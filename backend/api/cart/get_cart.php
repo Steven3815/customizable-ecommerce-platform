@@ -77,12 +77,25 @@ $stmt->execute([$cart_id]);
 
 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$total_amount = 0;
+
+foreach ($items as &$item) {
+    $item["cart_item_id"] = (int)$item["cart_item_id"];
+    $item["product_id"] = (int)$item["product_id"];
+    $item["quantity"] = (int)$item["quantity"];
+    $item["price"] = (float)$item["price"];
+    $item["subtotal"] = (float)$item["subtotal"];
+
+    $total_amount += $item["subtotal"];
+}
+
+unset($item);
 // 回傳
 
 echo json_encode([
-    "cart_id" => $cart_id,
-    "items" => $items
-],
-JSON_UNESCAPED_UNICODE);
+    "cart_id" => (int)$cart_id,
+    "items" => $items,
+    "total_amount" => $total_amount
+], JSON_UNESCAPED_UNICODE);
 
 ?>

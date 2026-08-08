@@ -25,6 +25,17 @@ if (
 $cart_item_id = $data["cart_item_id"];
 $quantity = $data["quantity"];
 $customer_id = $data["customer_id"];
+if (
+    !is_numeric($quantity) ||
+    $quantity <= 0 ||
+    floor($quantity) != $quantity
+) {
+    echo json_encode([
+        "error" => "Invalid quantity"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
 
 // 檢查商品是否存在
 $sql = "
@@ -66,8 +77,9 @@ $stmt->execute([
 ]);
 
 echo json_encode([
-    "message" => "Cart updated"
-],
-JSON_UNESCAPED_UNICODE);
+    "message" => "Cart updated",
+    "cart_item_id" => (int)$cart_item_id,
+    "quantity" => (int)$quantity
+], JSON_UNESCAPED_UNICODE);
 
 ?>
