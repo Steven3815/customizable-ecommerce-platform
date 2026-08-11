@@ -5,6 +5,18 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../config/database.php";
 
+session_start();
+
+// 檢查 Customer Session
+if (!isset($_SESSION["customer_id"])) {
+    echo json_encode([
+        "error" => "Unauthorized"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$customer_id = (int)$_SESSION["customer_id"];
+
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -12,17 +24,14 @@ $data = json_decode(
 
 // 檢查必要欄位
 if (
-    !isset($data["customer_id"]) ||
     !isset($data["order_id"])
 ) {
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
-
     exit;
 }
 
-$customer_id = $data["customer_id"];
 $order_id = $data["order_id"];
 
 $sql = "
@@ -47,7 +56,6 @@ if (!$order) {
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
-
     exit;
 }
 
@@ -55,7 +63,6 @@ if ($order["delivery_status"] !== "pending") {
     echo json_encode([
         "error" => "Order cannot be updated after shipping"
     ], JSON_UNESCAPED_UNICODE);
-
     exit;
 }
 
@@ -69,7 +76,6 @@ if (
     echo json_encode([
         "error" => "Missing order information"
     ], JSON_UNESCAPED_UNICODE);
-
     exit;
 }
 
@@ -105,3 +111,5 @@ echo json_encode([
     "message" => "Order updated successfully",
     "order_id" => (int)$order_id
 ], JSON_UNESCAPED_UNICODE);
+
+?>

@@ -1,41 +1,95 @@
 <?php
-// 加入購物車
+
+// Customer 加入購物車
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../config/database.php";
+
+session_start();
+
+// 檢查 Customer Session
+if (
+    !isset($_SESSION["customer_id"]) ||
+    !isset($_SESSION["role"]) ||
+    $_SESSION["role"] !== "customer"
+) {
+    echo json_encode([
+        "error" => "Unauthorized"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$customer_id = (int)$_SESSION["customer_id"];
 
 $data = json_decode(
     file_get_contents("php://input"),
     true
 );
 
+// 檢查必要欄位
 if (
-    !isset($data["customer_id"]) ||
     !isset($data["product_id"]) ||
     !isset($data["quantity"])
 ) {
-
     echo json_encode([
         "error" => "Missing required fields"
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 
     exit;
-
 }
 
-$customer_id = $data["customer_id"];
 $product_id = $data["product_id"];
 $spec_id = $data["spec_id"] ?? null;
 $quantity = $data["quantity"];
 
+// 檢查 product_id
+if (
+    !is_numeric($product_id) ||
+    floor($product_id) != $product_id ||
+    (int)$product_id <= 0
+) {
+    echo json_encode([
+        "error" => "Invalid product ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$product_id = (int)$product_id;
+
+// 檢查 spec_id
+if ($spec_id !== null) {
+    if (
+        !is_numeric($spec_id) ||
+        floor($spec_id) != $spec_id ||
+        (int)$spec_id <= 0
+    ) {
+        echo json_encode([
+            "error" => "Invalid specification ID"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    $spec_id = (int)$spec_id;
+}
+
 // 檢查數量
-if (!is_numeric($quantity) || $quantity <= 0 || floor($quantity) != $quantity) {
+if (
+    !is_numeric($quantity) ||
+    floor($quantity) != $quantity ||
+    (int)$quantity <= 0
+) {
     echo json_encode([
         "error" => "Invalid quantity"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
+
+$quantity = (int)$quantity;
 
 // 檢查會員
 $sql = "
@@ -45,15 +99,15 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $customer_id
-]);
+$stmt->execute([$customer_id]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+
 if (!$customer) {
     echo json_encode([
         "error" => "Customer not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -61,9 +115,11 @@ if (!$customer) {
 $sql = "
 SELECT
     product_id,
-    has_spec
+    has_spec,
+    stock
 FROM PRODUCT
 WHERE product_id = ?
+AND status = 'active'
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -72,34 +128,30 @@ $stmt->execute([$product_id]);
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
-
-    echo json_encode(
-        [
-            "error" => "Product not found"
-        ],
-        JSON_UNESCAPED_UNICODE
-    );
+    echo json_encode([
+        "error" => "Product not found"
+    ], JSON_UNESCAPED_UNICODE);
 
     exit;
-
 }
 
-// 檢查商品規格
-if ($product["has_spec"] == 1) {
-    // 有規格商品須提供 spec_id
+// 有規格商品
+if ((int)$product["has_spec"] === 1) {
+
+    // 必須提供 spec_id
     if ($spec_id === null) {
-        echo json_encode(
-            [
-                "error" => "Spec ID is required"
-            ],
-            JSON_UNESCAPED_UNICODE
-        );
+        echo json_encode([
+            "error" => "Spec ID is required"
+        ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
-    // 檢查 spec 是否屬於該商品
+
+    // 檢查規格是否屬於該商品
     $sql = "
     SELECT
-        spec_id
+        spec_id,
+        stock
     FROM PRODUCT_SPEC
     WHERE spec_id = ?
     AND product_id = ?
@@ -114,18 +166,44 @@ if ($product["has_spec"] == 1) {
     $spec = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$spec) {
-        echo json_encode(
-            [
-                "error" => "Invalid specification"
-            ],
-            JSON_UNESCAPED_UNICODE
-        );
+        echo json_encode([
+            "error" => "Invalid specification"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 檢查規格庫存
+    if ((int)$spec["stock"] < $quantity) {
+        echo json_encode([
+            "error" => "Insufficient stock"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+} else {
+
+    // 無規格商品不可傳 spec_id
+    if ($spec_id !== null) {
+        echo json_encode([
+            "error" => "This product does not have specifications"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 檢查商品庫存
+    if ((int)$product["stock"] < $quantity) {
+        echo json_encode([
+            "error" => "Insufficient stock"
+        ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 }
 
 // 找會員購物車
-
 $sql = "
 SELECT cart_id
 FROM CART
@@ -134,11 +212,12 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
+
 $cart = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$cart) {
-    // 沒有購物車建立
 
+    // 沒有購物車 → 建立購物車
     $sql = "
     INSERT INTO CART(customer_id)
     VALUES(?)
@@ -147,13 +226,14 @@ if (!$cart) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$customer_id]);
 
-    $cart_id = $pdo->lastInsertId();
+    $cart_id = (int)$pdo->lastInsertId();
 
 } else {
-    $cart_id = $cart["cart_id"];
+
+    $cart_id = (int)$cart["cart_id"];
 }
 
-// 加入商品
+// 檢查購物車是否已有相同商品
 $sql = "
 SELECT
     cart_item_id,
@@ -165,9 +245,10 @@ AND (
     (spec_id IS NULL AND ? IS NULL)
     OR spec_id = ?
 )
-";// 如果兩邊(購物車內、新增)都沒有規格(因product_id相同)，或者兩邊的規格編號相同，就代表購物車已經有這個商品
+";
 
 $stmt = $pdo->prepare($sql);
+
 $stmt->execute([
     $cart_id,
     $product_id,
@@ -177,26 +258,45 @@ $stmt->execute([
 
 $cart_item = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// 已存在商品 → 增加數量
+// 已存在 → 增加數量
 if ($cart_item) {
+
+    $new_quantity =
+        (int)$cart_item["quantity"] + $quantity;
+
+    // 再次檢查總數量是否超過庫存
+    if ((int)$product["has_spec"] === 1) {
+        $available_stock = (int)$spec["stock"];
+    } else {
+        $available_stock = (int)$product["stock"];
+    }
+
+    if ($new_quantity > $available_stock) {
+        echo json_encode([
+            "error" => "Insufficient stock"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
 
     $sql = "
     UPDATE CART_ITEM
-    SET quantity = quantity + ?
+    SET quantity = ?
     WHERE cart_item_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
-        $quantity,
+        $new_quantity,
         $cart_item["cart_item_id"]
     ]);
 
-
     $message = "Cart quantity updated";
 
-// 不存在商品 → 新增商品
 } else {
+
+    // 不存在 → 新增
     $sql = "
     INSERT INTO CART_ITEM
     (
@@ -215,20 +315,24 @@ if ($cart_item) {
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $cart_id,
         $product_id,
         $spec_id,
         $quantity
-
     ]);
 
     $message = "Product added to cart";
 }
 
+// 回傳
 echo json_encode([
-    "message" => $message
-],
-JSON_UNESCAPED_UNICODE);
+    "message" => $message,
+    "cart_id" => $cart_id,
+    "product_id" => $product_id,
+    "spec_id" => $spec_id,
+    "quantity" => $quantity
+], JSON_UNESCAPED_UNICODE);
 
 ?>
