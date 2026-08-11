@@ -3,7 +3,7 @@
 // Customer 取得單一商品詳細資料
 
 header("Content-Type: application/json; charset=UTF-8");
-require_once "../../config/database.php";
+require_once "../../../config/database.php";
 
 // 檢查 product_id
 $product_id = $_GET["id"] ?? null;

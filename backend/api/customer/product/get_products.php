@@ -3,7 +3,7 @@
 // Customer 商品列表
 
 header("Content-Type: application/json; charset=UTF-8");
-require_once "../../config/database.php";
+require_once "../../../config/database.php";
 
 // 取得搜尋條件
 $category_id = $_GET["category_id"] ?? null;

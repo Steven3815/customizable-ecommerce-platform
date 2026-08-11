@@ -3,8 +3,8 @@
 // 建立退款
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../config/database.php";
-require_once "../../helpers/upload_image.php";
+require_once "../../../config/database.php";
+require_once "../../../helpers/upload_image.php";
 
 session_start();
 
