@@ -185,7 +185,7 @@ echo json_encode([
     "store" => [
         "store_id" => $store_id,
         "store_name" => $store_name,
-        "store_url" => "$store["store_url"],
+        "store_url" => $store["store_url"],
         "owner_name" => $owner_name,
         "email" => $store["email"],
         "phone" => $phone,

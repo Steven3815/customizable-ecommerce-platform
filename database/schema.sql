@@ -316,24 +316,30 @@ CREATE TABLE STORE_SETTING (
 );
 
 CREATE TABLE STORE_PAYMENT_METHOD (
-    store_payment_id INT AUTO_INCREMENT PRIMARY KEY,
-
     store_id INT NOT NULL,
 
-    payment_method VARCHAR(50),
+    store_payment_id TINYINT NOT NULL,
+
+    payment_method VARCHAR(50) NOT NULL,
 
     status ENUM(
         'active',
         'inactive'
-    ) DEFAULT 'active',
+    ) DEFAULT 'inactive',
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
+        ON UPDATE CURRENT_TIMESTAMP,
 
+    PRIMARY KEY (store_id, store_payment_id),
 
-    FOREIGN KEY(store_id)
-    REFERENCES STORE(store_id)
+    UNIQUE (store_id, payment_method),
+
+    FOREIGN KEY (store_id)
+        REFERENCES STORE(store_id),
+
+    CHECK (store_payment_id BETWEEN 1 AND 5)
 );
 
 CREATE TABLE STORE_PAYMENT_ACCOUNT (
@@ -341,7 +347,7 @@ CREATE TABLE STORE_PAYMENT_ACCOUNT (
 
     store_id INT NOT NULL,
 
-    store_payment_id INT NOT NULL,
+    store_payment_id TINYINT NOT NULL,
 
     bank_name VARCHAR(100),
 
@@ -352,14 +358,13 @@ CREATE TABLE STORE_PAYMENT_ACCOUNT (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
+        ON UPDATE CURRENT_TIMESTAMP,
 
-
-    FOREIGN KEY(store_id)
-    REFERENCES STORE(store_id),
-
-    FOREIGN KEY(store_payment_id)
-    REFERENCES STORE_PAYMENT_METHOD(store_payment_id)
+    FOREIGN KEY (store_id, store_payment_id)
+        REFERENCES STORE_PAYMENT_METHOD(
+            store_id,
+            store_payment_id
+        )
 );
 
 CREATE TABLE STORE_DELIVERY_METHOD (
@@ -534,55 +539,3 @@ AFTER stock;
 
 ALTER TABLE STORE
 ADD UNIQUE (store_url);
-
-CREATE TABLE STORE_PAYMENT_METHOD (
-    store_id INT NOT NULL,
-
-    store_payment_id TINYINT NOT NULL,
-
-    payment_method VARCHAR(50) NOT NULL,
-
-    status ENUM(
-        'active',
-        'inactive'
-    ) DEFAULT 'inactive',
-
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (store_id, store_payment_id),
-
-    UNIQUE (store_id, payment_method),
-
-    FOREIGN KEY (store_id)
-        REFERENCES STORE(store_id),
-
-    CHECK (store_payment_id BETWEEN 1 AND 5)
-);
-
-CREATE TABLE STORE_PAYMENT_ACCOUNT (
-    account_id INT AUTO_INCREMENT PRIMARY KEY,
-
-    store_id INT NOT NULL,
-
-    store_payment_id TINYINT NOT NULL,
-
-    bank_name VARCHAR(100),
-
-    bank_number VARCHAR(100),
-
-    post_office_number VARCHAR(100),
-
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (store_id, store_payment_id)
-        REFERENCES STORE_PAYMENT_METHOD(
-            store_id,
-            store_payment_id
-        )
-);
