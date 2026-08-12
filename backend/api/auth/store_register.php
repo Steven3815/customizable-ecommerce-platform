@@ -192,7 +192,7 @@ try {
     $store_id = (int)$pdo->lastInsertId();
 
     // 自動產生 store_url
-    $store_url = "store-" . $store_id;
+    $store_url = "https://ecommerce.com/store-" . $store_id;
 
     // 更新 store_url
     $sql = "
@@ -255,6 +255,31 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$store_id]);
 
+    // 每個 Store 固定建立 5 種付款方式
+    $sql = "
+    INSERT INTO STORE_PAYMENT_METHOD
+    (
+        store_id,
+        store_payment_id,
+        payment_method,
+        status
+    )
+    VALUES
+    (?, 1, 'credit_card', 'inactive'),
+    (?, 2, 'atm', 'inactive'),
+    (?, 3, 'post_office', 'inactive'),
+    (?, 4, 'cash_on_delivery', 'inactive'),
+    (?, 5, 'in_store', 'inactive')
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $store_id,
+        $store_id,
+        $store_id,
+        $store_id,
+        $store_id
+    ]);
     // 全部成功
     $pdo->commit();
 

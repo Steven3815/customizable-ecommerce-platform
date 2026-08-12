@@ -291,7 +291,7 @@ CREATE TABLE STORE_SETTING (
         'showcase'
     ) DEFAULT 'shopping',
 
-    refund_enable BOOLEAN DEFAULT TRUE,
+    refund_enable BOOLEAN DEFAULT FALSE,
 
     refund_days_limit INT DEFAULT 7,
 
@@ -303,7 +303,7 @@ CREATE TABLE STORE_SETTING (
 
     stock_alert_threshold INT,
 
-    customer_service_enable BOOLEAN DEFAULT TRUE,
+    customer_service_enable BOOLEAN DEFAULT FALSE,
 
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -345,9 +345,9 @@ CREATE TABLE STORE_PAYMENT_ACCOUNT (
 
     bank_name VARCHAR(100),
 
-    account_number VARCHAR(100),
+    bank_number VARCHAR(100),
 
-    account_name VARCHAR(100),
+    post_office_number VARCHAR(100),
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
@@ -531,3 +531,58 @@ ALTER TABLE PRODUCT_SPEC
 ADD COLUMN status ENUM('active', 'inactive')
 NOT NULL DEFAULT 'active'
 AFTER stock;
+
+ALTER TABLE STORE
+ADD UNIQUE (store_url);
+
+CREATE TABLE STORE_PAYMENT_METHOD (
+    store_id INT NOT NULL,
+
+    store_payment_id TINYINT NOT NULL,
+
+    payment_method VARCHAR(50) NOT NULL,
+
+    status ENUM(
+        'active',
+        'inactive'
+    ) DEFAULT 'inactive',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (store_id, store_payment_id),
+
+    UNIQUE (store_id, payment_method),
+
+    FOREIGN KEY (store_id)
+        REFERENCES STORE(store_id),
+
+    CHECK (store_payment_id BETWEEN 1 AND 5)
+);
+
+CREATE TABLE STORE_PAYMENT_ACCOUNT (
+    account_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    store_id INT NOT NULL,
+
+    store_payment_id TINYINT NOT NULL,
+
+    bank_name VARCHAR(100),
+
+    bank_number VARCHAR(100),
+
+    post_office_number VARCHAR(100),
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (store_id, store_payment_id)
+        REFERENCES STORE_PAYMENT_METHOD(
+            store_id,
+            store_payment_id
+        )
+);
