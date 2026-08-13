@@ -1,0 +1,333 @@
+<?php
+
+// Customer 取得付款頁面資料
+
+header("Content-Type: application/json; charset=UTF-8");
+
+require_once "../../../config/database.php";
+
+session_start();
+
+// 檢查 Customer Session
+
+if (
+    !isset($_SESSION["customer_id"]) ||
+    !isset($_SESSION["role"]) ||
+    $_SESSION["role"] !== "customer"
+) {
+    echo json_encode([
+        "error" => "Unauthorized"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$customer_id = (int)$_SESSION["customer_id"];
+
+// 檢查 Customer ID
+
+if ($customer_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid customer ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得 order_id 和 store_id
+
+if (
+    !isset($_GET["order_id"]) ||
+    !isset($_GET["store_id"])
+) {
+    echo json_encode([
+        "error" => "Order ID and store ID are required"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$order_id = (int)$_GET["order_id"];
+$store_id = (int)$_GET["store_id"];
+
+// 檢查 Order ID
+
+if ($order_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid order ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store ID
+
+if ($store_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得訂單資料
+
+$sql = "
+SELECT
+    o.order_id,
+    o.customer_id,
+    o.store_id,
+    o.product_amount,
+    o.shipping_fee,
+    o.total_amount,
+    o.receiver_name,
+    o.receiver_phone,
+    o.receiver_address,
+    o.delivery_method,
+    o.delivery_status,
+
+    c.email AS customer_email,
+
+    s.store_name,
+    s.status AS store_status
+
+FROM ORDERS o
+
+JOIN CUSTOMER c
+    ON o.customer_id = c.customer_id
+
+JOIN STORE s
+    ON o.store_id = s.store_id
+
+WHERE o.order_id = ?
+AND o.customer_id = ?
+AND o.store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $order_id,
+    $customer_id,
+    $store_id
+]);
+
+$order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// 檢查訂單
+
+if (!$order) {
+    echo json_encode([
+        "error" => "Order not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 從訂單取得 Store ID
+
+$store_id = (int)$order["store_id"];
+$store_name = $order["store_name"];
+
+// 檢查 Store
+
+if ($store_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+if ($order["store_status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得目前 Payment
+
+$sql = "
+SELECT
+    payment_id,
+    order_id,
+    store_id,
+    payment_method,
+    amount,
+    payment_status,
+    payment_confirm_status,
+    paid_at,
+    confirmed_at,
+    created_at,
+    updated_at
+
+FROM PAYMENT
+
+WHERE order_id = ?
+AND store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $order_id,
+    $store_id
+]);
+
+$payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// 整理 Payment 資料
+
+$payment_data = null;
+
+if ($payment) {
+
+    $payment_data = [
+        "payment_id" => (int)$payment["payment_id"],
+        "order_id" => (int)$payment["order_id"],
+        "store_id" => (int)$payment["store_id"],
+        "payment_method" => $payment["payment_method"],
+        "amount" => (float)$payment["amount"],
+        "payment_status" => $payment["payment_status"],
+        "payment_confirm_status" => $payment["payment_confirm_status"],
+        "paid_at" => $payment["paid_at"],
+        "confirmed_at" => $payment["confirmed_at"],
+        "created_at" => $payment["created_at"],
+        "updated_at" => $payment["updated_at"]
+    ];
+}
+
+// 取得 Store 開放的付款方式
+
+$sql = "
+SELECT
+    store_payment_id,
+    payment_method
+
+FROM STORE_PAYMENT_METHOD
+
+WHERE store_id = ?
+AND status = 'active'
+
+ORDER BY store_payment_id
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$payment_methods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// 取得 Store 開放的配送方式
+
+$sql = "
+SELECT
+    store_delivery_id,
+    delivery_method
+
+FROM STORE_DELIVERY_METHOD
+
+WHERE store_id = ?
+AND status = 'active'
+
+ORDER BY store_delivery_id
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$delivery_methods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// 付款方式名稱
+
+$payment_method_names = [
+    "credit_card" => "信用卡",
+    "atm" => "ATM轉帳",
+    "post_office" => "郵局轉帳",
+    "cash_on_delivery" => "貨到付款",
+    "in_store" => "店內付款"
+];
+
+// 配送方式名稱
+
+$delivery_method_names = [
+    "home_delivery" => "宅配",
+    "convenience_store" => "超商取貨",
+    "store_pickup" => "店內自取"
+];
+
+// 整理付款方式
+
+$available_payment_methods = [];
+
+foreach ($payment_methods as $method) {
+
+    $payment_method = $method["payment_method"];
+
+    $available_payment_methods[] = [
+        "store_payment_id" => (int)$method["store_payment_id"],
+        "payment_method" => $payment_method,
+        "name" => $payment_method_names[$payment_method] ?? $payment_method
+    ];
+}
+
+// 整理配送方式
+
+$available_delivery_methods = [];
+
+foreach ($delivery_methods as $method) {
+
+    $delivery_method = $method["delivery_method"];
+
+    $available_delivery_methods[] = [
+        "store_delivery_id" => (int)$method["store_delivery_id"],
+        "delivery_method" => $delivery_method,
+        "name" => $delivery_method_names[$delivery_method] ?? $delivery_method
+    ];
+}
+
+// 回傳
+
+echo json_encode([
+
+    "message" => "Payment information retrieved successfully",
+
+    "order" => [
+        "order_id" => (int)$order["order_id"],
+        "customer_id" => (int)$order["customer_id"],
+        "store_id" => $store_id,
+
+        "product_amount" => (float)$order["product_amount"],
+        "shipping_fee" => (float)$order["shipping_fee"],
+        "total_amount" => (float)$order["total_amount"],
+
+        "receiver_name" => $order["receiver_name"],
+        "receiver_email" => $order["customer_email"],
+        "receiver_phone" => $order["receiver_phone"],
+        "receiver_address" => $order["receiver_address"],
+
+        "delivery_method" => $order["delivery_method"],
+        "delivery_status" => $order["delivery_status"]
+    ],
+
+    "payment" => $payment_data,
+
+    "store" => [
+        "store_id" => $store_id,
+        "store_name" => $store_name
+    ],
+
+    "payment_methods" => $available_payment_methods,
+
+    "delivery_methods" => $available_delivery_methods
+
+], JSON_UNESCAPED_UNICODE);
+
+?>

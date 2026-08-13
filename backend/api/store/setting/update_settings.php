@@ -595,99 +595,137 @@ try {
         }
     }
 
-    if (isset($data["delivery_methods"])) {
-        if (!is_array($data["delivery_methods"])) {
+if (isset($data["delivery_methods"])) {
+
+    if (!is_array($data["delivery_methods"])) {
+        throw new Exception(
+            "Invalid delivery methods"
+        );
+    }
+
+    // 固定配送方式 ID 對應
+    // 1 = home_delivery
+    // 2 = convenience_store
+    // 3 = store_pickup
+
+    $delivery_map = [
+        1 => "home_delivery",
+        2 => "convenience_store",
+        3 => "store_pickup"
+    ];
+
+    foreach (
+        $data["delivery_methods"]
+        as $delivery
+    ) {
+
+        if (!is_array($delivery)) {
             throw new Exception(
-                "Invalid delivery methods"
+                "Invalid delivery method data"
             );
         }
 
-        foreach (
-            $data["delivery_methods"]
-            as $delivery
+        // 檢查必要欄位
+        if (
+            !isset($delivery["store_delivery_id"]) ||
+            !isset($delivery["enabled"])
         ) {
-            if (!is_array($delivery)) {
-                throw new Exception(
-                    "Invalid delivery method data"
-                );
-            }
-
-            if (
-                !isset($delivery["store_delivery_id"]) ||
-                !isset($delivery["enabled"])
-            ) {
-                throw new Exception(
-                    "Delivery method ID and enabled are required"
-                );
-            }
-
-            $store_delivery_id =
-                $delivery["store_delivery_id"];
-
-            $enabled =
-                $delivery["enabled"];
-
-            if (
-                !is_numeric($store_delivery_id) ||
-                floor((float)$store_delivery_id)
-                    != (float)$store_delivery_id ||
-                (int)$store_delivery_id <= 0
-            ) {
-                throw new Exception(
-                    "Invalid delivery method ID"
-                );
-            }
-
-            $store_delivery_id =
-                (int)$store_delivery_id;
-
-            if (!is_bool($enabled)) {
-                throw new Exception(
-                    "Invalid delivery method enabled"
-                );
-            }
-
-            $sql = "
-            SELECT store_delivery_id
-            FROM STORE_DELIVERY_METHOD
-            WHERE store_delivery_id = ?
-            AND store_id = ?
-            ";
-
-            $stmt = $pdo->prepare($sql);
-
-            $stmt->execute([
-                $store_delivery_id,
-                $store_id
-            ]);
-
-            $delivery_method =
-                $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$delivery_method) {
-                throw new Exception(
-                    "Delivery method not found"
-                );
-            }
-
-            $sql = "
-            UPDATE STORE_DELIVERY_METHOD
-            SET status = ?
-            WHERE store_delivery_id = ?
-            AND store_id = ?
-            ";
-
-            $stmt = $pdo->prepare($sql);
-
-            $stmt->execute([
-                $enabled
-                    ? "active"
-                    : "inactive",
-                $store_delivery_id,
-                $store_id
-            ]);
+            throw new Exception(
+                "Delivery method ID and enabled are required"
+            );
         }
+
+        $store_delivery_id =
+            $delivery["store_delivery_id"];
+
+        $enabled =
+            $delivery["enabled"];
+
+        // 檢查 Delivery ID
+        if (
+            !is_numeric($store_delivery_id) ||
+            floor((float)$store_delivery_id)
+                != (float)$store_delivery_id ||
+            (int)$store_delivery_id < 1 ||
+            (int)$store_delivery_id > 3
+        ) {
+            throw new Exception(
+                "Invalid delivery method ID"
+            );
+        }
+
+        $store_delivery_id =
+            (int)$store_delivery_id;
+
+        // 檢查 enabled
+        if (!is_bool($enabled)) {
+            throw new Exception(
+                "Invalid delivery method enabled"
+            );
+        }
+
+        // 取得預期配送方式
+        $expected_delivery_method =
+            $delivery_map[$store_delivery_id];
+
+        // 檢查資料庫設定
+        $sql = "
+        SELECT
+            store_delivery_id,
+            delivery_method,
+            status
+        FROM STORE_DELIVERY_METHOD
+        WHERE store_id = ?
+        AND store_delivery_id = ?
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            $store_id,
+            $store_delivery_id
+        ]);
+
+        $delivery_method =
+            $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Delivery 不存在
+        if (!$delivery_method) {
+            throw new Exception(
+                "Delivery method not found"
+            );
+        }
+
+        // 檢查 ID 與名稱是否一致
+        if (
+            $delivery_method["delivery_method"]
+            !== $expected_delivery_method
+        ) {
+            throw new Exception(
+                "Delivery method configuration is invalid"
+            );
+        }
+
+        // 更新啟用狀態
+        $sql = "
+        UPDATE STORE_DELIVERY_METHOD
+        SET
+            status = ?
+        WHERE store_id = ?
+        AND store_delivery_id = ?
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            $enabled
+                ? "active"
+                : "inactive",
+            $store_id,
+            $store_delivery_id
+        ]);
     }
+}
 
     $pdo->commit();
 

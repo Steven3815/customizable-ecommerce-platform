@@ -132,7 +132,6 @@ try {
         $store_payment_id =
             (int)$payment["store_payment_id"];
 
-
         $item = [
 
             "store_payment_id" =>
@@ -185,33 +184,37 @@ try {
     }
 
     // 取得配送方式
+    // 1 = home_delivery
+    // 2 = convenience_store
+    // 3 = store_pickup
+    // STORE_DELIVERY_METHOD PK = (store_id, store_delivery_id)
+
     $sql = "
     SELECT
-        store_delivery_id,
-        delivery_method,
-        status
+        sdm.store_delivery_id,
+        sdm.delivery_method,
+        sdm.status
 
-    FROM STORE_DELIVERY_METHOD
-
-    WHERE store_id = ?
-
-    ORDER BY store_delivery_id ASC
-    ";
+    FROM STORE_DELIVERY_METHOD sdm
+    WHERE sdm.store_id = ?
+    ORDER BY sdm.store_delivery_id ASC";
 
     $stmt = $pdo->prepare($sql);
-
-
     $stmt->execute([$store_id]);
 
     $delivery_rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     $delivery_methods = [];
 
     foreach ($delivery_rows as $delivery) {
 
-        $delivery_methods[] = [
+        $store_delivery_id =
+            (int)$delivery["store_delivery_id"];
+
+        $item = [
 
             "store_delivery_id" =>
-                (int)$delivery["store_delivery_id"],
+                $store_delivery_id,
 
             "delivery_method" =>
                 $delivery["delivery_method"],
@@ -220,6 +223,8 @@ try {
                 $delivery["status"] === "active"
 
         ];
+
+        $delivery_methods[] = $item;
     }
 
     // 回傳

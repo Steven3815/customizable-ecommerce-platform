@@ -28,10 +28,20 @@ $data = json_decode(
     true
 );
 
+// 檢查 JSON
+if (!is_array($data)) {
+    echo json_encode([
+        "error" => "Invalid JSON"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 檢查必要欄位
 if (
     !isset($data["cart_item_id"]) ||
-    !isset($data["quantity"])
+    !isset($data["quantity"]) ||
+    !isset($data["store_id"])
 ) {
     echo json_encode([
         "error" => "Missing required fields"
@@ -42,6 +52,7 @@ if (
 
 $cart_item_id = $data["cart_item_id"];
 $quantity = $data["quantity"];
+$store_id = $data["store_id"];
 
 // 檢查 cart_item_id
 if (
@@ -57,6 +68,21 @@ if (
 }
 
 $cart_item_id = (int)$cart_item_id;
+
+// 檢查 store_id
+if (
+    !is_numeric($store_id) ||
+    floor($store_id) != $store_id ||
+    (int)$store_id <= 0
+) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$store_id = (int)$store_id;
 
 // 檢查數量
 if (
@@ -79,6 +105,7 @@ SELECT
     ci.cart_item_id,
     ci.product_id,
     ci.spec_id,
+    ci.store_id,
     p.product_name,
     p.has_spec,
     p.stock AS product_stock,
@@ -88,19 +115,27 @@ SELECT
 FROM CART_ITEM ci
 JOIN CART c
     ON ci.cart_id = c.cart_id
+    AND ci.store_id = c.store_id
 JOIN PRODUCT p
     ON ci.product_id = p.product_id
+    AND ci.store_id = p.store_id
 LEFT JOIN PRODUCT_SPEC ps
     ON ci.spec_id = ps.spec_id
+    AND ci.product_id = ps.product_id
+    AND ci.store_id = ps.store_id
 WHERE ci.cart_item_id = ?
+AND ci.store_id = ?
 AND c.customer_id = ?
+AND c.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $cart_item_id,
-    $customer_id
+    $store_id,
+    $customer_id,
+    $store_id
 ]);
 
 $item = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -168,19 +203,22 @@ $sql = "
 UPDATE CART_ITEM
 SET quantity = ?
 WHERE cart_item_id = ?
+AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $quantity,
-    $cart_item_id
+    $cart_item_id,
+    $store_id
 ]);
 
 // 回傳
 echo json_encode([
     "message" => "Cart updated",
     "cart_item_id" => $cart_item_id,
+    "store_id" => $store_id,
     "quantity" => $quantity
 ], JSON_UNESCAPED_UNICODE);
 

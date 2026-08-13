@@ -23,26 +23,53 @@ if (
 
 $customer_id = (int)$_SESSION["customer_id"];
 
+// 取得 JSON
 $data = json_decode(
     file_get_contents("php://input"),
     true
 );
 
-// 檢查必要欄位
-if (
-    !isset($data["product_id"]) ||
-    !isset($data["quantity"])
-) {
+// 檢查 JSON
+if (!is_array($data)) {
     echo json_encode([
-        "error" => "Missing required fields"
+        "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
+// 檢查必要欄位
+if (
+    !isset($data["store_id"]) ||
+    !isset($data["product_id"]) ||
+    !isset($data["quantity"])
+) {
+    echo json_encode([
+        "error" => "Store ID, product ID and quantity are required"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$store_id = $data["store_id"];
 $product_id = $data["product_id"];
 $spec_id = $data["spec_id"] ?? null;
 $quantity = $data["quantity"];
+
+// 檢查 store_id
+if (
+    !is_numeric($store_id) ||
+    floor($store_id) != $store_id ||
+    (int)$store_id <= 0
+) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$store_id = (int)$store_id;
 
 // 檢查 product_id
 if (
@@ -61,6 +88,7 @@ $product_id = (int)$product_id;
 
 // 檢查 spec_id
 if ($spec_id !== null) {
+
     if (
         !is_numeric($spec_id) ||
         floor($spec_id) != $spec_id ||
@@ -99,7 +127,10 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
+
+$stmt->execute([
+    $customer_id
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -111,25 +142,66 @@ if (!$customer) {
     exit;
 }
 
+// 檢查 Store
+$sql = "
+SELECT
+    store_id,
+    status
+FROM STORE
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+if ($store["status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 查詢商品
+// 必須同時符合 store_id + product_id
 $sql = "
 SELECT
     product_id,
+    store_id,
     has_spec,
-    stock
+    stock,
+    status
 FROM PRODUCT
 WHERE product_id = ?
+AND store_id = ?
 AND status = 'active'
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$product_id]);
+
+$stmt->execute([
+    $product_id,
+    $store_id
+]);
 
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
     echo json_encode([
-        "error" => "Product not found"
+        "error" => "Product does not belong to this store or product not found"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -138,7 +210,7 @@ if (!$product) {
 // 有規格商品
 if ((int)$product["has_spec"] === 1) {
 
-    // 必須提供 spec_id
+    // 有規格商品必須傳 spec_id
     if ($spec_id === null) {
         echo json_encode([
             "error" => "Spec ID is required"
@@ -147,7 +219,8 @@ if ((int)$product["has_spec"] === 1) {
         exit;
     }
 
-    // 檢查規格是否屬於該商品
+    // 檢查規格是否同時屬於
+    // Store + Product
     $sql = "
     SELECT
         spec_id,
@@ -155,12 +228,16 @@ if ((int)$product["has_spec"] === 1) {
     FROM PRODUCT_SPEC
     WHERE spec_id = ?
     AND product_id = ?
+    AND store_id = ?
+    AND status = 'active'
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $spec_id,
-        $product_id
+        $product_id,
+        $store_id
     ]);
 
     $spec = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -203,15 +280,20 @@ if ((int)$product["has_spec"] === 1) {
     }
 }
 
-// 找會員購物車
+// 找會員該 Store 的購物車
 $sql = "
 SELECT cart_id
 FROM CART
 WHERE customer_id = ?
+AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
+
+$stmt->execute([
+    $customer_id,
+    $store_id
+]);
 
 $cart = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -219,12 +301,24 @@ if (!$cart) {
 
     // 沒有購物車 → 建立購物車
     $sql = "
-    INSERT INTO CART(customer_id)
-    VALUES(?)
+    INSERT INTO CART
+    (
+        customer_id,
+        store_id
+    )
+    VALUES
+    (
+        ?,
+        ?
+    )
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$customer_id]);
+
+    $stmt->execute([
+        $customer_id,
+        $store_id
+    ]);
 
     $cart_id = (int)$pdo->lastInsertId();
 
@@ -240,6 +334,7 @@ SELECT
     quantity
 FROM CART_ITEM
 WHERE cart_id = ?
+AND store_id = ?
 AND product_id = ?
 AND (
     (spec_id IS NULL AND ? IS NULL)
@@ -251,6 +346,7 @@ $stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $cart_id,
+    $store_id,
     $product_id,
     $spec_id,
     $spec_id
@@ -264,7 +360,6 @@ if ($cart_item) {
     $new_quantity =
         (int)$cart_item["quantity"] + $quantity;
 
-    // 再次檢查總數量是否超過庫存
     if ((int)$product["has_spec"] === 1) {
         $available_stock = (int)$spec["stock"];
     } else {
@@ -283,16 +378,24 @@ if ($cart_item) {
     UPDATE CART_ITEM
     SET quantity = ?
     WHERE cart_item_id = ?
+    AND cart_id = ?
+    AND store_id = ?
+    AND product_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
 
     $stmt->execute([
         $new_quantity,
-        $cart_item["cart_item_id"]
+        $cart_item["cart_item_id"],
+        $cart_id,
+        $store_id,
+        $product_id
     ]);
 
     $message = "Cart quantity updated";
+
+    $final_quantity = $new_quantity;
 
 } else {
 
@@ -301,12 +404,14 @@ if ($cart_item) {
     INSERT INTO CART_ITEM
     (
         cart_id,
+        store_id,
         product_id,
         spec_id,
         quantity
     )
     VALUES
     (
+        ?,
         ?,
         ?,
         ?,
@@ -318,21 +423,26 @@ if ($cart_item) {
 
     $stmt->execute([
         $cart_id,
+        $store_id,
         $product_id,
         $spec_id,
         $quantity
     ]);
 
     $message = "Product added to cart";
+
+    $final_quantity = $quantity;
 }
 
 // 回傳
 echo json_encode([
     "message" => $message,
+    "customer_id" => $customer_id,
     "cart_id" => $cart_id,
+    "store_id" => $store_id,
     "product_id" => $product_id,
     "spec_id" => $spec_id,
-    "quantity" => $quantity
+    "quantity" => $final_quantity
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

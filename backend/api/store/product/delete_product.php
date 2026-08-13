@@ -23,10 +23,19 @@ if (
 
 $store_id = (int)$_SESSION["store_id"];
 
-// 檢查 product_id
+// 檢查 Store ID
+if ($store_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Product ID
 $product_id = $_POST["product_id"] ?? null;
 
-if ($product_id === null) {
+if ($product_id === null || $product_id === "") {
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -34,9 +43,10 @@ if ($product_id === null) {
     exit;
 }
 
+// 檢查 Product ID 格式
 if (
     !is_numeric($product_id) ||
-    floor($product_id) != $product_id
+    floor((float)$product_id) != (float)$product_id
 ) {
     echo json_encode([
         "error" => "Invalid product ID"
@@ -67,6 +77,7 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
+
 $stmt->execute([
     $product_id,
     $store_id
@@ -98,10 +109,15 @@ SELECT
     image_url
 FROM PRODUCT_IMAGE
 WHERE product_id = ?
+AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$product_id]);
+
+$stmt->execute([
+    $product_id,
+    $store_id
+]);
 
 $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -109,41 +125,60 @@ $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $pdo->beginTransaction();
 
 try {
-    // 移除購物車中的商品
-
-    // 商品雖然是軟刪除，但客戶購物車不能繼續保留已刪除商品。
+    // 1. 移除購物車中的商品
+    // 商品雖然是軟刪除，
+    // 但客戶購物車不能繼續保留已刪除商品。
     $sql = "
     DELETE FROM CART_ITEM
     WHERE product_id = ?
+    AND store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$product_id]);
+
+    $stmt->execute([
+        $product_id,
+        $store_id
+    ]);
 
     $deleted_cart_items = $stmt->rowCount();
+
+    // 2. 停用商品規格
     $sql = "
     UPDATE PRODUCT_SPEC
     SET
         status = 'inactive',
         updated_at = NOW()
     WHERE product_id = ?
+    AND store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$product_id]);
-    // 刪除商品圖片資料庫紀錄
-    // PRODUCT 本身不刪除，但 PRODUCT_IMAGE 可以刪除。
+
+    $stmt->execute([
+        $product_id,
+        $store_id
+    ]);
+
+    // 3. 刪除商品圖片資料庫紀錄
+    // PRODUCT 本身不刪除，
+    // 但 PRODUCT_IMAGE 可以刪除。
     $sql = "
     DELETE FROM PRODUCT_IMAGE
     WHERE product_id = ?
+    AND store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$product_id]);
+
+    $stmt->execute([
+        $product_id,
+        $store_id
+    ]);
 
     $deleted_images = $stmt->rowCount();
 
-    // 軟刪除商品
+    // 4. 軟刪除商品
     $sql = "
     UPDATE PRODUCT
     SET
@@ -161,17 +196,16 @@ try {
     ]);
 
     // 確認真的有更新
-
     if ($stmt->rowCount() !== 1) {
         throw new Exception(
             "Failed to delete product"
         );
     }
 
-    // 完成交易
+    // 5. 完成交易
     $pdo->commit();
 
-    // 刪除實體圖片
+    // 6. 刪除實體圖片
     $deleted_physical_images = 0;
 
     foreach ($images as $image) {
@@ -179,16 +213,19 @@ try {
         $image_url = $image["image_url"];
 
         // 防止不正常的路徑
-
         if (
             !is_string($image_url) ||
             strpos($image_url, "/uploads/") !== 0
         ) {
             continue;
         }
-        /*例如：
-         /uploads/products/image_xxx.jpg 對應
-         專案根目錄/uploads/products/image_xxx.jpg
+
+        /*
+         * 例如：
+         * /uploads/products/image_xxx.jpg
+         *
+         * 對應：
+         * 專案根目錄/uploads/products/image_xxx.jpg
          */
         $image_path =
             dirname(__DIR__, 3)
@@ -205,7 +242,7 @@ try {
         }
     }
 
-    // 回傳
+    // 7. 回傳
     echo json_encode([
         "message" => "Product deleted successfully",
         "product_id" => $product_id,
@@ -218,6 +255,7 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
+
     // 發生錯誤 → Rollback
     if ($pdo->inTransaction()) {
         $pdo->rollBack();

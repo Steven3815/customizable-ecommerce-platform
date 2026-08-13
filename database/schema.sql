@@ -46,6 +46,8 @@ CREATE TABLE CATEGORY (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
+    UNIQUE(store_id, category_id),
+
     FOREIGN KEY(store_id)
     REFERENCES STORE(store_id)
 );
@@ -70,31 +72,40 @@ CREATE TABLE PRODUCT (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP,
 
+    UNIQUE(store_id, product_id),
+
     FOREIGN KEY(store_id)
     REFERENCES STORE(store_id),
 
-    FOREIGN KEY(category_id)
-    REFERENCES CATEGORY(category_id)
+    FOREIGN KEY(store_id, category_id)
+    REFERENCES CATEGORY(store_id, category_id)
 );
 
 CREATE TABLE PRODUCT_SPEC (
     spec_id INT AUTO_INCREMENT PRIMARY KEY,
+    store_id INT NOT NULL,
     product_id INT NOT NULL,
 
     spec_name VARCHAR(100),
     price DECIMAL(10,2) NOT NULL,
     stock INT DEFAULT 0,
 
+    status ENUM('active', 'inactive')
+    NOT NULL DEFAULT 'active',
+
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(product_id)
-    REFERENCES PRODUCT(product_id)
+    UNIQUE(store_id, product_id, spec_id),
+
+    FOREIGN KEY(store_id, product_id)
+    REFERENCES PRODUCT(store_id, product_id)
 );
 
 CREATE TABLE PRODUCT_IMAGE (
     image_id INT AUTO_INCREMENT PRIMARY KEY,
+    store_id INT NOT NULL,
     product_id INT NOT NULL,
 
     image_url VARCHAR(500),
@@ -104,26 +115,34 @@ CREATE TABLE PRODUCT_IMAGE (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(product_id)
-    REFERENCES PRODUCT(product_id)
+    FOREIGN KEY(store_id, product_id)
+    REFERENCES PRODUCT(store_id, product_id)
 );
 
 CREATE TABLE CART (
     cart_id INT AUTO_INCREMENT PRIMARY KEY,
+
     customer_id INT NOT NULL,
+    store_id INT NOT NULL,
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE(customer_id, store_id),
 
     FOREIGN KEY(customer_id)
-    REFERENCES CUSTOMER(customer_id)
+        REFERENCES CUSTOMER(customer_id),
+
+    FOREIGN KEY(store_id)
+        REFERENCES STORE(store_id)
 );
 
 CREATE TABLE CART_ITEM (
     cart_item_id INT AUTO_INCREMENT PRIMARY KEY,
 
     cart_id INT NOT NULL,
+    store_id INT NOT NULL,
     product_id INT NOT NULL,
     spec_id INT NULL,
 
@@ -132,17 +151,18 @@ CREATE TABLE CART_ITEM (
     FOREIGN KEY(cart_id)
     REFERENCES CART(cart_id),
 
-    FOREIGN KEY(product_id)
-    REFERENCES PRODUCT(product_id),
+    FOREIGN KEY(store_id, product_id)
+    REFERENCES PRODUCT(store_id, product_id),
 
-    FOREIGN KEY(spec_id)
-    REFERENCES PRODUCT_SPEC(spec_id)
+    FOREIGN KEY(store_id, product_id, spec_id)
+    REFERENCES PRODUCT_SPEC(store_id, product_id, spec_id)
 );
 
 CREATE TABLE ORDERS (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
 
     customer_id INT NOT NULL,
+    store_id INT NOT NULL,
 
     receiver_name VARCHAR(100),
     receiver_phone VARCHAR(30),
@@ -155,6 +175,7 @@ CREATE TABLE ORDERS (
     total_amount DECIMAL(10,2),
 
     delivery_method VARCHAR(50),
+
     delivery_status ENUM(
         'pending',
         'shipping',
@@ -164,21 +185,24 @@ CREATE TABLE ORDERS (
     estimated_ship_date DATE,
     estimated_arrival_date DATE,
 
-
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
+        ON UPDATE CURRENT_TIMESTAMP,
 
+    UNIQUE(order_id, store_id),
 
     FOREIGN KEY(customer_id)
-    REFERENCES CUSTOMER(customer_id)
+        REFERENCES CUSTOMER(customer_id),
+
+    FOREIGN KEY(store_id)
+        REFERENCES STORE(store_id)
 );
 
 CREATE TABLE ORDER_ITEM (
     order_item_id INT AUTO_INCREMENT PRIMARY KEY,
 
     order_id INT NOT NULL,
-
+    store_id INT NOT NULL,
     product_id INT NOT NULL,
     spec_id INT NULL,
 
@@ -188,29 +212,29 @@ CREATE TABLE ORDER_ITEM (
     quantity INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
 
+    FOREIGN KEY(order_id, store_id)
+    REFERENCES ORDERS(order_id, store_id),
 
-    FOREIGN KEY(order_id)
-    REFERENCES ORDERS(order_id),
-
-    FOREIGN KEY(product_id)
-    REFERENCES PRODUCT(product_id),
-
-    FOREIGN KEY(spec_id)
-    REFERENCES PRODUCT_SPEC(spec_id)
+    FOREIGN KEY(store_id, product_id, spec_id)
+    REFERENCES PRODUCT_SPEC(store_id, product_id, spec_id)
 );
 
 CREATE TABLE PAYMENT (
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
 
     order_id INT UNIQUE NOT NULL,
+    store_id INT NOT NULL,
 
     payment_method VARCHAR(50),
 
+    amount DECIMAL(10,2) NOT NULL,
+
     payment_status ENUM(
         'pending',
+        'processing',
         'paid',
         'failed'
-    ),
+    ) DEFAULT 'pending',
 
     payment_confirm_status ENUM(
         'waiting',
@@ -227,17 +251,20 @@ CREATE TABLE PAYMENT (
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
+        ON UPDATE CURRENT_TIMESTAMP,
 
+    FOREIGN KEY(order_id, store_id)
+        REFERENCES ORDERS(order_id, store_id),
 
-    FOREIGN KEY(order_id)
-    REFERENCES ORDERS(order_id)
+    FOREIGN KEY(store_id)
+        REFERENCES STORE(store_id)
 );
 
 CREATE TABLE REFUND (
     refund_id INT AUTO_INCREMENT PRIMARY KEY,
 
     order_id INT UNIQUE NOT NULL,
+    store_id INT NOT NULL,
 
     refund_reason VARCHAR(100),
     refund_description TEXT,
@@ -255,9 +282,11 @@ CREATE TABLE REFUND (
     requested_at DATETIME,
     processed_at DATETIME,
 
+    FOREIGN KEY(order_id, store_id)
+        REFERENCES ORDERS(order_id, store_id),
 
-    FOREIGN KEY(order_id)
-    REFERENCES ORDERS(order_id)
+    FOREIGN KEY(store_id)
+        REFERENCES STORE(store_id)
 );
 
 CREATE TABLE WEBSITE_SETTING (
@@ -494,48 +523,35 @@ CREATE TABLE SLIDER_IMAGE (
 CREATE TABLE CUSTOMER_SERVICE (
     service_id INT AUTO_INCREMENT PRIMARY KEY,
 
-
     customer_id INT NOT NULL,
+    store_id INT NOT NULL,
 
     order_id INT NULL,
 
-
     problem_type VARCHAR(100),
-
     description TEXT,
-
     image_url VARCHAR(500),
-
 
     status ENUM(
         'pending',
         'resolved'
     ) DEFAULT 'pending',
 
-
     admin_reply TEXT,
 
-
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
-
+        ON UPDATE CURRENT_TIMESTAMP,
 
     FOREIGN KEY(customer_id)
-    REFERENCES CUSTOMER(customer_id),
+        REFERENCES CUSTOMER(customer_id),
 
+    FOREIGN KEY(store_id)
+        REFERENCES STORE(store_id),
 
-    FOREIGN KEY(order_id)
-    REFERENCES ORDERS(order_id)
+    FOREIGN KEY(order_id, store_id)
+        REFERENCES ORDERS(order_id, store_id)
 );
-ALTER TABLE CART
-ADD UNIQUE(customer_id);
-
-ALTER TABLE PRODUCT_SPEC
-ADD COLUMN status ENUM('active', 'inactive')
-NOT NULL DEFAULT 'active'
-AFTER stock;
 
 ALTER TABLE STORE
 ADD UNIQUE (store_url);

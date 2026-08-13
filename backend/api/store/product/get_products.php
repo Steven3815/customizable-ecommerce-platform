@@ -22,6 +22,32 @@ if (
 
 $store_id = (int)$_SESSION["store_id"];
 
+if ($store_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// 檢查 Store 是否存在
+$sql = "
+SELECT store_id
+FROM STORE
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$store_id]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // 取得搜尋條件
 $page = isset($_GET["page"]) ? (int)$_GET["page"] : 1;
 $limit = 20;
@@ -56,7 +82,32 @@ if ($category_id !== null && $category_id !== "") {
     $category_id = (int)$category_id;
 }
 
-// 檢查 status
+// 如果有 category_id，確認 Category 屬於目前 Store
+if ($category_id !== null && $category_id !== "") {
+    $sql = "
+    SELECT category_id
+    FROM CATEGORY
+    WHERE category_id = ?
+    AND store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $category_id,
+        $store_id
+    ]);
+
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$category) {
+        echo json_encode([
+            "error" => "Category not found"
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+// 檢查商品 status
 $allowed_status = [
     "active",
     "hidden",
@@ -185,7 +236,7 @@ if ($stock_status === "out_of_stock") {
     AND (
         (
             p.has_spec = 0
-            AND p.stock = 0
+            AND p.stock <= 0
         )
         OR
         (
@@ -198,13 +249,11 @@ if ($stock_status === "out_of_stock") {
                     AND ps.status = 'active'
                 ),
                 0
-            ) = 0
+            ) <= 0
         )
     )
     ";
-}
-
-if ($stock_status === "low") {
+} elseif ($stock_status === "low") {
     $sql .= "
     AND (
         (
@@ -226,9 +275,7 @@ if ($stock_status === "low") {
         )
     )
     ";
-}
-
-if ($stock_status === "in_stock") {
+} elseif ($stock_status === "in_stock") {
     $sql .= "
     AND (
         (
@@ -285,8 +332,7 @@ foreach ($products as &$product) {
 
     $product["has_spec"] = (bool)$product["has_spec"];
 
-    $product["total_stock"] =
-        (int)$product["total_stock"];
+    $product["total_stock"] = (int)$product["total_stock"];
 
     $product["display_price"] =
         $product["display_price"] !== null

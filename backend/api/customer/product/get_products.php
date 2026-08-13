@@ -3,13 +3,64 @@
 // Customer 商品列表
 
 header("Content-Type: application/json; charset=UTF-8");
+
 require_once "../../../config/database.php";
 
-// 取得搜尋條件
 $category_id = $_GET["category_id"] ?? null;
+$store_id = $_GET["store_id"] ?? null;
 $sort = $_GET["sort"] ?? "asc";
 
-// 檢查 category_id
+// 檢查 Store ID
+if ($store_id === null || $store_id === "") {
+    echo json_encode([
+        "error" => "Store ID is required"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if (
+    !is_numeric($store_id) ||
+    floor((float)$store_id) != (float)$store_id ||
+    (int)$store_id <= 0
+) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$store_id = (int)$store_id;
+
+// 檢查 Store
+$sql = "
+SELECT
+    store_id,
+    store_name,
+    status
+FROM STORE
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$store_id]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($store["status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// 檢查 Category ID
 if ($category_id !== null && $category_id !== "") {
     if (
         !is_numeric($category_id) ||
@@ -23,6 +74,31 @@ if ($category_id !== null && $category_id !== "") {
     }
 
     $category_id = (int)$category_id;
+
+    // 確認 Category 屬於目前 Store
+    $sql = "
+    SELECT
+        category_id,
+        category_name
+    FROM CATEGORY
+    WHERE category_id = ?
+    AND store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $category_id,
+        $store_id
+    ]);
+
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$category) {
+        echo json_encode([
+            "error" => "Category does not belong to this store"
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
 
 // 檢查排序方式
@@ -33,25 +109,37 @@ if (!in_array($sort, ["asc", "desc"], true)) {
     exit;
 }
 
+// 建立 WHERE 條件
 $where = [
+    "p.store_id = ?",
     "p.status = 'active'"
 ];
 
-$params = [];
+$params = [$store_id];
 
-// 分類篩選
 if ($category_id !== null && $category_id !== "") {
     $where[] = "p.category_id = ?";
     $params[] = $category_id;
+
+    $where[] = "
+        EXISTS (
+            SELECT 1
+            FROM CATEGORY c
+            WHERE c.category_id = p.category_id
+            AND c.store_id = p.store_id
+        )
+    ";
 }
 
 $where_sql = implode(" AND ", $where);
+
 $order = $sort === "asc" ? "ASC" : "DESC";
 
 // 取得商品
 $sql = "
 SELECT
     p.product_id,
+    p.store_id,
     p.category_id,
     p.product_name,
     p.description,
@@ -62,6 +150,7 @@ SELECT
         SELECT MIN(ps.price)
         FROM PRODUCT_SPEC ps
         WHERE ps.product_id = p.product_id
+        AND ps.store_id = p.store_id
         AND ps.status = 'active'
     ) AS min_spec_price,
 
@@ -69,7 +158,10 @@ SELECT
         SELECT pi.image_url
         FROM PRODUCT_IMAGE pi
         WHERE pi.product_id = p.product_id
-        ORDER BY pi.sort_order ASC, pi.image_id ASC
+        AND pi.store_id = p.store_id
+        ORDER BY
+            pi.sort_order ASC,
+            pi.image_id ASC
         LIMIT 1
     ) AS main_image
 
@@ -83,6 +175,7 @@ ORDER BY
             SELECT MIN(ps2.price)
             FROM PRODUCT_SPEC ps2
             WHERE ps2.product_id = p.product_id
+            AND ps2.store_id = p.store_id
             AND ps2.status = 'active'
         )
         ELSE p.price
@@ -98,7 +191,12 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // 整理商品資料
 foreach ($products as &$product) {
     $product["product_id"] = (int)$product["product_id"];
-    $product["category_id"] = (int)$product["category_id"];
+    $product["store_id"] = (int)$product["store_id"];
+
+    $product["category_id"] =
+        $product["category_id"] !== null
+            ? (int)$product["category_id"]
+            : null;
 
     $product["price"] =
         $product["price"] !== null
@@ -112,8 +210,7 @@ foreach ($products as &$product) {
             ? (float)$product["min_spec_price"]
             : null;
 
-    // 無規格：使用 PRODUCT.price
-    // 有規格：使用 active 規格中的最低價格
+    // 有規格使用最低規格價格，無規格使用商品價格
     $product["display_price"] =
         $product["has_spec"]
             ? $product["min_spec_price"]
@@ -124,6 +221,8 @@ unset($product);
 
 // 回傳
 echo json_encode([
+    "store_id" => $store_id,
+    "store_name" => $store["store_name"],
     "category_id" => $category_id,
     "sort" => $sort,
     "products" => $products

@@ -77,6 +77,7 @@ if (
 
 // 檢查 cart_item_id
 foreach ($cart_item_ids as $cart_item_id) {
+
     if (
         !is_numeric($cart_item_id) ||
         floor((float)$cart_item_id) != (float)$cart_item_id ||
@@ -125,7 +126,11 @@ $placeholders = implode(
 $pdo->beginTransaction();
 
 try {
+
+    // =========================================================
     // 1. 檢查會員
+    // =========================================================
+
     $sql = "
     SELECT customer_id
     FROM CUSTOMER
@@ -133,7 +138,10 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$customer_id]);
+
+    $stmt->execute([
+        $customer_id
+    ]);
 
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -141,28 +149,17 @@ try {
         throw new Exception("Customer not found");
     }
 
-    // 2. 找會員購物車
-    $sql = "
-    SELECT cart_id
-    FROM CART
-    WHERE customer_id = ?
-    ";
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$customer_id]);
+    // =========================================================
+    // 2. 取得選取的購物車商品
+    // =========================================================
 
-    $cart = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$cart) {
-        throw new Exception("Cart not found");
-    }
-
-    $cart_id = (int)$cart["cart_id"];
-
-    // 3. 取得選取的購物車商品
     $sql = "
     SELECT
         ci.cart_item_id,
+        ci.cart_id,
+        c.store_id,
+
         ci.product_id,
         ci.spec_id,
         ci.quantity,
@@ -180,21 +177,28 @@ try {
 
     FROM CART_ITEM ci
 
+    INNER JOIN CART c
+        ON ci.cart_id = c.cart_id
+        AND ci.store_id = c.store_id
+        AND c.customer_id = ?
+
     INNER JOIN PRODUCT p
         ON ci.product_id = p.product_id
+        AND ci.store_id = p.store_id
 
     LEFT JOIN PRODUCT_SPEC ps
         ON ci.spec_id = ps.spec_id
+        AND ci.product_id = ps.product_id
+        AND ci.store_id = ps.store_id
         AND ps.status = 'active'
 
-    WHERE ci.cart_id = ?
-    AND ci.cart_item_id IN ($placeholders)
+    WHERE ci.cart_item_id IN ($placeholders)
     ";
 
     $stmt = $pdo->prepare($sql);
 
     $params = array_merge(
-        [$cart_id],
+        [$customer_id],
         $cart_item_ids
     );
 
@@ -202,7 +206,11 @@ try {
 
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 4. 檢查商品是否全部存在
+
+    // =========================================================
+    // 3. 檢查商品是否全部存在
+    // =========================================================
+
     if (!$items) {
         throw new Exception(
             "Selected cart items not found"
@@ -215,10 +223,32 @@ try {
         );
     }
 
+
+    // =========================================================
+    // 4. 檢查所有商品是否屬於同一家商店
+    // =========================================================
+
+    $store_id = (int)$items[0]["store_id"];
+
+    foreach ($items as $item) {
+
+        if ((int)$item["store_id"] !== $store_id) {
+
+            throw new Exception(
+                "Cart items must belong to the same store"
+            );
+        }
+    }
+
+
+    // =========================================================
     // 5. 檢查商品狀態、規格狀態與庫存
+    // =========================================================
+
     $product_amount = 0;
 
     foreach ($items as $item) {
+
         $quantity = (int)$item["quantity"];
 
         if ($quantity <= 0) {
@@ -227,15 +257,25 @@ try {
             );
         }
 
+
+        // -----------------------------------------------------
         // 商品必須是 active
+        // -----------------------------------------------------
+
         if ($item["product_status"] !== "active") {
+
             throw new Exception(
                 "Product is no longer available"
             );
         }
 
-        // 有規格
+
+        // -----------------------------------------------------
+        // 有規格商品
+        // -----------------------------------------------------
+
         if ((int)$item["has_spec"] === 1) {
+
             if (
                 $item["spec_id"] === null ||
                 $item["spec_status"] !== "active"
@@ -246,46 +286,78 @@ try {
             }
 
             $price = (float)$item["spec_price"];
+
             $stock = (int)$item["spec_stock"];
 
             if ($quantity > $stock) {
+
                 throw new Exception(
                     "Insufficient specification stock"
                 );
             }
+
         } else {
-            // 無規格
+
+            // -------------------------------------------------
+            // 無規格商品
+            // -------------------------------------------------
+
+            if ($item["spec_id"] !== null) {
+
+                throw new Exception(
+                    "Invalid product specification"
+                );
+            }
+
             $price = (float)$item["product_price"];
+
             $stock = (int)$item["product_stock"];
 
             if ($quantity > $stock) {
+
                 throw new Exception(
                     "Insufficient product stock"
                 );
             }
         }
 
+
+        // 計算商品金額
         $product_amount += $price * $quantity;
     }
 
+
+    // =========================================================
     // 6. 計算訂單總額
+    // =========================================================
+
     $total_amount =
         $product_amount + $shipping_fee;
 
+
+    // =========================================================
     // 7. 建立 ORDERS
+    // =========================================================
+
     $sql = "
     INSERT INTO ORDERS
     (
         customer_id,
+        store_id,
+
         receiver_name,
         receiver_phone,
         receiver_address,
+
         order_date,
+
         product_amount,
         shipping_fee,
         total_amount,
+
         delivery_method,
         delivery_status,
+
         estimated_ship_date,
         estimated_arrival_date
     )
@@ -293,14 +365,20 @@ try {
     (
         ?,
         ?,
+
         ?,
         ?,
+        ?,
+
         NOW(),
+
         ?,
         ?,
         ?,
+
         ?,
         'pending',
+
         DATE_ADD(CURDATE(), INTERVAL 3 DAY),
         DATE_ADD(CURDATE(), INTERVAL 7 DAY)
     )
@@ -310,26 +388,44 @@ try {
 
     $stmt->execute([
         $customer_id,
+        $store_id,
+
         $receiver_name,
         $receiver_phone,
         $receiver_address,
+
         $product_amount,
         $shipping_fee,
         $total_amount,
+
         $delivery_method
     ]);
 
     $order_id = (int)$pdo->lastInsertId();
 
+
+    // =========================================================
     // 8. 建立 ORDER_ITEM
+    // =========================================================
+
+    // 注意：
+    // ORDER_ITEM 必須存 store_id
+    // 因為資料表有：
+    //
+    // FOREIGN KEY(order_id, store_id)
+    // REFERENCES ORDERS(order_id, store_id)
+
     $sql = "
     INSERT INTO ORDER_ITEM
     (
         order_id,
+        store_id,
         product_id,
         spec_id,
+
         product_name,
         spec_name,
+
         quantity,
         price
     )
@@ -339,7 +435,10 @@ try {
         ?,
         ?,
         ?,
+
         ?,
+        ?,
+
         ?,
         ?
     )
@@ -348,37 +447,61 @@ try {
     $stmt_order_item = $pdo->prepare($sql);
 
     foreach ($items as $item) {
+
         if ((int)$item["has_spec"] === 1) {
+
             $price = (float)$item["spec_price"];
+
             $spec_name = $item["spec_name"];
+
         } else {
+
             $price = (float)$item["product_price"];
+
             $spec_name = null;
         }
 
+
         $stmt_order_item->execute([
             $order_id,
+            $store_id,
             $item["product_id"],
             $item["spec_id"],
+
             $item["product_name"],
             $spec_name,
+
             $item["quantity"],
             $price
         ]);
     }
 
+
+    // =========================================================
     // 9. 扣除庫存
+    // =========================================================
+
     foreach ($items as $item) {
+
         $quantity = (int)$item["quantity"];
 
+
+        // -----------------------------------------------------
+        // 有規格
+        // -----------------------------------------------------
+
         if ((int)$item["has_spec"] === 1) {
+
             $sql = "
             UPDATE PRODUCT_SPEC
             SET
                 stock = stock - ?,
                 updated_at = NOW()
+
             WHERE spec_id = ?
             AND product_id = ?
+            AND store_id = ?
+
             AND status = 'active'
             AND stock >= ?
             ";
@@ -389,21 +512,33 @@ try {
                 $quantity,
                 $item["spec_id"],
                 $item["product_id"],
+                $store_id,
                 $quantity
             ]);
 
             if ($stmt->rowCount() !== 1) {
+
                 throw new Exception(
                     "Failed to update specification stock"
                 );
             }
+
+
         } else {
+
+            // -------------------------------------------------
+            // 無規格
+            // -------------------------------------------------
+
             $sql = "
             UPDATE PRODUCT
             SET
                 stock = stock - ?,
                 updated_at = NOW()
+
             WHERE product_id = ?
+            AND store_id = ?
+
             AND status = 'active'
             AND stock >= ?
             ";
@@ -413,10 +548,12 @@ try {
             $stmt->execute([
                 $quantity,
                 $item["product_id"],
+                $store_id,
                 $quantity
             ]);
 
             if ($stmt->rowCount() !== 1) {
+
                 throw new Exception(
                     "Failed to update product stock"
                 );
@@ -424,38 +561,69 @@ try {
         }
     }
 
+
+    // =========================================================
     // 10. 刪除已結帳商品
+    // =========================================================
+
+    // 只刪除目前 Customer 自己的購物車商品
+
     $sql = "
-    DELETE FROM CART_ITEM
-    WHERE cart_id = ?
-    AND cart_item_id IN ($placeholders)
+    DELETE ci
+    FROM CART_ITEM ci
+
+    INNER JOIN CART c
+        ON ci.cart_id = c.cart_id
+
+    WHERE c.customer_id = ?
+    AND ci.cart_item_id IN ($placeholders)
     ";
 
     $stmt = $pdo->prepare($sql);
 
     $params = array_merge(
-        [$cart_id],
+        [$customer_id],
         $cart_item_ids
     );
 
     $stmt->execute($params);
 
+
+    // =========================================================
     // 11. 完成交易
+    // =========================================================
+
     $pdo->commit();
 
+
+    // =========================================================
     // 12. 回傳
+    // =========================================================
+
     echo json_encode([
         "message" => "Order created successfully",
+
         "order_id" => $order_id,
+
         "customer_id" => $customer_id,
+
+        "store_id" => $store_id,
+
         "product_amount" => $product_amount,
+
         "shipping_fee" => $shipping_fee,
+
         "total_amount" => $total_amount,
+
         "delivery_method" => $delivery_method,
+
         "delivery_status" => "pending"
+
     ], JSON_UNESCAPED_UNICODE);
 
+
 } catch (Exception $e) {
+
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
