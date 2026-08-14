@@ -1,11 +1,14 @@
 <?php
 
+// Customer 取得指定 Store 的客服案件列表
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
 
 session_start();
 
+// 檢查 Customer Session
 if (
     !isset($_SESSION["customer_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -14,6 +17,7 @@ if (
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -23,9 +27,63 @@ if ($customer_id <= 0) {
     echo json_encode([
         "error" => "Invalid customer ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
+// 取得 Store ID
+if (!isset($_GET["store_id"])) {
+    echo json_encode([
+        "error" => "Store ID is required"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$store_id = $_GET["store_id"];
+
+// 檢查 Store ID
+if (
+    !is_numeric($store_id) ||
+    floor((float)$store_id) != (float)$store_id ||
+    (int)$store_id <= 0
+) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$store_id = (int)$store_id;
+
+// 檢查 Store
+$sql = "
+SELECT
+    store_id,
+    store_name,
+    status
+FROM STORE
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得狀態篩選
 $status = $_GET["status"] ?? "all";
 
 if (
@@ -36,105 +94,93 @@ if (
     echo json_encode([
         "error" => "Invalid status"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
+// 取得客服案件
 $sql = "
 SELECT
-    cs.service_id,
-    cs.customer_id,
-    cs.store_id,
-    cs.order_id,
-    cs.problem_type,
-    cs.description,
-    cs.image_url,
-    cs.status,
-    cs.admin_reply,
-    cs.created_at,
-    cs.updated_at,
-
-    s.store_name,
-
-    o.total_amount,
-    o.delivery_method,
-    o.delivery_status
-
-FROM CUSTOMER_SERVICE cs
-
-JOIN STORE s
-    ON cs.store_id = s.store_id
-
-LEFT JOIN ORDERS o
-    ON cs.order_id = o.order_id
-    AND cs.store_id = o.store_id
-
-WHERE cs.customer_id = ?
+    service_id,
+    problem_type,
+    created_at,
+    status
+FROM CUSTOMER_SERVICE
+WHERE customer_id = ?
+AND store_id = ?
 ";
 
 $params = [
-    $customer_id
+    $customer_id,
+    $store_id
 ];
 
+// 狀態篩選
 if ($status === "pending") {
 
     $sql .= "
-        AND cs.status = 'pending'
+    AND status = 'pending'
     ";
 
 } elseif ($status === "resolved") {
 
     $sql .= "
-        AND cs.status = 'resolved'
+    AND status = 'resolved'
     ";
 }
 
+// 排序
 $sql .= "
-ORDER BY cs.created_at DESC
+ORDER BY created_at DESC
 ";
 
+// 執行
 $stmt = $pdo->prepare($sql);
 
 $stmt->execute($params);
 
 $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// 整理資料
 $result = [];
 
 foreach ($services as $service) {
 
     $result[] = [
-        "service_id" => (int)$service["service_id"],
+        "service_id" =>
+            (int)$service["service_id"],
 
-        "store" => [
-            "store_id" => (int)$service["store_id"],
-            "store_name" => $service["store_name"]
-        ],
+        "problem_type" =>
+            $service["problem_type"],
 
-        "order" => $service["order_id"] !== null
-            ? [
-                "order_id" => (int)$service["order_id"],
-                "total_amount" => $service["total_amount"] !== null
-                    ? (float)$service["total_amount"]
-                    : null,
-                "delivery_method" => $service["delivery_method"],
-                "delivery_status" => $service["delivery_status"]
-            ]
-            : null,
+        "created_at" =>
+            $service["created_at"],
 
-        "problem_type" => $service["problem_type"],
-        "description" => $service["description"],
-        "image_url" => $service["image_url"],
-        "status" => $service["status"],
-        "admin_reply" => $service["admin_reply"],
-        "created_at" => $service["created_at"],
-        "updated_at" => $service["updated_at"]
+        "status" =>
+            $service["status"]
     ];
 }
 
+// 回傳
 echo json_encode([
-    "status_filter" => $status,
-    "count" => count($result),
-    "services" => $result
+
+    "store" => [
+        "store_id" =>
+            (int)$store["store_id"],
+
+        "store_name" =>
+            $store["store_name"]
+    ],
+
+    "status_filter" =>
+        $status,
+
+    "count" =>
+        count($result),
+
+    "services" =>
+        $result
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

@@ -26,6 +26,13 @@ if ($customer_id <= 0) {
     exit;
 }
 
+if (!isset($_GET["store_id"])) {
+    echo json_encode([
+        "error" => "Store ID is required"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if (!isset($_GET["service_id"])) {
     echo json_encode([
         "error" => "Service ID is required"
@@ -33,7 +40,21 @@ if (!isset($_GET["service_id"])) {
     exit;
 }
 
+$store_id = $_GET["store_id"];
 $service_id = $_GET["service_id"];
+
+if (
+    !is_numeric($store_id) ||
+    floor((float)$store_id) != (float)$store_id ||
+    (int)$store_id <= 0
+) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$store_id = (int)$store_id;
 
 if (
     !is_numeric($service_id) ||
@@ -84,13 +105,15 @@ LEFT JOIN ORDERS o
 
 WHERE cs.service_id = ?
 AND cs.customer_id = ?
+AND cs.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $service_id,
-    $customer_id
+    $customer_id,
+    $store_id
 ]);
 
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -113,13 +136,20 @@ $result = [
     "order" => $service["order_id"] !== null
         ? [
             "order_id" => (int)$service["order_id"],
+
             "total_amount" => $service["total_amount"] !== null
                 ? (float)$service["total_amount"]
                 : null,
+
             "delivery_method" => $service["delivery_method"],
+
             "delivery_status" => $service["delivery_status"],
-            "estimated_ship_date" => $service["estimated_ship_date"],
-            "estimated_arrival_date" => $service["estimated_arrival_date"]
+
+            "estimated_ship_date" =>
+                $service["estimated_ship_date"],
+
+            "estimated_arrival_date" =>
+                $service["estimated_arrival_date"]
         ]
         : null,
 
