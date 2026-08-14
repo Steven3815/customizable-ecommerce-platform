@@ -22,6 +22,7 @@ $sql = "
 SELECT
     r.refund_id,
     r.order_id,
+    r.store_id,
     r.refund_reason,
     r.refund_description,
     r.refund_image_url,
@@ -34,8 +35,10 @@ SELECT
 FROM REFUND r
 JOIN ORDERS o
     ON r.order_id = o.order_id
+    AND r.store_id = o.store_id
 LEFT JOIN PAYMENT p
     ON r.order_id = p.order_id
+    AND r.store_id = p.store_id
 WHERE o.customer_id = ?
 ORDER BY r.requested_at DESC
 ";
@@ -50,7 +53,7 @@ $refunds = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!$refunds) {
     echo json_encode([
-        "message" => "No refunds found",
+        "message" => "目前無退款紀錄",
         "refunds" => []
     ], JSON_UNESCAPED_UNICODE);
     exit;
@@ -62,26 +65,32 @@ $result = [];
 foreach ($refunds as $refund) {
 
     $order_id = (int)$refund["order_id"];
+    $store_id = (int)$refund["store_id"];
 
     // 取得商品明細
     $sql = "
     SELECT
-        order_item_id,
-        product_id,
-        spec_id,
-        product_name,
-        spec_name,
-        quantity,
-        price
-    FROM ORDER_ITEM
-    WHERE order_id = ?
-    ORDER BY order_item_id ASC
+        oi.order_item_id,
+        oi.product_id,
+        oi.spec_id,
+        oi.product_name,
+        oi.spec_name,
+        oi.quantity,
+        oi.price
+    FROM ORDER_ITEM oi
+    JOIN ORDERS o
+        ON oi.order_id = o.order_id
+        AND oi.store_id = o.store_id
+    WHERE oi.order_id = ?
+    AND oi.store_id = ?
+    ORDER BY oi.order_item_id ASC
     ";
 
     $stmt = $pdo->prepare($sql);
 
     $stmt->execute([
-        $order_id
+        $order_id,
+        $store_id
     ]);
 
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -120,6 +129,9 @@ foreach ($refunds as $refund) {
     $refund["order_id"] =
         (int)$refund["order_id"];
 
+    $refund["store_id"] =
+        (int)$refund["store_id"];
+
     $refund["total_amount"] =
         (float)$refund["total_amount"];
 
@@ -130,6 +142,9 @@ foreach ($refunds as $refund) {
 
         "order_id" =>
             $refund["order_id"],
+
+        "store_id" =>
+            $refund["store_id"],
 
         "payment" => [
             "paid_at" =>
