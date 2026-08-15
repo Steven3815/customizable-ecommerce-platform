@@ -1,6 +1,7 @@
 <?php
 
 // Customer 建立退款申請
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
@@ -125,7 +126,8 @@ $store_id = (int)$order["store_id"];
 $sql = "
 SELECT
     refund_enable,
-    refund_days_limit
+    refund_days_limit,
+    store_mode
 FROM STORE_SETTING
 WHERE store_id = ?
 ";
@@ -142,6 +144,15 @@ $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$store_setting) {
     echo json_encode([
         "error" => "Store setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式不能申請退款
+if ($store_setting["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -216,12 +227,14 @@ SELECT
     refund_status
 FROM REFUND
 WHERE order_id = ?
+AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
 
 $stmt->execute([
-    $order_id
+    $order_id,
+    $store_id
 ]);
 
 $refund = $stmt->fetch(PDO::FETCH_ASSOC);

@@ -60,11 +60,16 @@ $store_id = (int)$store_id;
 // 檢查 Store
 $sql = "
 SELECT
-    store_id,
-    store_name,
-    status
-FROM STORE
-WHERE store_id = ?
+    s.store_id,
+    s.store_name,
+    s.status,
+    ss.store_mode
+FROM STORE s
+
+INNER JOIN STORE_SETTING ss
+    ON s.store_id = ss.store_id
+
+WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -78,6 +83,24 @@ $store = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$store) {
     echo json_encode([
         "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// Store 必須為 active
+if ($store["status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式不可使用客服
+if ($store["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

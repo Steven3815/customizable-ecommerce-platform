@@ -37,6 +37,7 @@ try {
     $pdo->beginTransaction();
 
     if (isset($data["store_status"])) {
+
         $store_status = $data["store_status"];
 
         if (
@@ -61,6 +62,7 @@ try {
     }
 
     if (isset($data["store_mode"])) {
+
         $store_mode = $data["store_mode"];
 
         if (
@@ -68,6 +70,35 @@ try {
             $store_mode !== "showcase"
         ) {
             throw new Exception("Invalid store mode");
+        }
+
+        $sql = "
+        SELECT store_mode
+        FROM STORE_SETTING
+        WHERE store_id = ?
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            $store_id
+        ]);
+
+        $current_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$current_setting) {
+            throw new Exception("Store setting not found");
+        }
+
+        $current_mode = $current_setting["store_mode"];
+
+        if (
+            $current_mode === "shopping" &&
+            $store_mode === "showcase"
+        ) {
+            throw new Exception(
+                "Shopping mode cannot be changed to showcase mode"
+            );
         }
 
         $sql = "
@@ -85,11 +116,13 @@ try {
     }
 
     if (isset($data["refund"])) {
+
         if (!is_array($data["refund"])) {
             throw new Exception("Invalid refund settings");
         }
 
         if (isset($data["refund"]["enabled"])) {
+
             $refund_enable =
                 $data["refund"]["enabled"];
 
@@ -114,6 +147,7 @@ try {
         }
 
         if (isset($data["refund"]["days_limit"])) {
+
             $days_limit =
                 $data["refund"]["days_limit"];
 
@@ -144,6 +178,7 @@ try {
     }
 
     if (isset($data["shipping"])) {
+
         if (!is_array($data["shipping"])) {
             throw new Exception(
                 "Invalid shipping settings"
@@ -151,6 +186,7 @@ try {
         }
 
         if (isset($data["shipping"]["shipping_days"])) {
+
             $shipping_days =
                 $data["shipping"]["shipping_days"];
 
@@ -180,6 +216,7 @@ try {
         }
 
         if (isset($data["shipping"]["delivery_days"])) {
+
             $delivery_days =
                 $data["shipping"]["delivery_days"];
 
@@ -210,6 +247,7 @@ try {
     }
 
     if (isset($data["stock_alert"])) {
+
         if (!is_array($data["stock_alert"])) {
             throw new Exception(
                 "Invalid stock alert settings"
@@ -217,6 +255,7 @@ try {
         }
 
         if (isset($data["stock_alert"]["enabled"])) {
+
             $stock_alert_enable =
                 $data["stock_alert"]["enabled"];
 
@@ -243,6 +282,7 @@ try {
         if (
             isset($data["stock_alert"]["threshold"])
         ) {
+
             $threshold =
                 $data["stock_alert"]["threshold"];
 
@@ -278,6 +318,7 @@ try {
     }
 
     if (isset($data["customer_service"])) {
+
         if (!is_array($data["customer_service"])) {
             throw new Exception(
                 "Invalid customer service settings"
@@ -289,6 +330,7 @@ try {
                 $data["customer_service"]["enabled"]
             )
         ) {
+
             $customer_service_enable =
                 $data["customer_service"]["enabled"];
 
@@ -314,6 +356,7 @@ try {
     }
 
     if (isset($data["payment_methods"])) {
+
         if (!is_array($data["payment_methods"])) {
             throw new Exception(
                 "Invalid payment methods"
@@ -321,6 +364,7 @@ try {
         }
 
         foreach ($data["payment_methods"] as $payment) {
+
             if (!is_array($payment)) {
                 throw new Exception(
                     "Invalid payment method data"
@@ -427,11 +471,13 @@ try {
             ]);
 
             if ($store_payment_id === 2) {
+
                 $has_bank_data =
                     isset($payment["bank_name"]) ||
                     isset($payment["bank_number"]);
 
                 if ($has_bank_data) {
+
                     $bank_name =
                         trim(
                             $payment["bank_name"] ?? ""
@@ -469,6 +515,7 @@ try {
                         $stmt->fetch(PDO::FETCH_ASSOC);
 
                     if ($account) {
+
                         $sql = "
                         UPDATE STORE_PAYMENT_ACCOUNT
                         SET
@@ -486,7 +533,9 @@ try {
                             (int)$account["account_id"],
                             $store_id
                         ]);
+
                     } else {
+
                         $sql = "
                         INSERT INTO STORE_PAYMENT_ACCOUNT
                         (
@@ -517,11 +566,13 @@ try {
             }
 
             if ($store_payment_id === 3) {
+
                 if (
                     isset(
                         $payment["post_office_number"]
                     )
                 ) {
+
                     $post_office_number =
                         trim(
                             $payment["post_office_number"]
@@ -551,6 +602,7 @@ try {
                         $stmt->fetch(PDO::FETCH_ASSOC);
 
                     if ($account) {
+
                         $sql = "
                         UPDATE STORE_PAYMENT_ACCOUNT
                         SET
@@ -566,7 +618,9 @@ try {
                             (int)$account["account_id"],
                             $store_id
                         ]);
+
                     } else {
+
                         $sql = "
                         INSERT INTO STORE_PAYMENT_ACCOUNT
                         (
@@ -595,137 +649,124 @@ try {
         }
     }
 
-if (isset($data["delivery_methods"])) {
+    if (isset($data["delivery_methods"])) {
 
-    if (!is_array($data["delivery_methods"])) {
-        throw new Exception(
-            "Invalid delivery methods"
-        );
+        if (!is_array($data["delivery_methods"])) {
+            throw new Exception(
+                "Invalid delivery methods"
+            );
+        }
+
+        $delivery_map = [
+            1 => "home_delivery",
+            2 => "convenience_store",
+            3 => "store_pickup"
+        ];
+
+        foreach (
+            $data["delivery_methods"]
+            as $delivery
+        ) {
+
+            if (!is_array($delivery)) {
+                throw new Exception(
+                    "Invalid delivery method data"
+                );
+            }
+
+            if (
+                !isset($delivery["store_delivery_id"]) ||
+                !isset($delivery["enabled"])
+            ) {
+                throw new Exception(
+                    "Delivery method ID and enabled are required"
+                );
+            }
+
+            $store_delivery_id =
+                $delivery["store_delivery_id"];
+
+            $enabled =
+                $delivery["enabled"];
+
+            if (
+                !is_numeric($store_delivery_id) ||
+                floor((float)$store_delivery_id)
+                    != (float)$store_delivery_id ||
+                (int)$store_delivery_id < 1 ||
+                (int)$store_delivery_id > 3
+            ) {
+                throw new Exception(
+                    "Invalid delivery method ID"
+                );
+            }
+
+            $store_delivery_id =
+                (int)$store_delivery_id;
+
+            if (!is_bool($enabled)) {
+                throw new Exception(
+                    "Invalid delivery method enabled"
+                );
+            }
+
+            $expected_delivery_method =
+                $delivery_map[$store_delivery_id];
+
+            $sql = "
+            SELECT
+                store_delivery_id,
+                delivery_method,
+                status
+            FROM STORE_DELIVERY_METHOD
+            WHERE store_id = ?
+            AND store_delivery_id = ?
+            ";
+
+            $stmt = $pdo->prepare($sql);
+
+            $stmt->execute([
+                $store_id,
+                $store_delivery_id
+            ]);
+
+            $delivery_method =
+                $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$delivery_method) {
+                throw new Exception(
+                    "Delivery method not found"
+                );
+            }
+
+            if (
+                $delivery_method["delivery_method"]
+                !== $expected_delivery_method
+            ) {
+                throw new Exception(
+                    "Delivery method configuration is invalid"
+                );
+            }
+
+            $sql = "
+            UPDATE STORE_DELIVERY_METHOD
+            SET
+                status = ?
+            WHERE store_id = ?
+            AND store_delivery_id = ?
+            ";
+
+            $stmt = $pdo->prepare($sql);
+
+            $stmt->execute([
+                $enabled
+                    ? "active"
+                    : "inactive",
+                $store_id,
+                $store_delivery_id
+            ]);
+        }
     }
-
-    // 固定配送方式 ID 對應
-    // 1 = home_delivery
-    // 2 = convenience_store
-    // 3 = store_pickup
-
-    $delivery_map = [
-        1 => "home_delivery",
-        2 => "convenience_store",
-        3 => "store_pickup"
-    ];
-
-    foreach (
-        $data["delivery_methods"]
-        as $delivery
-    ) {
-
-        if (!is_array($delivery)) {
-            throw new Exception(
-                "Invalid delivery method data"
-            );
-        }
-
-        // 檢查必要欄位
-        if (
-            !isset($delivery["store_delivery_id"]) ||
-            !isset($delivery["enabled"])
-        ) {
-            throw new Exception(
-                "Delivery method ID and enabled are required"
-            );
-        }
-
-        $store_delivery_id =
-            $delivery["store_delivery_id"];
-
-        $enabled =
-            $delivery["enabled"];
-
-        // 檢查 Delivery ID
-        if (
-            !is_numeric($store_delivery_id) ||
-            floor((float)$store_delivery_id)
-                != (float)$store_delivery_id ||
-            (int)$store_delivery_id < 1 ||
-            (int)$store_delivery_id > 3
-        ) {
-            throw new Exception(
-                "Invalid delivery method ID"
-            );
-        }
-
-        $store_delivery_id =
-            (int)$store_delivery_id;
-
-        // 檢查 enabled
-        if (!is_bool($enabled)) {
-            throw new Exception(
-                "Invalid delivery method enabled"
-            );
-        }
-
-        // 取得預期配送方式
-        $expected_delivery_method =
-            $delivery_map[$store_delivery_id];
-
-        // 檢查資料庫設定
-        $sql = "
-        SELECT
-            store_delivery_id,
-            delivery_method,
-            status
-        FROM STORE_DELIVERY_METHOD
-        WHERE store_id = ?
-        AND store_delivery_id = ?
-        ";
-
-        $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $store_id,
-            $store_delivery_id
-        ]);
-
-        $delivery_method =
-            $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // Delivery 不存在
-        if (!$delivery_method) {
-            throw new Exception(
-                "Delivery method not found"
-            );
-        }
-
-        // 檢查 ID 與名稱是否一致
-        if (
-            $delivery_method["delivery_method"]
-            !== $expected_delivery_method
-        ) {
-            throw new Exception(
-                "Delivery method configuration is invalid"
-            );
-        }
-
-        // 更新啟用狀態
-        $sql = "
-        UPDATE STORE_DELIVERY_METHOD
-        SET
-            status = ?
-        WHERE store_id = ?
-        AND store_delivery_id = ?
-        ";
-
-        $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $enabled
-                ? "active"
-                : "inactive",
-            $store_id,
-            $store_delivery_id
-        ]);
-    }
-}
 
     $pdo->commit();
 
@@ -735,6 +776,7 @@ if (isset($data["delivery_methods"])) {
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
+
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }

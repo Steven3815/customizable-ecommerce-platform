@@ -1,11 +1,14 @@
 <?php
 
+// Customer 修改會員資料
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
 
 session_start();
 
+// 檢查 Customer Session
 if (
     !isset($_SESSION["customer_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -20,11 +23,22 @@ if (
 
 $customer_id = (int)$_SESSION["customer_id"];
 
+// 檢查 Customer ID
+if ($customer_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid customer ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得 JSON
 $data = json_decode(
     file_get_contents("php://input"),
     true
 );
 
+// 檢查 JSON
 if (!is_array($data)) {
     echo json_encode([
         "error" => "Invalid JSON format"
@@ -33,6 +47,7 @@ if (!is_array($data)) {
     exit;
 }
 
+// Email / Password 不允許修改
 if (
     array_key_exists("email", $data) ||
     array_key_exists("password", $data)
@@ -44,6 +59,7 @@ if (
     exit;
 }
 
+// 允許修改的欄位
 $allowed_fields = [
     "name",
     "phone",
@@ -52,9 +68,11 @@ $allowed_fields = [
     "preferred_delivery"
 ];
 
+// 確認至少有一個欄位需要修改
 $has_update = false;
 
 foreach ($allowed_fields as $field) {
+
     if (array_key_exists($field, $data)) {
         $has_update = true;
         break;
@@ -69,12 +87,12 @@ if (!$has_update) {
     exit;
 }
 
+// 查詢目前會員資料
 $sql = "
 SELECT
     customer_id,
     name,
     email,
-    password,
     phone,
     address,
     preferred_payment,
@@ -99,16 +117,33 @@ if (!$customer) {
     exit;
 }
 
-$name = $customer["name"];
-$phone = $customer["phone"];
-$address = $customer["address"];
-$preferred_payment = $customer["preferred_payment"];
-$preferred_delivery = $customer["preferred_delivery"];
+// 使用原本資料作為預設值
+$name =
+    $customer["name"];
+
+$phone =
+    $customer["phone"];
+
+$address =
+    $customer["address"];
+
+$preferred_payment =
+    $customer["preferred_payment"];
+
+$preferred_delivery =
+    $customer["preferred_delivery"];
+
+
+// =========================
+// 修改姓名
+// =========================
 
 if (array_key_exists("name", $data)) {
+
     $name = trim($data["name"]);
 
     if ($name === "") {
+
         echo json_encode([
             "error" => "Name cannot be empty"
         ], JSON_UNESCAPED_UNICODE);
@@ -117,34 +152,113 @@ if (array_key_exists("name", $data)) {
     }
 }
 
+
+// =========================
+// 修改電話
+// =========================
+
 if (array_key_exists("phone", $data)) {
+
     $phone = trim($data["phone"]);
 }
 
+
+// =========================
+// 修改地址
+// =========================
+
 if (array_key_exists("address", $data)) {
+
     $address = trim($data["address"]);
 }
 
+
+// =========================
+// 修改預設付款方式
+// =========================
+
 if (array_key_exists("preferred_payment", $data)) {
-    $preferred_payment = trim($data["preferred_payment"]);
+
+    $preferred_payment =
+        trim($data["preferred_payment"]);
+
+    $allowed_payment_methods = [
+        "credit_card",
+        "atm",
+        "post_office",
+        "cash_on_delivery",
+        "in_store"
+    ];
+
+    if (
+        !in_array(
+            $preferred_payment,
+            $allowed_payment_methods,
+            true
+        )
+    ) {
+
+        echo json_encode([
+            "error" => "Invalid preferred payment method"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
 }
 
+
+// =========================
+// 修改預設配送方式
+// =========================
+
 if (array_key_exists("preferred_delivery", $data)) {
-    $preferred_delivery = trim($data["preferred_delivery"]);
+
+    $preferred_delivery =
+        trim($data["preferred_delivery"]);
+
+    $allowed_delivery_methods = [
+        "home_delivery",
+        "convenience_store",
+        "store_pickup"
+    ];
+
+    if (
+        !in_array(
+            $preferred_delivery,
+            $allowed_delivery_methods,
+            true
+        )
+    ) {
+
+        echo json_encode([
+            "error" => "Invalid preferred delivery method"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
 }
+
+
+// =========================
+// 更新 Customer
+// =========================
 
 $sql = "
 UPDATE CUSTOMER
+
 SET
     name = ?,
     phone = ?,
     address = ?,
     preferred_payment = ?,
-    preferred_delivery = ?
+    preferred_delivery = ?,
+    updated_at = NOW()
+
 WHERE customer_id = ?
 ";
 
 try {
+
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare($sql);
@@ -159,7 +273,9 @@ try {
     ]);
 
     $pdo->commit();
+
 } catch (PDOException $e) {
+
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
@@ -171,17 +287,42 @@ try {
     exit;
 }
 
+
+// =========================
+// 回傳
+// =========================
+
 echo json_encode([
-    "message" => "Profile updated successfully",
+
+    "message" =>
+        "Profile updated successfully",
+
     "customer" => [
-        "customer_id" => $customer_id,
-        "name" => $name,
-        "email" => $customer["email"],
-        "phone" => $phone,
-        "address" => $address,
-        "preferred_payment" => $preferred_payment,
-        "preferred_delivery" => $preferred_delivery
+
+        "customer_id" =>
+            $customer_id,
+
+        "name" =>
+            $name,
+
+        "email" =>
+            $customer["email"],
+
+        "phone" =>
+            $phone,
+
+        "address" =>
+            $address,
+
+        // 只有一個預設付款方式
+        "preferred_payment" =>
+            $preferred_payment,
+
+        // 只有一個預設配送方式
+        "preferred_delivery" =>
+            $preferred_delivery
     ]
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

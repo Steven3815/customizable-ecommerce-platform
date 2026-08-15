@@ -1,6 +1,7 @@
 <?php
 
 // Customer 取得退款列表
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
@@ -16,6 +17,7 @@ if (
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -25,6 +27,7 @@ if ($customer_id <= 0) {
     echo json_encode([
         "error" => "Invalid customer ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -33,6 +36,7 @@ if (!isset($_GET["store_id"])) {
     echo json_encode([
         "error" => "Store ID is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -46,6 +50,7 @@ if (
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -73,6 +78,49 @@ if (!$store) {
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store 狀態
+if ($store["status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store 模式
+$sql = "
+SELECT
+    store_mode
+FROM STORE_SETTING
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store_setting) {
+    echo json_encode([
+        "error" => "Store setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式不能取得退款資料
+if ($store_setting["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -128,6 +176,7 @@ if (!$refunds) {
         "count" => 0,
         "refunds" => []
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 

@@ -175,6 +175,39 @@ if ($store["status"] !== "active") {
     exit;
 }
 
+// 檢查 Store 模式
+$sql = "
+SELECT
+    store_mode
+FROM STORE_SETTING
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store_setting) {
+    echo json_encode([
+        "error" => "Store setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式不可加入購物車
+if ($store_setting["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 查詢商品
 // 必須同時符合 store_id + product_id
 $sql = "

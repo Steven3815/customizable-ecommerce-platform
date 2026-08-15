@@ -17,6 +17,7 @@ if (
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -33,6 +34,7 @@ if (!is_array($data)) {
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -41,6 +43,7 @@ if (!isset($data["order_id"])) {
     echo json_encode([
         "error" => "Order ID is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -51,6 +54,7 @@ if ($order_id <= 0) {
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -67,12 +71,18 @@ SELECT
     o.delivery_status,
 
     s.store_name,
-    s.status AS store_status
+    s.status AS store_status,
+
+    ss.store_status AS business_status,
+    ss.store_mode
 
 FROM ORDERS o
 
 JOIN STORE s
     ON o.store_id = s.store_id
+
+JOIN STORE_SETTING ss
+    ON o.store_id = ss.store_id
 
 WHERE o.order_id = ?
 AND o.customer_id = ?
@@ -92,6 +102,7 @@ if (!$order) {
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -102,6 +113,7 @@ if ($store_id <= 0) {
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -110,6 +122,25 @@ if ($order["store_status"] !== "active") {
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 商店暫停營業
+if ($order["business_status"] !== "open") {
+    echo json_encode([
+        "error" => "Store is currently closed"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式
+if ($order["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -145,6 +176,7 @@ if (!$payment) {
     echo json_encode([
         "error" => "Payment not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -159,6 +191,7 @@ if (
     echo json_encode([
         "error" => "This payment method does not support transfer"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -167,6 +200,7 @@ if ($payment["payment_status"] === "paid") {
     echo json_encode([
         "error" => "Order has already been paid"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -175,6 +209,7 @@ if ($payment["payment_status"] === "processing") {
     echo json_encode([
         "error" => "Transfer is already waiting for store confirmation"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -183,6 +218,7 @@ if ($payment["payment_status"] !== "pending") {
     echo json_encode([
         "error" => "Payment is not available for transfer"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -212,6 +248,7 @@ if (!$store_payment) {
     echo json_encode([
         "error" => "Payment method is not available for this store"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -219,6 +256,7 @@ if ($store_payment["status"] !== "active") {
     echo json_encode([
         "error" => "Selected payment method is currently unavailable"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -250,6 +288,7 @@ if (!$account) {
     echo json_encode([
         "error" => "Store payment account not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -265,6 +304,7 @@ if ($payment_method === "atm") {
         echo json_encode([
             "error" => "Store bank account is not configured"
         ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 
@@ -279,6 +319,7 @@ if ($payment_method === "atm") {
         echo json_encode([
             "error" => "Store post office account is not configured"
         ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 

@@ -8,7 +8,6 @@ require_once "../../../config/database.php";
 
 session_start();
 
-
 // 檢查 Customer Session
 if (
     !isset($_SESSION["customer_id"]) ||
@@ -24,7 +23,7 @@ if (
 
 $customer_id = (int)$_SESSION["customer_id"];
 
-// 檢查 customer_id
+// 檢查 Customer ID
 if ($customer_id <= 0) {
     echo json_encode([
         "error" => "Invalid customer ID"
@@ -52,11 +51,15 @@ WHERE customer_id = ?
 try {
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$customer_id]);
+
+    $stmt->execute([
+        $customer_id
+    ]);
 
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
+
     echo json_encode([
         "error" => "Failed to retrieve customer profile"
     ], JSON_UNESCAPED_UNICODE);
@@ -77,10 +80,108 @@ if (!$customer) {
 // 整理資料型態
 $customer["customer_id"] = (int)$customer["customer_id"];
 
-// 回傳會員資料
+// Payment 對應
+$payment_map = [
+    1 => "credit_card",
+    2 => "atm",
+    3 => "post_office",
+    4 => "cash_on_delivery",
+    5 => "in_store"
+];
+
+// Delivery 對應
+$delivery_map = [
+    1 => "home_delivery",
+    2 => "convenience_store",
+    3 => "store_pickup"
+];
+
+// preferred_payment
+$preferred_payment = $customer["preferred_payment"];
+
+// preferred_delivery
+$preferred_delivery = $customer["preferred_delivery"];
+
+// 如果資料庫存的是 ID，轉成 method
+$preferred_payment_method = null;
+
+if (
+    is_numeric($preferred_payment) &&
+    isset($payment_map[(int)$preferred_payment])
+) {
+    $preferred_payment_method =
+        $payment_map[(int)$preferred_payment];
+} elseif (
+    is_string($preferred_payment) &&
+    in_array(
+        $preferred_payment,
+        $payment_map,
+        true
+    )
+) {
+    $preferred_payment_method =
+        $preferred_payment;
+}
+
+// 如果資料庫存的是 ID，轉成 method
+$preferred_delivery_method = null;
+
+if (
+    is_numeric($preferred_delivery) &&
+    isset($delivery_map[(int)$preferred_delivery])
+) {
+    $preferred_delivery_method =
+        $delivery_map[(int)$preferred_delivery];
+} elseif (
+    is_string($preferred_delivery) &&
+    in_array(
+        $preferred_delivery,
+        $delivery_map,
+        true
+    )
+) {
+    $preferred_delivery_method =
+        $preferred_delivery;
+}
+
+// 回傳
 echo json_encode([
-    "message" => "Customer profile retrieved successfully",
-    "customer" => $customer
+
+    "message" =>
+        "Customer profile retrieved successfully",
+
+    "customer" => [
+
+        "customer_id" =>
+            $customer["customer_id"],
+
+        "name" =>
+            $customer["name"],
+
+        "email" =>
+            $customer["email"],
+
+        "phone" =>
+            $customer["phone"],
+
+        "address" =>
+            $customer["address"],
+
+        // 會員預設付款方式
+        "preferred_payment" =>
+            $preferred_payment_method,
+
+        // 會員預設配送方式
+        "preferred_delivery" =>
+            $preferred_delivery_method,
+
+        "created_at" =>
+            $customer["created_at"],
+
+        "updated_at" =>
+            $customer["updated_at"]
+    ]
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

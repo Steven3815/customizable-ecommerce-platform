@@ -17,11 +17,13 @@ if (
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 $customer_id = (int)$_SESSION["customer_id"];
 
+// 取得 JSON
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -32,6 +34,7 @@ if (!is_array($data)) {
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -43,6 +46,7 @@ if (
     echo json_encode([
         "error" => "Cart item ID and store ID are required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -58,6 +62,7 @@ if (
     echo json_encode([
         "error" => "Invalid cart item ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -72,18 +77,57 @@ if (
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 $store_id = (int)$store_id;
 
+// 檢查 Store 模式
+$sql = "
+SELECT
+    store_mode
+FROM STORE_SETTING
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Store Setting 不存在
+if (!$store_setting) {
+    echo json_encode([
+        "error" => "Store setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式不可刪除購物車商品
+if ($store_setting["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 檢查購物車商品是否屬於目前會員以及指定商店
 $sql = "
 SELECT
-    ci.cart_item_id
+    ci.cart_item_id,
+    ci.cart_id
 FROM CART_ITEM ci
+
 JOIN CART c
     ON ci.cart_id = c.cart_id
+    AND ci.store_id = c.store_id
+
 WHERE ci.cart_item_id = ?
 AND ci.store_id = ?
 AND c.customer_id = ?
@@ -106,10 +150,13 @@ if (!$item) {
     echo json_encode([
         "error" => "Cart item not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
-// 刪除商品
+$cart_id = (int)$item["cart_id"];
+
+// 刪除購物車商品
 $sql = "
 DELETE FROM CART_ITEM
 WHERE cart_item_id = ?
@@ -121,8 +168,18 @@ $stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $cart_item_id,
+    $cart_id,
     $store_id
 ]);
+
+// 確認是否成功刪除
+if ($stmt->rowCount() !== 1) {
+    echo json_encode([
+        "error" => "Cart item could not be deleted"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
 
 // 回傳
 echo json_encode([

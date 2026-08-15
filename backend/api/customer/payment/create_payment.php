@@ -178,7 +178,6 @@ SELECT
     o.product_amount,
     o.shipping_fee,
     o.total_amount,
-    o.delivery_method,
     o.delivery_status,
 
     c.name AS customer_name,
@@ -215,14 +214,20 @@ if (!$order) {
     exit;
 }
 
-// 檢查 Store
+// 檢查 Store 與 Store Setting
 $sql = "
 SELECT
-    store_id,
-    store_name,
-    status
-FROM STORE
-WHERE store_id = ?
+    s.store_id,
+    s.store_name,
+    s.status AS store_status,
+    ss.store_status AS business_status,
+    ss.store_mode
+FROM STORE s
+
+INNER JOIN STORE_SETTING ss
+    ON s.store_id = ss.store_id
+
+WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -235,13 +240,14 @@ $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
     echo json_encode([
-        "error" => "Store not found"
+        "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
-if ($store["status"] !== "active") {
+// 商店帳號停用
+if ($store["store_status"] !== "active") {
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -249,7 +255,34 @@ if ($store["status"] !== "active") {
     exit;
 }
 
+// 商店暫停營業
+if ($store["business_status"] !== "open") {
+    echo json_encode([
+        "error" => "Store is currently closed"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式不能付款
+if ($store["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 $store_name = $store["store_name"];
+
+// 訂單只能在 pending 時進行付款設定
+if ($order["delivery_status"] !== "pending") {
+    echo json_encode([
+        "error" => "Order cannot be paid after shipping"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
 
 // 取得目前 Payment
 $sql = "
@@ -402,26 +435,6 @@ try {
 
     $pdo->beginTransaction();
 
-    // 更新訂單配送方式
-    $sql = "
-    UPDATE ORDERS
-    SET
-        delivery_method = ?,
-        updated_at = NOW()
-    WHERE order_id = ?
-    AND customer_id = ?
-    AND store_id = ?
-    ";
-
-    $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $delivery_method,
-        $order_id,
-        $customer_id,
-        $store_id
-    ]);
-
     // 沒有 Payment → 建立
     if (!$existing_payment) {
 
@@ -431,6 +444,7 @@ try {
             order_id,
             store_id,
             payment_method,
+            delivery_method,
             amount,
             payment_status,
             payment_confirm_status,
@@ -439,6 +453,7 @@ try {
         )
         VALUES
         (
+            ?,
             ?,
             ?,
             ?,
@@ -456,6 +471,7 @@ try {
             $order_id,
             $store_id,
             $payment_method,
+            $delivery_method,
             $order["total_amount"]
         ]);
 
@@ -468,6 +484,7 @@ try {
         UPDATE PAYMENT
         SET
             payment_method = ?,
+            delivery_method = ?,
             amount = ?,
             updated_at = NOW()
 
@@ -482,6 +499,7 @@ try {
 
         $stmt->execute([
             $payment_method,
+            $delivery_method,
             $order["total_amount"],
             $existing_payment["payment_id"],
             $order_id,
@@ -555,6 +573,7 @@ echo json_encode([
         "order_id" => $order_id,
         "store_id" => $store_id,
         "payment_method" => $payment_method,
+        "delivery_method" => $delivery_method,
         "amount" => (float)$order["total_amount"],
         "payment_status" => "pending",
         "payment_confirm_status" => "waiting",
@@ -577,10 +596,6 @@ echo json_encode([
     "store" => [
         "store_id" => $store_id,
         "store_name" => $store_name
-    ],
-
-    "delivery" => [
-        "delivery_method" => $delivery_method
     ]
 
 ], JSON_UNESCAPED_UNICODE);

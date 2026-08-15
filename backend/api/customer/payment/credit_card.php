@@ -74,7 +74,6 @@ $cvv = trim($data["cvv"]);
 $phone = trim($data["phone"]);
 
 // 檢查 Order ID
-
 if ($order_id <= 0) {
     echo json_encode([
         "error" => "Invalid order ID"
@@ -187,6 +186,63 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$order) {
     echo json_encode([
         "error" => "Order not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store 狀態
+$sql = "
+SELECT
+    s.store_id,
+    s.status AS store_status,
+    ss.store_status AS business_status,
+    ss.store_mode
+FROM STORE s
+INNER JOIN STORE_SETTING ss
+    ON s.store_id = ss.store_id
+WHERE s.store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Store 不存在
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 商店帳號停用
+if ($store["store_status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 商店暫停營業
+if ($store["business_status"] !== "open") {
+    echo json_encode([
+        "error" => "Store is currently closed"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式
+if ($store["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

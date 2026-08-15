@@ -1,6 +1,6 @@
 <?php
 
-// 購物車內容
+// Customer 取得購物車內容
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -64,9 +64,77 @@ if (
 
 $store_id = (int)$store_id;
 
+// 檢查 Store
+$sql = "
+SELECT
+    store_id,
+    status
+FROM STORE
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// Store 必須為 active
+if ($store["status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store 模式
+$sql = "
+SELECT
+    store_mode
+FROM STORE_SETTING
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store_setting) {
+    echo json_encode([
+        "error" => "Store setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式不可使用購物車
+if ($store_setting["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 找會員指定商店的購物車
 $sql = "
-SELECT cart_id
+SELECT
+    cart_id
 FROM CART
 WHERE customer_id = ?
 AND store_id = ?
@@ -158,14 +226,9 @@ $total_amount = 0;
 
 foreach ($items as &$item) {
 
-    $item["cart_item_id"] =
-        (int)$item["cart_item_id"];
-
-    $item["product_id"] =
-        (int)$item["product_id"];
-
-    $item["quantity"] =
-        (int)$item["quantity"];
+    $item["cart_item_id"] = (int)$item["cart_item_id"];
+    $item["product_id"] = (int)$item["product_id"];
+    $item["quantity"] = (int)$item["quantity"];
 
     $item["spec_id"] =
         $item["spec_id"] !== null

@@ -28,7 +28,8 @@ if (
     !isset($data["owner_name"]) ||
     !isset($data["email"]) ||
     !isset($data["password"]) ||
-    !isset($data["phone"])
+    !isset($data["phone"]) ||
+    !isset($data["store_mode"])
 ) {
 
     echo json_encode([
@@ -44,6 +45,7 @@ $owner_name = trim($data["owner_name"]);
 $email = trim($data["email"]);
 $password = $data["password"];
 $phone = trim($data["phone"]);
+$store_mode = trim($data["store_mode"]);
 
 // 檢查商家名稱
 if ($store_name === "") {
@@ -118,6 +120,19 @@ if ($phone === "") {
     exit;
 }
 
+// 檢查商店模式
+if (
+    $store_mode !== "shopping" &&
+    $store_mode !== "showcase"
+) {
+
+    echo json_encode([
+        "error" => "Invalid store mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 檢查 Email 是否已註冊
 $sql = "
 SELECT store_id
@@ -146,11 +161,10 @@ $hashed_password = password_hash(
     PASSWORD_DEFAULT
 );
 
-// 開始 Transaction
 try {
+
     $pdo->beginTransaction();
 
-    // 建立 STORE
     // store_url 先暫時 NULL
     $sql = "
     INSERT INTO STORE
@@ -180,6 +194,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $store_name,
         $email,
@@ -197,35 +212,43 @@ try {
     // 更新 store_url
     $sql = "
     UPDATE STORE
-    SET store_url = ?,
+    SET
+        store_url = ?,
         updated_at = NOW()
     WHERE store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $store_url,
         $store_id
     ]);
 
     // 建立 STORE_SETTING
-    // 其他欄位使用資料庫 DEFAULT
+    // store_mode 使用註冊時選擇的模式
     $sql = "
     INSERT INTO STORE_SETTING
     (
-        store_id
+        store_id,
+        store_mode
     )
     VALUES
     (
+        ?,
         ?
     )
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$store_id]);
+
+    $stmt->execute([
+        $store_id,
+        $store_mode
+    ]);
 
     // 建立 WEBSITE_SETTING
-    // 如果這些欄位有 DEFAULT，就讓資料庫處理
+    // 如果其他欄位有 DEFAULT，就讓資料庫處理
     $sql = "
     INSERT INTO WEBSITE_SETTING
     (
@@ -238,7 +261,10 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$store_id]);
+
+    $stmt->execute([
+        $store_id
+    ]);
 
     // 建立 HOMEPAGE_PRODUCT_SETTING
     $sql = "
@@ -253,7 +279,10 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$store_id]);
+
+    $stmt->execute([
+        $store_id
+    ]);
 
     // 每個 Store 固定建立 5 種付款方式
     $sql = "
@@ -273,6 +302,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $store_id,
         $store_id,
@@ -280,7 +310,7 @@ try {
         $store_id,
         $store_id
     ]);
-    // 全部成功
+
     $pdo->commit();
 
     // 回傳
@@ -294,7 +324,8 @@ try {
             "email" => $email,
             "owner_name" => $owner_name,
             "phone" => $phone,
-            "status" => "active"
+            "status" => "active",
+            "store_mode" => $store_mode
         ]
     ], JSON_UNESCAPED_UNICODE);
 

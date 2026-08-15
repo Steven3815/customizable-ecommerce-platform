@@ -23,10 +23,7 @@ if (
 
 $customer_id = (int)$_SESSION["customer_id"];
 
-// ========================================
 // 取得 store_id
-// ========================================
-
 if (!isset($_GET["store_id"])) {
     echo json_encode([
         "error" => "Store ID is required"
@@ -37,7 +34,6 @@ if (!isset($_GET["store_id"])) {
 
 $store_id = $_GET["store_id"];
 
-// 檢查 store_id
 if (
     !is_numeric($store_id) ||
     floor($store_id) != $store_id ||
@@ -52,16 +48,10 @@ if (
 
 $store_id = (int)$store_id;
 
-// ========================================
 // 篩選條件
-// ========================================
-
 $status = $_GET["status"] ?? "all";
 
-// ========================================
 // 檢查會員
-// ========================================
-
 $sql = "
 SELECT customer_id
 FROM CUSTOMER
@@ -69,6 +59,7 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
+
 $stmt->execute([
     $customer_id
 ]);
@@ -83,17 +74,17 @@ if (!$customer) {
     exit;
 }
 
-// ========================================
 // 檢查 Store
-// ========================================
-
 $sql = "
 SELECT
-    store_id,
-    store_name,
-    status
-FROM STORE
-WHERE store_id = ?
+    s.store_id,
+    s.store_name,
+    s.status AS store_status,
+    ss.store_mode
+FROM STORE s
+INNER JOIN STORE_SETTING ss
+    ON s.store_id = ss.store_id
+WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -112,11 +103,25 @@ if (!$store) {
     exit;
 }
 
-// ========================================
-// 建立訂單篩選條件
-// ========================================
+// 商店帳號停用
+if ($store["store_status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
 
-// ★ 核心：同時限制 customer_id + store_id
+    exit;
+}
+
+// 展示模式
+if ($store["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 建立訂單篩選條件
 $where = "
 WHERE o.customer_id = ?
 AND o.store_id = ?
@@ -127,13 +132,7 @@ $params = [
     $store_id
 ];
 
-// ========================================
-// Payment 狀態
-// ========================================
-
 if ($status === "all") {
-
-    // 不增加條件
 
 } elseif ($status === "pending_payment") {
 
@@ -171,10 +170,6 @@ if ($status === "all") {
         )
     ";
 
-// ========================================
-// Payment 確認狀態
-// ========================================
-
 } elseif ($status === "payment_waiting") {
 
     $where .= "
@@ -211,10 +206,6 @@ if ($status === "all") {
         )
     ";
 
-// ========================================
-// Delivery 狀態
-// ========================================
-
 } elseif ($status === "delivery_pending") {
 
     $where .= "
@@ -232,10 +223,6 @@ if ($status === "all") {
     $where .= "
         AND o.delivery_status = 'completed'
     ";
-
-// ========================================
-// Refund 狀態
-// ========================================
 
 } elseif ($status === "refund_pending") {
 
@@ -282,10 +269,7 @@ if ($status === "all") {
     exit;
 }
 
-// ========================================
-// 取得指定 Store 的訂單
-// ========================================
-
+// 取得訂單
 $sql = "
 SELECT
     o.order_id,
@@ -298,20 +282,15 @@ SELECT
     o.product_amount,
     o.shipping_fee,
     o.total_amount,
-    o.delivery_method,
     o.delivery_status,
     o.estimated_ship_date,
     o.estimated_arrival_date,
     o.created_at,
     o.updated_at
-
 FROM ORDERS o
-
 INNER JOIN STORE s
     ON o.store_id = s.store_id
-
 $where
-
 ORDER BY o.order_date DESC
 ";
 
@@ -321,12 +300,7 @@ $stmt->execute($params);
 
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ========================================
-// 沒有訂單
-// ========================================
-
 if (!$orders) {
-
     echo json_encode([
         "message" => "No orders found",
         "customer_id" => $customer_id,
@@ -337,20 +311,13 @@ if (!$orders) {
     exit;
 }
 
-// ========================================
-// 整理訂單
-// ========================================
-
 $result = [];
 
 foreach ($orders as $order) {
 
     $order_id = (int)$order["order_id"];
 
-    // ========================================
     // Payment
-    // ========================================
-
     $sql = "
     SELECT
         payment_id,
@@ -361,12 +328,9 @@ foreach ($orders as $order) {
         payment_proof_image,
         paid_at,
         confirmed_at
-
     FROM PAYMENT
-
     WHERE order_id = ?
     AND store_id = ?
-
     LIMIT 1
     ";
 
@@ -379,10 +343,7 @@ foreach ($orders as $order) {
 
     $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // ========================================
     // Refund
-    // ========================================
-
     $sql = "
     SELECT
         refund_id,
@@ -393,14 +354,10 @@ foreach ($orders as $order) {
         admin_reply,
         requested_at,
         processed_at
-
     FROM REFUND
-
     WHERE order_id = ?
     AND store_id = ?
-
     ORDER BY requested_at DESC
-
     LIMIT 1
     ";
 
@@ -413,10 +370,7 @@ foreach ($orders as $order) {
 
     $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // ========================================
     // Order Item
-    // ========================================
-
     $sql = "
     SELECT
         order_item_id,
@@ -426,12 +380,9 @@ foreach ($orders as $order) {
         spec_name,
         quantity,
         price
-
     FROM ORDER_ITEM
-
     WHERE order_id = ?
     AND store_id = ?
-
     ORDER BY order_item_id ASC
     ";
 
@@ -444,10 +395,6 @@ foreach ($orders as $order) {
 
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ========================================
-    // 整理商品資料
-    // ========================================
-
     foreach ($items as &$item) {
 
         $item["order_item_id"] =
@@ -457,7 +404,6 @@ foreach ($orders as $order) {
             (int)$item["product_id"];
 
         if ($item["spec_id"] !== null) {
-
             $item["spec_id"] =
                 (int)$item["spec_id"];
         }
@@ -474,29 +420,15 @@ foreach ($orders as $order) {
 
     unset($item);
 
-    // ========================================
-    // 整理 Payment
-    // ========================================
-
     if ($payment) {
-
         $payment["payment_id"] =
             (int)$payment["payment_id"];
     }
 
-    // ========================================
-    // 整理 Refund
-    // ========================================
-
     if ($refund) {
-
         $refund["refund_id"] =
             (int)$refund["refund_id"];
     }
-
-    // ========================================
-    // 建立結果
-    // ========================================
 
     $result[] = [
 
@@ -541,9 +473,6 @@ foreach ($orders as $order) {
 
         "delivery" => [
 
-            "delivery_method" =>
-                $order["delivery_method"],
-
             "delivery_status" =>
                 $order["delivery_status"],
 
@@ -567,10 +496,6 @@ foreach ($orders as $order) {
             $order["updated_at"]
     ];
 }
-
-// ========================================
-// 回傳
-// ========================================
 
 echo json_encode([
     "customer_id" => $customer_id,

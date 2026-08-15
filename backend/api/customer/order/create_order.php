@@ -17,6 +17,7 @@ if (
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -32,6 +33,7 @@ if (!is_array($data)) {
     echo json_encode([
         "error" => "Invalid JSON data"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -40,12 +42,12 @@ if (
     !isset($data["cart_item_ids"]) ||
     !isset($data["receiver_name"]) ||
     !isset($data["receiver_phone"]) ||
-    !isset($data["receiver_address"]) ||
-    !isset($data["delivery_method"])
+    !isset($data["receiver_address"])
 ) {
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -53,13 +55,16 @@ $cart_item_ids = $data["cart_item_ids"];
 $receiver_name = trim($data["receiver_name"]);
 $receiver_phone = trim($data["receiver_phone"]);
 $receiver_address = trim($data["receiver_address"]);
-$delivery_method = trim($data["delivery_method"]);
 
 // 檢查購物車商品
-if (!is_array($cart_item_ids) || empty($cart_item_ids)) {
+if (
+    !is_array($cart_item_ids) ||
+    empty($cart_item_ids)
+) {
     echo json_encode([
         "error" => "Cart item IDs are required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -72,6 +77,7 @@ if (
     echo json_encode([
         "error" => "Receiver information is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -86,40 +92,32 @@ foreach ($cart_item_ids as $cart_item_id) {
         echo json_encode([
             "error" => "Invalid cart item ID"
         ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 }
 
-$cart_item_ids = array_map("intval", $cart_item_ids);
+$cart_item_ids = array_map(
+    "intval",
+    $cart_item_ids
+);
 
 // 移除重複的 cart_item_id
 $cart_item_ids = array_values(
     array_unique($cart_item_ids)
 );
 
-// 目前先固定運費
+// 固定運費
 $shipping_fee = 60;
-
-// 允許的配送方式
-$allowed_delivery_methods = [
-    "home_delivery"
-];
-
-if (!in_array(
-    $delivery_method,
-    $allowed_delivery_methods,
-    true
-)) {
-    echo json_encode([
-        "error" => "Invalid delivery method"
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
 
 // 建立 IN (?, ?, ?)
 $placeholders = implode(
     ",",
-    array_fill(0, count($cart_item_ids), "?")
+    array_fill(
+        0,
+        count($cart_item_ids),
+        "?"
+    )
 );
 
 // 開始交易
@@ -127,10 +125,7 @@ $pdo->beginTransaction();
 
 try {
 
-    // =========================================================
-    // 1. 檢查會員
-    // =========================================================
-
+    // 檢查會員
     $sql = "
     SELECT customer_id
     FROM CUSTOMER
@@ -146,14 +141,12 @@ try {
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$customer) {
-        throw new Exception("Customer not found");
+        throw new Exception(
+            "Customer not found"
+        );
     }
 
-
-    // =========================================================
-    // 2. 取得選取的購物車商品
-    // =========================================================
-
+    // 取得選取的購物車商品
     $sql = "
     SELECT
         ci.cart_item_id,
@@ -206,45 +199,87 @@ try {
 
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-    // =========================================================
-    // 3. 檢查商品是否全部存在
-    // =========================================================
-
+    // 檢查商品是否全部存在
     if (!$items) {
         throw new Exception(
             "Selected cart items not found"
         );
     }
 
-    if (count($items) !== count($cart_item_ids)) {
+    if (
+        count($items) !==
+        count($cart_item_ids)
+    ) {
         throw new Exception(
             "Invalid cart item selected"
         );
     }
 
-
-    // =========================================================
-    // 4. 檢查所有商品是否屬於同一家商店
-    // =========================================================
-
+    // 檢查所有商品是否屬於同一家商店
     $store_id = (int)$items[0]["store_id"];
 
     foreach ($items as $item) {
 
-        if ((int)$item["store_id"] !== $store_id) {
-
+        if (
+            (int)$item["store_id"] !==
+            $store_id
+        ) {
             throw new Exception(
                 "Cart items must belong to the same store"
             );
         }
     }
 
+    // 檢查商店狀態與模式
+    $sql = "
+    SELECT
+        s.status AS store_status,
+        ss.store_status AS business_status,
+        ss.store_mode
+    FROM STORE s
 
-    // =========================================================
-    // 5. 檢查商品狀態、規格狀態與庫存
-    // =========================================================
+    INNER JOIN STORE_SETTING ss
+        ON s.store_id = ss.store_id
 
+    WHERE s.store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $store_id
+    ]);
+
+    $store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$store) {
+        throw new Exception(
+            "Store setting not found"
+        );
+    }
+
+    // 商店帳號停用
+    if ($store["store_status"] !== "active") {
+        throw new Exception(
+            "Store is inactive"
+        );
+    }
+
+    // 商店暫停營業
+    if ($store["business_status"] !== "open") {
+        throw new Exception(
+            "Store is currently closed"
+        );
+    }
+
+    // 展示模式不能購物
+    if ($store["store_mode"] !== "shopping") {
+        throw new Exception(
+            "Store is currently in showcase mode"
+        );
+    }
+
+    // 檢查商品狀態、規格與庫存
     $product_amount = 0;
 
     foreach ($items as $item) {
@@ -257,23 +292,14 @@ try {
             );
         }
 
-
-        // -----------------------------------------------------
         // 商品必須是 active
-        // -----------------------------------------------------
-
         if ($item["product_status"] !== "active") {
-
             throw new Exception(
                 "Product is no longer available"
             );
         }
 
-
-        // -----------------------------------------------------
         // 有規格商品
-        // -----------------------------------------------------
-
         if ((int)$item["has_spec"] === 1) {
 
             if (
@@ -286,11 +312,9 @@ try {
             }
 
             $price = (float)$item["spec_price"];
-
             $stock = (int)$item["spec_stock"];
 
             if ($quantity > $stock) {
-
                 throw new Exception(
                     "Insufficient specification stock"
                 );
@@ -298,47 +322,34 @@ try {
 
         } else {
 
-            // -------------------------------------------------
             // 無規格商品
-            // -------------------------------------------------
-
             if ($item["spec_id"] !== null) {
-
                 throw new Exception(
                     "Invalid product specification"
                 );
             }
 
             $price = (float)$item["product_price"];
-
             $stock = (int)$item["product_stock"];
 
             if ($quantity > $stock) {
-
                 throw new Exception(
                     "Insufficient product stock"
                 );
             }
         }
 
-
         // 計算商品金額
-        $product_amount += $price * $quantity;
+        $product_amount +=
+            $price * $quantity;
     }
 
-
-    // =========================================================
-    // 6. 計算訂單總額
-    // =========================================================
-
+    // 計算訂單總額
     $total_amount =
-        $product_amount + $shipping_fee;
+        $product_amount +
+        $shipping_fee;
 
-
-    // =========================================================
-    // 7. 建立 ORDERS
-    // =========================================================
-
+    // 建立 ORDERS
     $sql = "
     INSERT INTO ORDERS
     (
@@ -355,7 +366,6 @@ try {
         shipping_fee,
         total_amount,
 
-        delivery_method,
         delivery_status,
 
         estimated_ship_date,
@@ -376,7 +386,6 @@ try {
         ?,
         ?,
 
-        ?,
         'pending',
 
         DATE_ADD(CURDATE(), INTERVAL 3 DAY),
@@ -396,25 +405,12 @@ try {
 
         $product_amount,
         $shipping_fee,
-        $total_amount,
-
-        $delivery_method
+        $total_amount
     ]);
 
     $order_id = (int)$pdo->lastInsertId();
 
-
-    // =========================================================
-    // 8. 建立 ORDER_ITEM
-    // =========================================================
-
-    // 注意：
-    // ORDER_ITEM 必須存 store_id
-    // 因為資料表有：
-    //
-    // FOREIGN KEY(order_id, store_id)
-    // REFERENCES ORDERS(order_id, store_id)
-
+    // 建立 ORDER_ITEM
     $sql = "
     INSERT INTO ORDER_ITEM
     (
@@ -451,16 +447,13 @@ try {
         if ((int)$item["has_spec"] === 1) {
 
             $price = (float)$item["spec_price"];
-
             $spec_name = $item["spec_name"];
 
         } else {
 
             $price = (float)$item["product_price"];
-
             $spec_name = null;
         }
-
 
         $stmt_order_item->execute([
             $order_id,
@@ -476,20 +469,12 @@ try {
         ]);
     }
 
-
-    // =========================================================
-    // 9. 扣除庫存
-    // =========================================================
-
+    // 扣除庫存
     foreach ($items as $item) {
 
         $quantity = (int)$item["quantity"];
 
-
-        // -----------------------------------------------------
         // 有規格
-        // -----------------------------------------------------
-
         if ((int)$item["has_spec"] === 1) {
 
             $sql = "
@@ -517,19 +502,14 @@ try {
             ]);
 
             if ($stmt->rowCount() !== 1) {
-
                 throw new Exception(
                     "Failed to update specification stock"
                 );
             }
 
-
         } else {
 
-            // -------------------------------------------------
             // 無規格
-            // -------------------------------------------------
-
             $sql = "
             UPDATE PRODUCT
             SET
@@ -553,7 +533,6 @@ try {
             ]);
 
             if ($stmt->rowCount() !== 1) {
-
                 throw new Exception(
                     "Failed to update product stock"
                 );
@@ -561,13 +540,7 @@ try {
         }
     }
 
-
-    // =========================================================
-    // 10. 刪除已結帳商品
-    // =========================================================
-
-    // 只刪除目前 Customer 自己的購物車商品
-
+    // 刪除已結帳商品
     $sql = "
     DELETE ci
     FROM CART_ITEM ci
@@ -588,18 +561,10 @@ try {
 
     $stmt->execute($params);
 
-
-    // =========================================================
-    // 11. 完成交易
-    // =========================================================
-
+    // 完成交易
     $pdo->commit();
 
-
-    // =========================================================
-    // 12. 回傳
-    // =========================================================
-
+    // 回傳
     echo json_encode([
         "message" => "Order created successfully",
 
@@ -615,12 +580,9 @@ try {
 
         "total_amount" => $total_amount,
 
-        "delivery_method" => $delivery_method,
-
         "delivery_status" => "pending"
 
     ], JSON_UNESCAPED_UNICODE);
-
 
 } catch (Exception $e) {
 

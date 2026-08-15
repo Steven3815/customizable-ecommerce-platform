@@ -23,20 +23,32 @@ if (!is_array($data)) {
 
 // 檢查必要欄位
 if (
+    !isset($data["store_id"]) ||
     !isset($data["name"]) ||
     !isset($data["email"]) ||
     !isset($data["password"])
 ) {
     echo json_encode([
-        "error" => "Missing required fields"
+        "error" => "Store ID, name, email and password are required"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
+$store_id = (int)$data["store_id"];
+
 $name = trim($data["name"]);
 $email = trim($data["email"]);
 $password = $data["password"];
+
+// 檢查 Store ID
+if ($store_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
 
 // 檢查姓名
 if ($name === "") {
@@ -68,7 +80,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 // 統一 Email 大小寫
 $email = strtolower($email);
 
-
 // 檢查密碼
 if ($password === "") {
     echo json_encode([
@@ -87,6 +98,57 @@ if (strlen($password) < 8) {
     exit;
 }
 
+// 取得 Store
+$sql = "
+SELECT
+    s.store_id,
+    s.store_name,
+    s.status AS store_status,
+    ss.store_mode
+
+FROM STORE s
+
+INNER JOIN STORE_SETTING ss
+    ON s.store_id = ss.store_id
+
+WHERE s.store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Store 不存在
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// Store 帳號停用
+if ($store["store_status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式禁止註冊
+if ($store["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Registration is unavailable in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 檢查 Email 是否已註冊
 $sql = "
 SELECT customer_id
@@ -95,7 +157,10 @@ WHERE email = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$email]);
+
+$stmt->execute([
+    $email
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -172,6 +237,7 @@ echo json_encode([
     "message" => "Customer registered successfully",
     "customer_id" => $customer_id,
     "email" => $email,
+    "store_id" => $store_id,
     "action" => "login"
 ], JSON_UNESCAPED_UNICODE);
 

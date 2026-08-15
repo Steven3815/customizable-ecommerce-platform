@@ -89,7 +89,10 @@ SELECT
     c.email AS customer_email,
 
     s.store_name,
-    s.status AS store_status
+    s.status AS store_status,
+
+    ss.store_status AS business_status,
+    ss.store_mode
 
 FROM ORDERS o
 
@@ -98,6 +101,9 @@ JOIN CUSTOMER c
 
 JOIN STORE s
     ON o.store_id = s.store_id
+
+JOIN STORE_SETTING ss
+    ON o.store_id = ss.store_id
 
 WHERE o.order_id = ?
 AND o.customer_id = ?
@@ -129,7 +135,7 @@ if (!$order) {
 $store_id = (int)$order["store_id"];
 $store_name = $order["store_name"];
 
-// 檢查 Store
+// 檢查 Store ID
 
 if ($store_id <= 0) {
     echo json_encode([
@@ -139,9 +145,31 @@ if ($store_id <= 0) {
     exit;
 }
 
+// 商店帳號停用
+
 if ($order["store_status"] !== "active") {
     echo json_encode([
         "error" => "Store is inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 商店暫停營業
+
+if ($order["business_status"] !== "open") {
+    echo json_encode([
+        "error" => "Store is currently closed"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 展示模式
+
+if ($order["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -274,7 +302,8 @@ foreach ($payment_methods as $method) {
     $available_payment_methods[] = [
         "store_payment_id" => (int)$method["store_payment_id"],
         "payment_method" => $payment_method,
-        "name" => $payment_method_names[$payment_method] ?? $payment_method
+        "name" => $payment_method_names[$payment_method]
+            ?? $payment_method
     ];
 }
 
@@ -289,7 +318,8 @@ foreach ($delivery_methods as $method) {
     $available_delivery_methods[] = [
         "store_delivery_id" => (int)$method["store_delivery_id"],
         "delivery_method" => $delivery_method,
-        "name" => $delivery_method_names[$delivery_method] ?? $delivery_method
+        "name" => $delivery_method_names[$delivery_method]
+            ?? $delivery_method
     ];
 }
 

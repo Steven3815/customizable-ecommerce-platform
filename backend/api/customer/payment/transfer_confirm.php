@@ -115,15 +115,22 @@ if (
 
 $payment_method = $payment["payment_method"];
 
+// 取得 Store 狀態
 $sql = "
 SELECT
-    store_id,
-    store_name,
-    status
+    s.store_id,
+    s.store_name,
+    s.status AS store_status,
 
-FROM STORE
+    ss.store_status AS business_status,
+    ss.store_mode
 
-WHERE store_id = ?
+FROM STORE s
+
+JOIN STORE_SETTING ss
+    ON s.store_id = ss.store_id
+
+WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -142,7 +149,8 @@ if (!$store) {
     exit;
 }
 
-if ($store["status"] !== "active") {
+// Store 帳號是否啟用
+if ($store["store_status"] !== "active") {
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -150,8 +158,27 @@ if ($store["status"] !== "active") {
     exit;
 }
 
+// 商店是否營業
+if ($store["business_status"] !== "open") {
+    echo json_encode([
+        "error" => "Store is currently closed"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 是否為購物模式
+if ($store["store_mode"] !== "shopping") {
+    echo json_encode([
+        "error" => "Store is currently in showcase mode"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 $store_name = $store["store_name"];
 
+// 檢查 Store 是否開放此付款方式
 $sql = "
 SELECT
     store_payment_id,
@@ -189,6 +216,7 @@ if ($store_payment["status"] !== "active") {
     exit;
 }
 
+// 已付款
 if ($payment["payment_status"] === "paid") {
     echo json_encode([
         "error" => "Order has already been paid"
@@ -197,6 +225,7 @@ if ($payment["payment_status"] === "paid") {
     exit;
 }
 
+// 已經送出轉帳確認
 if ($payment["payment_status"] === "processing") {
     echo json_encode([
         "error" => "Transfer is already waiting for store confirmation"
@@ -205,6 +234,7 @@ if ($payment["payment_status"] === "processing") {
     exit;
 }
 
+// 只有 pending 可以確認轉帳
 if ($payment["payment_status"] !== "pending") {
     echo json_encode([
         "error" => "Payment is not available for transfer confirmation"
@@ -213,6 +243,7 @@ if ($payment["payment_status"] !== "pending") {
     exit;
 }
 
+// 更新付款狀態
 $sql = "
 UPDATE PAYMENT
 
@@ -267,6 +298,7 @@ try {
     exit;
 }
 
+// 回傳
 echo json_encode([
 
     "message" => "Transfer submitted successfully",
