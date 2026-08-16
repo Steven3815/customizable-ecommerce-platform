@@ -73,6 +73,7 @@ $validated_category_ids = [];
 
 foreach ($category_ids as $category_id) {
 
+    // 檢查是否為整數
     if (
         !is_numeric($category_id) ||
         floor((float)$category_id) != (float)$category_id
@@ -86,6 +87,7 @@ foreach ($category_ids as $category_id) {
 
     $category_id = (int)$category_id;
 
+    // ID 必須大於 0
     if ($category_id <= 0) {
         echo json_encode([
             "error" => "Invalid category ID"
@@ -114,6 +116,7 @@ foreach ($category_ids as $category_id) {
 
 try {
 
+    // 開始 Transaction
     $pdo->beginTransaction();
 
     // 確認所有 Category 都屬於目前 Store
@@ -143,12 +146,14 @@ try {
     }
 
     // Soft Delete
+    // 同時將 sort_order 設為 NULL
     foreach ($validated_category_ids as $category_id) {
 
         $sql = "
             UPDATE CATEGORY
             SET
                 status = 'deleted',
+                sort_order = NULL,
                 updated_at = NOW()
             WHERE category_id = ?
             AND store_id = ?
@@ -183,6 +188,7 @@ try {
         $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     // 重新整理 sort_order
+    // 從 1 開始重新排列
     $sort_order = 1;
 
     foreach (
@@ -214,7 +220,7 @@ try {
     // Commit
     $pdo->commit();
 
-    // 回傳目前剩餘的 Category
+    // 取得重新排序後的 Category
     $sql = "
         SELECT
             category_id,
@@ -223,7 +229,7 @@ try {
         FROM CATEGORY
         WHERE store_id = ?
         AND status != 'deleted'
-        ORDER BY sort_order ASC
+        ORDER BY sort_order ASC, category_id ASC
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -235,9 +241,10 @@ try {
     $categories =
         $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // 回傳
     echo json_encode([
         "message" =>
-            "Categories deleted successfully",
+            "Categories deleted and reordered successfully",
 
         "categories" =>
             $categories
@@ -245,6 +252,7 @@ try {
 
 } catch (Exception $e) {
 
+    // 發生錯誤時 Rollback
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }

@@ -571,4 +571,4 @@ ADD CONSTRAINT chk_display_limit
 CHECK (display_limit IN (4, 5, 6));
 
 ALTER TABLE PRODUCT
-ADD COLUMN sort_order INT NOT NULL DEFAULT 1;
+ADD COLUMN sort_order INT NULL DEFAULT 1;
