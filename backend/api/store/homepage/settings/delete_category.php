@@ -1,15 +1,14 @@
 <?php
 
-// Store 重新排列首頁商品類別
+// Store 刪除商品類別
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../config/database.php";
+require_once "../../../../config/database.php";
 
 session_start();
 
 // 檢查 Store Session
-
 if (
     !isset($_SESSION["store_id"]) ||
     !isset($_SESSION["role"]) ||
@@ -33,7 +32,6 @@ if ($store_id <= 0) {
 }
 
 // 取得 JSON
-
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -48,7 +46,6 @@ if (!is_array($data)) {
 }
 
 // 檢查 category_ids
-
 if (
     !isset($data["category_ids"]) ||
     !is_array($data["category_ids"])
@@ -62,6 +59,7 @@ if (
 
 $category_ids = $data["category_ids"];
 
+// 至少一個 Category
 if (count($category_ids) < 1) {
     echo json_encode([
         "error" => "At least one category is required"
@@ -71,7 +69,6 @@ if (count($category_ids) < 1) {
 }
 
 // 驗證 Category ID
-
 $validated_category_ids = [];
 
 foreach ($category_ids as $category_id) {
@@ -97,6 +94,7 @@ foreach ($category_ids as $category_id) {
         exit;
     }
 
+    // 防止同一個 Category 重複
     if (
         in_array(
             $category_id,
@@ -114,12 +112,58 @@ foreach ($category_ids as $category_id) {
     $validated_category_ids[] = $category_id;
 }
 
-$pdo->beginTransaction();
-
 try {
 
-    // 取得目前 Store 所有未刪除 Category
+    $pdo->beginTransaction();
 
+    // 確認所有 Category 都屬於目前 Store
+    foreach ($validated_category_ids as $category_id) {
+
+        $sql = "
+            SELECT
+                category_id
+            FROM CATEGORY
+            WHERE category_id = ?
+            AND store_id = ?
+            AND status != 'deleted'
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            $category_id,
+            $store_id
+        ]);
+
+        if (!$stmt->fetch()) {
+            throw new Exception(
+                "Category not found"
+            );
+        }
+    }
+
+    // Soft Delete
+    foreach ($validated_category_ids as $category_id) {
+
+        $sql = "
+            UPDATE CATEGORY
+            SET
+                status = 'deleted',
+                updated_at = NOW()
+            WHERE category_id = ?
+            AND store_id = ?
+            AND status != 'deleted'
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            $category_id,
+            $store_id
+        ]);
+    }
+
+    // 取得刪除後剩餘的 Category
     $sql = "
         SELECT
             category_id
@@ -135,92 +179,42 @@ try {
         $store_id
     ]);
 
-    $existing_category_ids = [];
+    $remaining_category_ids =
+        $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-
-        $existing_category_ids[] =
-            (int)$row["category_id"];
-    }
-
-    // 確認傳入的 Category 數量正確
-
-    if (
-        count($validated_category_ids)
-        !== count($existing_category_ids)
-    ) {
-        throw new Exception(
-            "Category list is incomplete"
-        );
-    }
-
-    // 確認傳入的 Category 全部屬於目前 Store
-
-    $existing_lookup = array_flip(
-        $existing_category_ids
-    );
-
-    foreach ($validated_category_ids as $category_id) {
-
-        if (!isset($existing_lookup[$category_id])) {
-
-            throw new Exception(
-                "Category not found"
-            );
-        }
-    }
-
-    // 先使用暫時排序
-
-    $temporary_offset = 1000000;
-
-    $sql = "
-        UPDATE CATEGORY
-        SET
-            sort_order = sort_order + ?
-        WHERE store_id = ?
-        AND status != 'deleted'
-    ";
-
-    $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $temporary_offset,
-        $store_id
-    ]);
-
-    // 按照 category_ids 順序重新設定 sort_order
-
-    $sql = "
-        UPDATE CATEGORY
-        SET
-            sort_order = ?,
-            updated_at = NOW()
-        WHERE category_id = ?
-        AND store_id = ?
-        AND status != 'deleted'
-    ";
-
-    $stmt = $pdo->prepare($sql);
+    // 重新整理 sort_order
+    $sort_order = 1;
 
     foreach (
-        $validated_category_ids
-        as $index => $category_id
+        $remaining_category_ids
+        as $category_id
     ) {
 
-        $sort_order = $index + 1;
+        $sql = "
+            UPDATE CATEGORY
+            SET
+                sort_order = ?,
+                updated_at = NOW()
+            WHERE category_id = ?
+            AND store_id = ?
+            AND status != 'deleted'
+        ";
+
+        $stmt = $pdo->prepare($sql);
 
         $stmt->execute([
             $sort_order,
             $category_id,
             $store_id
         ]);
+
+        $sort_order++;
     }
 
+    // Commit
     $pdo->commit();
 
-    // 回傳新的排序
-
+    // 回傳目前剩餘的 Category
     $sql = "
         SELECT
             category_id,
@@ -243,7 +237,8 @@ try {
 
     echo json_encode([
         "message" =>
-            "Categories reordered successfully",
+            "Categories deleted successfully",
+
         "categories" =>
             $categories
     ], JSON_UNESCAPED_UNICODE);

@@ -41,7 +41,7 @@ CREATE TABLE CATEGORY (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     store_id INT NOT NULL,
     category_name VARCHAR(100) NOT NULL,
-    sort_order INT DEFAULT 0,
+    sort_order INT DEFAULT 1,
     status ENUM('active','inactive','deleted') DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -109,7 +109,7 @@ CREATE TABLE PRODUCT_IMAGE (
     product_id INT NOT NULL,
 
     image_url VARCHAR(500),
-    sort_order INT DEFAULT 0,
+    sort_order INT DEFAULT 1,
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -507,7 +507,7 @@ CREATE TABLE SLIDER_IMAGE (
 
     image_url VARCHAR(500),
 
-    sort_order INT DEFAULT 0,
+    sort_order INT DEFAULT 1,
 
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -571,4 +571,4 @@ ADD CONSTRAINT chk_display_limit
 CHECK (display_limit IN (4, 5, 6));
 
 ALTER TABLE PRODUCT
-ADD COLUMN sort_order INT NOT NULL DEFAULT 0;
+ADD COLUMN sort_order INT NOT NULL DEFAULT 1;

@@ -4,7 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../config/database.php";
+require_once "../../../../config/database.php";
 
 session_start();
 
@@ -400,133 +400,6 @@ try {
                     $sort_order
                 ]);
             }
-        }
-    }
-
-    // 刪除商品類別
-    if (isset($data["deleted_category_ids"])) {
-
-        if (
-            !is_array(
-                $data["deleted_category_ids"]
-            )
-        ) {
-            throw new Exception(
-                "Invalid deleted category IDs"
-            );
-        }
-
-        foreach (
-            $data["deleted_category_ids"]
-            as $category_id
-        ) {
-
-            if (
-                !is_numeric($category_id) ||
-                floor((float)$category_id)
-                != (float)$category_id
-            ) {
-                throw new Exception(
-                    "Invalid category ID"
-                );
-            }
-
-            $category_id =
-                (int)$category_id;
-
-            if ($category_id <= 0) {
-                throw new Exception(
-                    "Invalid category ID"
-                );
-            }
-
-            // 確認 Category 屬於目前 Store
-            $sql = "
-                SELECT
-                    category_id
-                FROM CATEGORY
-                WHERE category_id = ?
-                AND store_id = ?
-                AND status != 'deleted'
-            ";
-
-            $stmt = $pdo->prepare($sql);
-
-            $stmt->execute([
-                $category_id,
-                $store_id
-            ]);
-
-            if (!$stmt->fetch()) {
-                throw new Exception(
-                    "Category not found"
-                );
-            }
-
-            // Soft Delete
-            $sql = "
-                UPDATE CATEGORY
-                SET
-                    status = 'deleted',
-                    updated_at = NOW()
-                WHERE category_id = ?
-                AND store_id = ?
-                AND status != 'deleted'
-            ";
-
-            $stmt = $pdo->prepare($sql);
-
-            $stmt->execute([
-                $category_id,
-                $store_id
-            ]);
-        }
-
-        // 刪除完成後重新整理 Category sort_order
-        $sql = "
-            SELECT
-                category_id
-            FROM CATEGORY
-            WHERE store_id = ?
-            AND status != 'deleted'
-            ORDER BY sort_order ASC, category_id ASC
-        ";
-
-        $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $store_id
-        ]);
-
-        $remaining_categories =
-            $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        $new_sort_order = 1;
-
-        foreach (
-            $remaining_categories
-            as $remaining_category_id
-        ) {
-
-            $sql = "
-                UPDATE CATEGORY
-                SET
-                    sort_order = ?,
-                    updated_at = NOW()
-                WHERE category_id = ?
-                AND store_id = ?
-                AND status != 'deleted'
-            ";
-
-            $stmt = $pdo->prepare($sql);
-
-            $stmt->execute([
-                $new_sort_order,
-                $remaining_category_id,
-                $store_id
-            ]);
-
-            $new_sort_order++;
         }
     }
 
