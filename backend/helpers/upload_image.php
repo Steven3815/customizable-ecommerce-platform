@@ -1,10 +1,15 @@
 <?php
 
-function uploadImage($file, $folder)
-{
+function uploadImage(
+    $file,
+    $folder,
+    $resize_width = null,
+    $resize_height = null
+) {
     // 檢查是否有上傳檔案
     if (
         !isset($file) ||
+        !is_array($file) ||
         $file["error"] !== UPLOAD_ERR_OK
     ) {
         throw new Exception("Image upload failed");
@@ -33,6 +38,25 @@ function uploadImage($file, $folder)
 
     // 圖片副檔名
     $extension = $allowed_types[$mime_type];
+
+    // 取得圖片尺寸
+    $image_info = getimagesize(
+        $file["tmp_name"]
+    );
+
+    if ($image_info === false) {
+        throw new Exception("Invalid image file");
+    }
+
+    $original_width = $image_info[0];
+    $original_height = $image_info[1];
+
+    if (
+        $original_width <= 0 ||
+        $original_height <= 0
+    ) {
+        throw new Exception("Invalid image dimensions");
+    }
 
     // 建立資料夾
     $upload_dir =
@@ -65,14 +89,233 @@ function uploadImage($file, $folder)
         $upload_dir
         . $file_name;
 
-    // 移動檔案
-    if (!move_uploaded_file(
-        $file["tmp_name"],
-        $file_path
-    )) {
+    /*
+     * 沒有指定 resize
+     * → 保留原始圖片
+     */
+    if (
+        $resize_width === null ||
+        $resize_height === null
+    ) {
 
-        throw new Exception(
-            "Failed to save image"
+        if (!move_uploaded_file(
+            $file["tmp_name"],
+            $file_path
+        )) {
+
+            throw new Exception(
+                "Failed to save image"
+            );
+        }
+
+    } else {
+
+        /*
+         * 指定 resize
+         * → 自動裁切成指定比例
+         */
+
+        if (
+            $resize_width <= 0 ||
+            $resize_height <= 0
+        ) {
+            throw new Exception(
+                "Invalid resize dimensions"
+            );
+        }
+
+        // 建立來源圖片
+        switch ($mime_type) {
+
+            case "image/jpeg":
+                $source_image =
+                    imagecreatefromjpeg(
+                        $file["tmp_name"]
+                    );
+                break;
+
+            case "image/png":
+                $source_image =
+                    imagecreatefrompng(
+                        $file["tmp_name"]
+                    );
+                break;
+
+            case "image/webp":
+                $source_image =
+                    imagecreatefromwebp(
+                        $file["tmp_name"]
+                    );
+                break;
+
+            default:
+                throw new Exception(
+                    "Unsupported image type"
+                );
+        }
+
+        if ($source_image === false) {
+            throw new Exception(
+                "Failed to create source image"
+            );
+        }
+
+        /*
+         * 計算來源圖片比例
+         */
+        $source_ratio =
+            $original_width /
+            $original_height;
+
+        $target_ratio =
+            $resize_width /
+            $resize_height;
+
+        /*
+         * 計算裁切範圍
+         */
+        if ($source_ratio > $target_ratio) {
+
+            // 原圖太寬
+            $crop_height =
+                $original_height;
+
+            $crop_width =
+                (int)(
+                    $original_height
+                    * $target_ratio
+                );
+
+            $crop_x =
+                (int)(
+                    ($original_width - $crop_width)
+                    / 2
+                );
+
+            $crop_y = 0;
+
+        } else {
+
+            // 原圖太高
+            $crop_width =
+                $original_width;
+
+            $crop_height =
+                (int)(
+                    $original_width
+                    / $target_ratio
+                );
+
+            $crop_x = 0;
+
+            $crop_y =
+                (int)(
+                    ($original_height - $crop_height)
+                    / 2
+                );
+        }
+
+        // 建立新的圖片
+        $new_image =
+            imagecreatetruecolor(
+                $resize_width,
+                $resize_height
+            );
+
+        /*
+         * PNG / WebP 保留透明背景
+         */
+        if (
+            $mime_type === "image/png" ||
+            $mime_type === "image/webp"
+        ) {
+
+            imagealphablending(
+                $new_image,
+                false
+            );
+
+            imagesavealpha(
+                $new_image,
+                true
+            );
+
+            $transparent =
+                imagecolorallocatealpha(
+                    $new_image,
+                    0,
+                    0,
+                    0,
+                    127
+                );
+
+            imagefill(
+                $new_image,
+                0,
+                0,
+                $transparent
+            );
+        }
+
+        // 裁切並縮放
+        imagecopyresampled(
+            $new_image,
+            $source_image,
+
+            0,
+            0,
+
+            $crop_x,
+            $crop_y,
+
+            $resize_width,
+            $resize_height,
+
+            $crop_width,
+            $crop_height
+        );
+
+        // 儲存圖片
+        switch ($mime_type) {
+
+            case "image/jpeg":
+
+                imagejpeg(
+                    $new_image,
+                    $file_path,
+                    90
+                );
+
+                break;
+
+            case "image/png":
+
+                imagepng(
+                    $new_image,
+                    $file_path,
+                    6
+                );
+
+                break;
+
+            case "image/webp":
+
+                imagewebp(
+                    $new_image,
+                    $file_path,
+                    90
+                );
+
+                break;
+        }
+
+        // 釋放記憶體
+        imagedestroy(
+            $source_image
+        );
+
+        imagedestroy(
+            $new_image
         );
     }
 
@@ -83,11 +326,9 @@ function uploadImage($file, $folder)
         . $file_name;
 }
 
+
 /**
  * 刪除已上傳的圖片
- *
- * 用於資料庫 transaction rollback 時，
- * 清除已經成功上傳但沒有成功寫入資料庫的圖片。
  */
 function deleteImage($image_url)
 {
@@ -97,12 +338,6 @@ function deleteImage($image_url)
     ) {
         return;
     }
-
-    // URL：
-    // /uploads/products/image_xxx.jpg
-    //
-    // 轉成實際檔案位置：
-    // __DIR__ . "/../uploads/products/image_xxx.jpg"
 
     $prefix = "/uploads/";
 
@@ -131,9 +366,9 @@ function deleteImage($image_url)
         . "/../uploads/"
         . $relative_path;
 
-    // 確認是檔案後才刪除
     if (is_file($file_path)) {
         unlink($file_path);
     }
 }
+
 ?>
