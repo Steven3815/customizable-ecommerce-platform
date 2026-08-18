@@ -23,7 +23,6 @@ if (
 
 $store_id = (int)$_SESSION["store_id"];
 
-// 檢查 Store ID
 if ($store_id <= 0) {
     echo json_encode([
         "error" => "Invalid store ID"
@@ -32,7 +31,7 @@ if ($store_id <= 0) {
     exit;
 }
 
-// 檢查 Product ID
+// 取得 Product ID
 $product_id = $_POST["product_id"] ?? null;
 
 if ($product_id === null || $product_id === "") {
@@ -43,7 +42,7 @@ if ($product_id === null || $product_id === "") {
     exit;
 }
 
-// 檢查 Product ID 格式
+// 檢查 Product ID
 if (
     !is_numeric($product_id) ||
     floor((float)$product_id) != (float)$product_id
@@ -93,7 +92,7 @@ if (!$product) {
     exit;
 }
 
-// 檢查商品是否已經刪除
+// 已刪除商品不能再次刪除
 if ($product["status"] === "deleted") {
     echo json_encode([
         "error" => "Product has already been deleted"
@@ -125,9 +124,8 @@ $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $pdo->beginTransaction();
 
 try {
+
     // 1. 移除購物車中的商品
-    // 商品雖然是軟刪除，
-    // 但客戶購物車不能繼續保留已刪除商品。
     $sql = "
     DELETE FROM CART_ITEM
     WHERE product_id = ?
@@ -144,6 +142,7 @@ try {
     $deleted_cart_items = $stmt->rowCount();
 
     // 2. 停用商品規格
+    // 不刪除 PRODUCT_SPEC，保留歷史資料
     $sql = "
     UPDATE PRODUCT_SPEC
     SET
@@ -160,9 +159,9 @@ try {
         $store_id
     ]);
 
+    $deactivated_specs = $stmt->rowCount();
+
     // 3. 刪除商品圖片資料庫紀錄
-    // PRODUCT 本身不刪除，
-    // 但 PRODUCT_IMAGE 可以刪除。
     $sql = "
     DELETE FROM PRODUCT_IMAGE
     WHERE product_id = ?
@@ -195,11 +194,8 @@ try {
         $store_id
     ]);
 
-    // 確認真的有更新
     if ($stmt->rowCount() !== 1) {
-        throw new Exception(
-            "Failed to delete product"
-        );
+        throw new Exception("Failed to delete product");
     }
 
     // 5. 完成交易
@@ -212,7 +208,7 @@ try {
 
         $image_url = $image["image_url"];
 
-        // 防止不正常的路徑
+        // 只允許刪除 uploads 目錄內的圖片
         if (
             !is_string($image_url) ||
             strpos($image_url, "/uploads/") !== 0
@@ -220,13 +216,6 @@ try {
             continue;
         }
 
-        /*
-         * 例如：
-         * /uploads/products/image_xxx.jpg
-         *
-         * 對應：
-         * 專案根目錄/uploads/products/image_xxx.jpg
-         */
         $image_path =
             dirname(__DIR__, 3)
             . $image_url;
@@ -235,7 +224,6 @@ try {
             file_exists($image_path) &&
             is_file($image_path)
         ) {
-
             if (unlink($image_path)) {
                 $deleted_physical_images++;
             }
@@ -245,18 +233,18 @@ try {
     // 7. 回傳
     echo json_encode([
         "message" => "Product deleted successfully",
+        "store_id" => $store_id,
         "product_id" => $product_id,
         "product_name" => $product["product_name"],
-        "store_id" => $store_id,
         "status" => "deleted",
         "deleted_cart_items" => $deleted_cart_items,
+        "deactivated_specs" => $deactivated_specs,
         "deleted_image_records" => $deleted_images,
         "deleted_physical_images" => $deleted_physical_images
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
-    // 發生錯誤 → Rollback
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
@@ -264,6 +252,8 @@ try {
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
+
+    exit;
 }
 
 ?>

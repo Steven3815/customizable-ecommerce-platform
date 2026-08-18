@@ -18,18 +18,31 @@ if (
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 $store_id = (int)$_SESSION["store_id"];
 
+if ($store_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 檢查 product_id
 $product_id = $_POST["product_id"] ?? null;
 
-if ($product_id === null || $product_id === "") {
+if (
+    $product_id === null ||
+    $product_id === ""
+) {
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -40,6 +53,7 @@ if (
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -49,98 +63,123 @@ if ($product_id <= 0) {
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得商品資料
+$sql = "
+SELECT
+    product_id,
+    store_id,
+    category_id,
+    product_name,
+    description,
+    price,
+    stock,
+    has_spec,
+    spec_name,
+    status
+FROM PRODUCT
+WHERE product_id = ?
+AND store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $product_id,
+    $store_id
+]);
+
+$product = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$product) {
+    echo json_encode([
+        "error" => "Product not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// deleted 商品禁止更新
+if ($product["status"] === "deleted") {
+    echo json_encode([
+        "error" => "Deleted product cannot be updated"
+    ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 // 取得基本資料
-$category_id = $_POST["category_id"] ?? null;
-$product_name = trim($_POST["product_name"] ?? "");
-$description = trim($_POST["description"] ?? "");
-$price = $_POST["price"] ?? null;
-$stock = $_POST["stock"] ?? null;
-$has_spec = isset($_POST["has_spec"]) ? (int)$_POST["has_spec"] : 0;
-$status = $_POST["status"] ?? "active";
+// category_id 不接受前端修改
+$category_id = (int)$product["category_id"];
 
-// 檢查必要欄位
-if (
-    $category_id === null ||
-    $category_id === "" ||
-    $product_name === ""
-) {
-    echo json_encode([
-        "error" => "Missing required fields"
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+$product_name =
+    trim($_POST["product_name"] ?? "");
 
-// 檢查 Category ID
-if (
-    !is_numeric($category_id) ||
-    floor((float)$category_id) != (float)$category_id
-) {
-    echo json_encode([
-        "error" => "Invalid category ID"
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+$description =
+    trim($_POST["description"] ?? "");
 
-$category_id = (int)$category_id;
+$price =
+    $_POST["price"] ?? null;
 
-if ($category_id <= 0) {
-    echo json_encode([
-        "error" => "Invalid category ID"
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+$has_spec =
+    isset($_POST["has_spec"])
+        ? (int)$_POST["has_spec"]
+        : 0;
+
+$status =
+    $_POST["status"] ?? $product["status"];
+
+// 規格類型名稱
+// 例如：尺寸、顏色
+$spec_name =
+    trim($_POST["spec_name"] ?? "");
 
 // 檢查商品名稱
-if (mb_strlen($product_name) > 255) {
+if ($product_name === "") {
+    echo json_encode([
+        "error" => "Product name is required"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+if (mb_strlen($product_name) > 200) {
     echo json_encode([
         "error" => "Product name is too long"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
+// 檢查商品價格
+if (
+    $price === null ||
+    $price === "" ||
+    !is_numeric($price) ||
+    (float)$price < 0
+) {
+    echo json_encode([
+        "error" => "Invalid price"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$price = (float)$price;
+
 // 檢查 has_spec
-if ($has_spec !== 0 && $has_spec !== 1) {
+if (
+    $has_spec !== 0 &&
+    $has_spec !== 1
+) {
     echo json_encode([
         "error" => "Invalid has_spec"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
-}
-
-// 檢查價格與庫存
-if ($has_spec === 0) {
-    if (
-        $price === null ||
-        $price === "" ||
-        !is_numeric($price) ||
-        (float)$price < 0
-    ) {
-        echo json_encode([
-            "error" => "Invalid price"
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    if (
-        $stock === null ||
-        $stock === "" ||
-        !is_numeric($stock) ||
-        (float)$stock < 0 ||
-        floor((float)$stock) != (float)$stock
-    ) {
-        echo json_encode([
-            "error" => "Invalid stock"
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    $price = (float)$price;
-    $stock = (int)$stock;
-} else {
-    $price = null;
-    $stock = 0;
 }
 
 // 檢查商品狀態
@@ -153,70 +192,42 @@ if (!in_array($status, $allowed_status, true)) {
     echo json_encode([
         "error" => "Invalid product status"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
-// 檢查 Category 是否屬於目前 Store
-$sql = "
-SELECT category_id
-FROM CATEGORY
-WHERE category_id = ?
-AND store_id = ?
-";
+// 有規格
+if ($has_spec === 1) {
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $category_id,
-    $store_id
-]);
+    // 規格類型名稱必填
+    if ($spec_name === "") {
+        echo json_encode([
+            "error" => "Specification name is required"
+        ], JSON_UNESCAPED_UNICODE);
 
-$category = $stmt->fetch(PDO::FETCH_ASSOC);
+        exit;
+    }
 
-if (!$category) {
-    echo json_encode([
-        "error" => "Category not found"
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+    if (mb_strlen($spec_name) > 100) {
+        echo json_encode([
+            "error" => "Specification name is too long"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+} else {
+
+    // 沒有規格時
+    // PRODUCT.spec_name 設為 NULL
+    $spec_name = null;
 }
 
-// 檢查商品是否屬於目前 Store
-$sql = "
-SELECT
-    product_id,
-    has_spec,
-    status
-FROM PRODUCT
-WHERE product_id = ?
-AND store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $product_id,
-    $store_id
-]);
-
-$product = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$product) {
-    echo json_encode([
-        "error" => "Product not found"
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// deleted 商品禁止更新
-if ($product["status"] === "deleted") {
-    echo json_encode([
-        "error" => "Deleted product cannot be updated"
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// 取得並驗證商品規格
+// 取得規格
 $specs = [];
 
 if ($has_spec === 1) {
+
     if (
         !isset($_POST["specs"]) ||
         !is_array($_POST["specs"])
@@ -224,33 +235,53 @@ if ($has_spec === 1) {
         echo json_encode([
             "error" => "Specifications are required"
         ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 
     $specs = $_POST["specs"];
 
-    if (empty($specs)) {
+    // 至少一個規格
+    if (count($specs) < 1) {
         echo json_encode([
             "error" => "At least one specification is required"
         ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 最多 10 個規格
+    if (count($specs) > 10) {
+        echo json_encode([
+            "error" => "A product can have at most 10 specifications"
+        ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 
     $submitted_spec_ids_check = [];
 
     foreach ($specs as $index => $spec) {
+
         if (!is_array($spec)) {
             echo json_encode([
                 "error" => "Invalid specification data"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
-        $spec_id = $spec["spec_id"] ?? null;
+        // spec_id
+        $spec_id =
+            $spec["spec_id"] ?? null;
 
-        if ($spec_id === null || $spec_id === "") {
+        if (
+            $spec_id === null ||
+            $spec_id === ""
+        ) {
             $spec_id = null;
         } else {
+
             if (
                 !is_numeric($spec_id) ||
                 floor((float)$spec_id) != (float)$spec_id
@@ -258,6 +289,7 @@ if ($has_spec === 1) {
                 echo json_encode([
                     "error" => "Invalid specification ID"
                 ], JSON_UNESCAPED_UNICODE);
+
                 exit;
             }
 
@@ -267,6 +299,7 @@ if ($has_spec === 1) {
                 echo json_encode([
                     "error" => "Invalid specification ID"
                 ], JSON_UNESCAPED_UNICODE);
+
                 exit;
             }
 
@@ -280,43 +313,38 @@ if ($has_spec === 1) {
                 echo json_encode([
                     "error" => "Duplicate specification ID"
                 ], JSON_UNESCAPED_UNICODE);
+
                 exit;
             }
 
-            $submitted_spec_ids_check[] = $spec_id;
+            $submitted_spec_ids_check[] =
+                $spec_id;
         }
 
-        $spec_name = trim($spec["spec_name"] ?? "");
+        // PRODUCT_SPEC.spec_name
+        // 例如 S、M、L
+        $spec_value =
+            trim($spec["spec_name"] ?? "");
 
-        if ($spec_name === "") {
+        if ($spec_value === "") {
             echo json_encode([
-                "error" => "Specification name is required"
+                "error" => "Specification value is required"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
-        if (mb_strlen($spec_name) > 255) {
+        if (mb_strlen($spec_value) > 100) {
             echo json_encode([
-                "error" => "Specification name is too long"
+                "error" => "Specification value is too long"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
-        $spec_price = $spec["price"] ?? null;
-
-        if (
-            $spec_price === null ||
-            $spec_price === "" ||
-            !is_numeric($spec_price) ||
-            (float)$spec_price < 0
-        ) {
-            echo json_encode([
-                "error" => "Invalid specification price"
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
-        }
-
-        $spec_stock = $spec["stock"] ?? null;
+        // 庫存
+        $spec_stock =
+            $spec["stock"] ?? null;
 
         if (
             $spec_stock === null ||
@@ -328,45 +356,86 @@ if ($has_spec === 1) {
             echo json_encode([
                 "error" => "Invalid specification stock"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
-        $spec_status = $spec["status"] ?? "active";
+        $spec_stock = (int)$spec_stock;
 
-        if (!in_array($spec_status, ["active", "inactive"], true)) {
+        // 規格狀態
+        $spec_status =
+            $spec["status"] ?? "active";
+
+        if (
+            !in_array(
+                $spec_status,
+                ["active", "inactive"],
+                true
+            )
+        ) {
             echo json_encode([
                 "error" => "Invalid specification status"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
         $specs[$index] = [
             "spec_id" => $spec_id,
-            "spec_name" => $spec_name,
-            "price" => (float)$spec_price,
-            "stock" => (int)$spec_stock,
+            "spec_name" => $spec_value,
+            "price" => $price,
+            "stock" => $spec_stock,
             "status" => $spec_status
         ];
     }
 }
 
-// 初始化圖片
+// 商品本身的 stock
+// 有規格時由 PRODUCT_SPEC 管理
+// 無規格時使用 PRODUCT.stock
+if ($has_spec === 0) {
+
+    $stock = $_POST["stock"] ?? null;
+
+    if (
+        $stock === null ||
+        $stock === "" ||
+        !is_numeric($stock) ||
+        (float)$stock < 0 ||
+        floor((float)$stock) != (float)$stock
+    ) {
+        echo json_encode([
+            "error" => "Invalid stock"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    $stock = (int)$stock;
+
+} else {
+
+    $stock = 0;
+}
+
+// 初始化上傳圖片路徑
 $uploaded_file_paths = [];
 
-// 開始交易
 $pdo->beginTransaction();
 
 try {
+
     // 更新商品基本資料
+    // category_id 不修改
     $sql = "
     UPDATE PRODUCT
     SET
-        category_id = ?,
         product_name = ?,
         description = ?,
         price = ?,
         stock = ?,
         has_spec = ?,
+        spec_name = ?,
         status = ?,
         updated_at = NOW()
     WHERE product_id = ?
@@ -376,42 +445,53 @@ try {
     $stmt = $pdo->prepare($sql);
 
     $stmt->execute([
-        $category_id,
         $product_name,
         $description,
         $price,
         $stock,
         $has_spec,
+        $spec_name,
         $status,
         $product_id,
         $store_id
     ]);
 
-    // 更新商品規格
+    // 有規格
     if ($has_spec === 1) {
-        $existing_spec_ids = [];
 
+        // 取得目前所有規格
         $sql = "
         SELECT
-            spec_id,
-            spec_name
+            spec_id
         FROM PRODUCT_SPEC
         WHERE product_id = ?
+        AND store_id = ?
         ";
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$product_id]);
 
-        $existing_specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([
+            $product_id,
+            $store_id
+        ]);
+
+        $existing_specs =
+            $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $existing_spec_ids = [];
 
         foreach ($existing_specs as $existing_spec) {
-            $existing_spec_ids[] = (int)$existing_spec["spec_id"];
+            $existing_spec_ids[] =
+                (int)$existing_spec["spec_id"];
         }
 
         $submitted_spec_ids = [];
 
         foreach ($specs as $spec) {
+
             if ($spec["spec_id"] !== null) {
+
+                // 確認 spec_id 屬於此商品
                 if (
                     !in_array(
                         $spec["spec_id"],
@@ -424,8 +504,11 @@ try {
                     );
                 }
 
-                $submitted_spec_ids[] = $spec["spec_id"];
+                $submitted_spec_ids[] =
+                    $spec["spec_id"];
 
+                // 更新既有規格
+                // price 永遠使用 PRODUCT.price
                 $sql = "
                 UPDATE PRODUCT_SPEC
                 SET
@@ -436,24 +519,30 @@ try {
                     updated_at = NOW()
                 WHERE spec_id = ?
                 AND product_id = ?
+                AND store_id = ?
                 ";
 
                 $stmt = $pdo->prepare($sql);
 
                 $stmt->execute([
                     $spec["spec_name"],
-                    $spec["price"],
+                    $price,
                     $spec["stock"],
                     $spec["status"],
                     $spec["spec_id"],
-                    $product_id
+                    $product_id,
+                    $store_id
                 ]);
+
             } else {
-                // 避免建立重複的商品規格
+
+                // 新增規格前確認名稱沒有重複
                 $sql = "
-                SELECT spec_id
+                SELECT
+                    spec_id
                 FROM PRODUCT_SPEC
                 WHERE product_id = ?
+                AND store_id = ?
                 AND spec_name = ?
                 ";
 
@@ -461,10 +550,12 @@ try {
 
                 $stmt->execute([
                     $product_id,
+                    $store_id,
                     $spec["spec_name"]
                 ]);
 
-                $existing_spec = $stmt->fetch(PDO::FETCH_ASSOC);
+                $existing_spec =
+                    $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($existing_spec) {
                     throw new Exception(
@@ -472,33 +563,49 @@ try {
                     );
                 }
 
+                // 新增規格
+                // price 自動使用 PRODUCT.price
                 $sql = "
                 INSERT INTO PRODUCT_SPEC
                 (
                     product_id,
+                    store_id,
                     spec_name,
                     price,
                     stock,
                     status
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )
                 ";
 
                 $stmt = $pdo->prepare($sql);
 
                 $stmt->execute([
                     $product_id,
+                    $store_id,
                     $spec["spec_name"],
-                    $spec["price"],
+                    $price,
                     $spec["stock"],
                     $spec["status"]
                 ]);
 
-                $submitted_spec_ids[] = (int)$pdo->lastInsertId();
+                $submitted_spec_ids[] =
+                    (int)$pdo->lastInsertId();
             }
         }
 
+        // 沒有被送回來的舊規格
+        // 不刪除，只改成 inactive
         foreach ($existing_spec_ids as $existing_spec_id) {
+
             if (
                 !in_array(
                     $existing_spec_id,
@@ -506,8 +613,7 @@ try {
                     true
                 )
             ) {
-                // 不刪除規格，只改為 inactive
-                // 避免 CART_ITEM 或 ORDER_ITEM 等資料仍然參照此 spec_id
+
                 $sql = "
                 UPDATE PRODUCT_SPEC
                 SET
@@ -515,29 +621,38 @@ try {
                     updated_at = NOW()
                 WHERE spec_id = ?
                 AND product_id = ?
+                AND store_id = ?
                 ";
 
                 $stmt = $pdo->prepare($sql);
 
                 $stmt->execute([
                     $existing_spec_id,
-                    $product_id
+                    $product_id,
+                    $store_id
                 ]);
             }
         }
+
     } else {
-        // 商品改成沒有規格時，不刪除原本規格
-        // 只將所有規格設為 inactive
+
+        // 關閉規格
+        // 舊規格全部 inactive
         $sql = "
         UPDATE PRODUCT_SPEC
         SET
             status = 'inactive',
             updated_at = NOW()
         WHERE product_id = ?
+        AND store_id = ?
         ";
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$product_id]);
+
+        $stmt->execute([
+            $product_id,
+            $store_id
+        ]);
     }
 
     // 新增商品圖片
@@ -546,9 +661,12 @@ try {
         isset($_FILES["images"]["name"]) &&
         is_array($_FILES["images"]["name"])
     ) {
-        $file_count = count($_FILES["images"]["name"]);
+
+        $file_count =
+            count($_FILES["images"]["name"]);
 
         for ($i = 0; $i < $file_count; $i++) {
+
             if (
                 $_FILES["images"]["error"][$i]
                 === UPLOAD_ERR_NO_FILE
@@ -557,31 +675,44 @@ try {
             }
 
             $file = [
-                "name" => $_FILES["images"]["name"][$i],
-                "type" => $_FILES["images"]["type"][$i],
-                "tmp_name" => $_FILES["images"]["tmp_name"][$i],
-                "error" => $_FILES["images"]["error"][$i],
-                "size" => $_FILES["images"]["size"][$i]
+                "name" =>
+                    $_FILES["images"]["name"][$i],
+
+                "type" =>
+                    $_FILES["images"]["type"][$i],
+
+                "tmp_name" =>
+                    $_FILES["images"]["tmp_name"][$i],
+
+                "error" =>
+                    $_FILES["images"]["error"][$i],
+
+                "size" =>
+                    $_FILES["images"]["size"][$i]
             ];
 
-            $image_url = uploadImage(
-                $file,
-                "products"
-            );
+            $image_url =
+                uploadImage(
+                    $file,
+                    "products"
+                );
 
-            $relative_path = ltrim($image_url, "/");
+            $relative_path =
+                ltrim($image_url, "/");
 
             $file_path =
                 dirname(__DIR__, 3)
                 . "/"
                 . $relative_path;
 
-            $uploaded_file_paths[] = $file_path;
+            $uploaded_file_paths[] =
+                $file_path;
 
-            // 新增圖片時使用前端傳入的排序
-            $sort_order = isset($_POST["image_sort_orders"][$i])
-                ? (int)$_POST["image_sort_orders"][$i]
-                : $i;
+            // 新增圖片排序
+            $sort_order =
+                isset($_POST["image_sort_orders"][$i])
+                    ? (int)$_POST["image_sort_orders"][$i]
+                    : $i;
 
             if ($sort_order < 0) {
                 throw new Exception(
@@ -593,16 +724,24 @@ try {
             INSERT INTO PRODUCT_IMAGE
             (
                 product_id,
+                store_id,
                 image_url,
                 sort_order
             )
-            VALUES (?, ?, ?)
+            VALUES
+            (
+                ?,
+                ?,
+                ?,
+                ?
+            )
             ";
 
             $stmt = $pdo->prepare($sql);
 
             $stmt->execute([
                 $product_id,
+                $store_id,
                 $image_url,
                 $sort_order
             ]);
@@ -614,15 +753,23 @@ try {
         isset($_POST["image_orders"]) &&
         is_array($_POST["image_orders"])
     ) {
-        foreach ($_POST["image_orders"] as $image_order) {
+
+        foreach (
+            $_POST["image_orders"]
+            as $image_order
+        ) {
+
             if (!is_array($image_order)) {
                 throw new Exception(
                     "Invalid image order data"
                 );
             }
 
-            $image_id = $image_order["image_id"] ?? null;
-            $sort_order = $image_order["sort_order"] ?? null;
+            $image_id =
+                $image_order["image_id"] ?? null;
+
+            $sort_order =
+                $image_order["sort_order"] ?? null;
 
             if (
                 $image_id === null ||
@@ -650,17 +797,20 @@ try {
 
             // 確認圖片屬於目前商品
             $sql = "
-            SELECT image_id
+            SELECT
+                image_id
             FROM PRODUCT_IMAGE
             WHERE image_id = ?
             AND product_id = ?
+            AND store_id = ?
             ";
 
             $stmt = $pdo->prepare($sql);
 
             $stmt->execute([
                 $image_id,
-                $product_id
+                $product_id,
+                $store_id
             ]);
 
             if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -669,12 +819,14 @@ try {
                 );
             }
 
-            // 更新排序
+            // 更新圖片排序
             $sql = "
             UPDATE PRODUCT_IMAGE
-            SET sort_order = ?
+            SET
+                sort_order = ?
             WHERE image_id = ?
             AND product_id = ?
+            AND store_id = ?
             ";
 
             $stmt = $pdo->prepare($sql);
@@ -682,19 +834,23 @@ try {
             $stmt->execute([
                 $sort_order,
                 $image_id,
-                $product_id
+                $product_id,
+                $store_id
             ]);
         }
     }
 
-    // Commit
     $pdo->commit();
+
 } catch (Exception $e) {
+
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
+    // 刪除已經上傳但交易失敗的圖片
     foreach ($uploaded_file_paths as $file_path) {
+
         if (
             is_string($file_path) &&
             file_exists($file_path)
@@ -712,6 +868,7 @@ try {
 
 // 重新取得更新後商品
 try {
+
     $sql = "
     SELECT
         p.product_id,
@@ -723,6 +880,7 @@ try {
         p.price,
         p.stock,
         p.has_spec,
+        p.spec_name,
         p.status,
         p.created_at,
         p.updated_at
@@ -741,7 +899,8 @@ try {
         $store_id
     ]);
 
-    $updated_product = $stmt->fetch(PDO::FETCH_ASSOC);
+    $updated_product =
+        $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$updated_product) {
         echo json_encode([
@@ -760,24 +919,32 @@ try {
         sort_order
     FROM PRODUCT_IMAGE
     WHERE product_id = ?
+    AND store_id = ?
     ORDER BY sort_order ASC, image_id ASC
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$product_id]);
 
-    $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([
+        $product_id,
+        $store_id
+    ]);
+
+    $images =
+        $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($images as &$image) {
-        $image["image_id"] = (int)$image["image_id"];
-        $image["sort_order"] = (int)$image["sort_order"];
+
+        $image["image_id"] =
+            (int)$image["image_id"];
+
+        $image["sort_order"] =
+            (int)$image["sort_order"];
     }
 
     unset($image);
 
     // 取得商品規格
-    $specs = [];
-
     $sql = "
     SELECT
         spec_id,
@@ -789,18 +956,30 @@ try {
         updated_at
     FROM PRODUCT_SPEC
     WHERE product_id = ?
+    AND store_id = ?
     ORDER BY spec_id ASC
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$product_id]);
 
-    $specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([
+        $product_id,
+        $store_id
+    ]);
+
+    $specs =
+        $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($specs as &$spec) {
-        $spec["spec_id"] = (int)$spec["spec_id"];
-        $spec["price"] = (float)$spec["price"];
-        $spec["stock"] = (int)$spec["stock"];
+
+        $spec["spec_id"] =
+            (int)$spec["spec_id"];
+
+        $spec["price"] =
+            (float)$spec["price"];
+
+        $spec["stock"] =
+            (int)$spec["stock"];
     }
 
     unset($spec);
@@ -813,9 +992,7 @@ try {
         (int)$updated_product["store_id"];
 
     $updated_product["category_id"] =
-        $updated_product["category_id"] !== null
-            ? (int)$updated_product["category_id"]
-            : null;
+        (int)$updated_product["category_id"];
 
     $updated_product["price"] =
         $updated_product["price"] !== null
@@ -832,31 +1009,69 @@ try {
 
     // 回傳
     echo json_encode([
-        "message" => "Product updated successfully",
-        "store_id" => $store_id,
+        "message" =>
+            "Product updated successfully",
+
+        "store_id" =>
+            $store_id,
+
         "product" => [
-            "product_id" => $updated_product["product_id"],
+
+            "product_id" =>
+                $updated_product["product_id"],
+
             "category" => [
-                "category_id" => $updated_product["category_id"],
-                "category_name" => $updated_product["category_name"]
+
+                "category_id" =>
+                    $updated_product["category_id"],
+
+                "category_name" =>
+                    $updated_product["category_name"]
             ],
-            "product_name" => $updated_product["product_name"],
-            "description" => $updated_product["description"],
-            "price" => $updated_product["price"],
-            "stock" => $updated_product["stock"],
-            "has_spec" => $updated_product["has_spec"],
-            "specs" => $specs,
-            "images" => $images,
-            "status" => $updated_product["status"],
-            "created_at" => $updated_product["created_at"],
-            "updated_at" => $updated_product["updated_at"]
+
+            "product_name" =>
+                $updated_product["product_name"],
+
+            "description" =>
+                $updated_product["description"],
+
+            "price" =>
+                $updated_product["price"],
+
+            "stock" =>
+                $updated_product["stock"],
+
+            "has_spec" =>
+                $updated_product["has_spec"],
+
+            "spec_name" =>
+                $updated_product["spec_name"],
+
+            "specs" =>
+                $specs,
+
+            "images" =>
+                $images,
+
+            "status" =>
+                $updated_product["status"],
+
+            "created_at" =>
+                $updated_product["created_at"],
+
+            "updated_at" =>
+                $updated_product["updated_at"]
         ]
+
     ], JSON_UNESCAPED_UNICODE);
+
 } catch (Exception $e) {
+
     echo json_encode([
         "error" =>
             "Product updated successfully, but failed to retrieve updated data",
-        "detail" => $e->getMessage()
+        "detail" =>
+            $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

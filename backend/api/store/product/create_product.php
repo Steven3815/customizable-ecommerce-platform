@@ -1,6 +1,7 @@
 <?php
 
 // Store 建立商品
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
@@ -17,6 +18,7 @@ if (
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -27,6 +29,7 @@ if ($store_id <= 0) {
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -39,7 +42,10 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -47,22 +53,39 @@ if (!$store) {
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 // 取得基本資料
-$category_id = $_POST["category_id"] ?? null;
-$product_name = trim($_POST["product_name"] ?? "");
-$description = trim($_POST["description"] ?? "");
-$price = $_POST["price"] ?? null;
-$stock = $_POST["stock"] ?? null;
+$category_id =
+    $_POST["category_id"] ?? null;
 
+$product_name =
+    trim($_POST["product_name"] ?? "");
+
+$description =
+    trim($_POST["description"] ?? "");
+
+$price =
+    $_POST["price"] ?? null;
+
+$stock =
+    $_POST["stock"] ?? null;
+
+// 是否開啟規格
+// 預設關閉
 $has_spec = isset($_POST["has_spec"])
     ? (int)$_POST["has_spec"]
     : 0;
 
-// 建立商品時固定為 active
+// 商品建立時固定 active
 $status = "active";
+
+// 規格名稱
+// 例如：尺寸、顏色
+$spec_name =
+    trim($_POST["spec_name"] ?? "");
 
 // 檢查必要欄位
 if (
@@ -72,6 +95,7 @@ if (
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -84,16 +108,18 @@ if (
     echo json_encode([
         "error" => "Invalid category ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 $category_id = (int)$category_id;
 
 // 檢查商品名稱
-if (mb_strlen($product_name) > 255) {
+if (mb_strlen($product_name) > 200) {
     echo json_encode([
         "error" => "Product name is too long"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -105,26 +131,32 @@ if (
     echo json_encode([
         "error" => "Invalid has_spec"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
-// 檢查商品價格與庫存
+// 檢查商品價格
+// 不論有沒有規格
+// PRODUCT.price 都是商品價格
+if (
+    $price === null ||
+    $price === "" ||
+    !is_numeric($price) ||
+    (float)$price < 0
+) {
+    echo json_encode([
+        "error" => "Invalid price"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$price = (float)$price;
+
+// 無規格商品
 if ($has_spec === 0) {
 
-    // 價格必填
-    if (
-        $price === null ||
-        $price === "" ||
-        !is_numeric($price) ||
-        (float)$price < 0
-    ) {
-        echo json_encode([
-            "error" => "Invalid price"
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    // 庫存必填
+    // 無規格時 PRODUCT.stock 必須填寫
     if (
         $stock === null ||
         $stock === "" ||
@@ -135,17 +167,36 @@ if ($has_spec === 0) {
         echo json_encode([
             "error" => "Invalid stock"
         ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 
-    $price = (float)$price;
     $stock = (int)$stock;
+
+    // 沒有規格
+    // PRODUCT.spec_name 為 NULL
+    $spec_name = null;
 
 } else {
 
-    // 有規格時，價格與庫存由 PRODUCT_SPEC 管理
-    $price = null;
-    $stock = 0;
+    // 有規格商品
+
+    // 規格類型名稱必填
+    if ($spec_name === "") {
+        echo json_encode([
+            "error" => "Specification name is required"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    if (mb_strlen($spec_name) > 100) {
+        echo json_encode([
+            "error" => "Specification name is too long"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
 }
 
 // 檢查 Category 是否存在且屬於目前 Store
@@ -170,6 +221,7 @@ if (!$category) {
     echo json_encode([
         "error" => "Category not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -185,15 +237,27 @@ if ($has_spec === 1) {
         echo json_encode([
             "error" => "Specifications are required"
         ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 
     $specs = $_POST["specs"];
 
-    if (empty($specs)) {
+    // 至少一個規格
+    if (count($specs) < 1) {
         echo json_encode([
             "error" => "At least one specification is required"
         ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 最多 10 個規格
+    if (count($specs) > 10) {
+        echo json_encode([
+            "error" => "A product can have at most 10 specifications"
+        ], JSON_UNESCAPED_UNICODE);
+
         exit;
     }
 
@@ -203,41 +267,33 @@ if ($has_spec === 1) {
             echo json_encode([
                 "error" => "Invalid specification data"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
-        $spec_name = trim(
-            $spec["spec_name"] ?? ""
-        );
+        // 實際規格值
+        // 例如 S、M、L
+        $spec_value =
+            trim($spec["spec_name"] ?? "");
 
-        $spec_price = $spec["price"] ?? null;
-        $spec_stock = $spec["stock"] ?? null;
+        // 規格庫存
+        $spec_stock =
+            $spec["stock"] ?? null;
 
-        // 檢查規格名稱
-        if ($spec_name === "") {
+        // 檢查規格值
+        if ($spec_value === "") {
             echo json_encode([
-                "error" => "Specification name is required"
+                "error" => "Specification value is required"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
-        if (mb_strlen($spec_name) > 255) {
+        if (mb_strlen($spec_value) > 100) {
             echo json_encode([
-                "error" => "Specification name is too long"
+                "error" => "Specification value is too long"
             ], JSON_UNESCAPED_UNICODE);
-            exit;
-        }
 
-        // 檢查規格價格
-        if (
-            $spec_price === null ||
-            $spec_price === "" ||
-            !is_numeric($spec_price) ||
-            (float)$spec_price < 0
-        ) {
-            echo json_encode([
-                "error" => "Invalid specification price"
-            ], JSON_UNESCAPED_UNICODE);
             exit;
         }
 
@@ -252,17 +308,30 @@ if ($has_spec === 1) {
             echo json_encode([
                 "error" => "Invalid specification stock"
             ], JSON_UNESCAPED_UNICODE);
+
             exit;
         }
 
-        // 建立商品時規格固定為 active
+        $spec_stock = (int)$spec_stock;
+
+        // 建立規格資料
+        // PRODUCT_SPEC.price 自動使用 PRODUCT.price
         $specs[$index] = [
-            "spec_name" => $spec_name,
-            "price" => (float)$spec_price,
-            "stock" => (int)$spec_stock,
+            "spec_name" => $spec_value,
+            "price" => $price,
+            "stock" => $spec_stock,
             "status" => "active"
         ];
     }
+
+    // 有規格時
+    // 實際庫存由 PRODUCT_SPEC 管理
+    $stock = 0;
+
+} else {
+
+    // 無規格時不建立 PRODUCT_SPEC
+    $specs = [];
 }
 
 // 檢查商品圖片
@@ -274,10 +343,12 @@ if (
     echo json_encode([
         "error" => "At least one product image is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
-$file_count = count($_FILES["images"]["name"]);
+$file_count =
+    count($_FILES["images"]["name"]);
 
 $valid_image_count = 0;
 
@@ -295,6 +366,7 @@ if ($valid_image_count < 1) {
     echo json_encode([
         "error" => "At least one product image is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
@@ -303,11 +375,7 @@ $pdo->beginTransaction();
 
 try {
 
-    // =========================================================
-    // 1. 建立商品
-    // =========================================================
-
-    // store_id 由 Session 取得，不由前端傳入
+    // 建立商品
     $sql = "
     INSERT INTO PRODUCT
     (
@@ -318,10 +386,12 @@ try {
         price,
         stock,
         has_spec,
+        spec_name,
         status
     )
     VALUES
     (
+        ?,
         ?,
         ?,
         ?,
@@ -343,20 +413,16 @@ try {
         $price,
         $stock,
         $has_spec,
+        $spec_name,
         $status
     ]);
 
-    // 取得商品 ID
-    $product_id = (int)$pdo->lastInsertId();
+    $product_id =
+        (int)$pdo->lastInsertId();
 
-
-    // =========================================================
-    // 2. 建立商品規格
-    // =========================================================
-
+    // 建立商品規格
     if ($has_spec === 1) {
 
-        // 加入 store_id
         $sql = "
         INSERT INTO PRODUCT_SPEC
         (
@@ -386,19 +452,17 @@ try {
                 $product_id,
                 $store_id,
                 $spec["spec_name"],
-                $spec["price"],
+                $price,
                 $spec["stock"],
-                $spec["status"]
+                "active"
             ]);
         }
     }
 
-
-    // =========================================================
-    // 3. 商品圖片
-    // =========================================================
-
+    // 建立商品圖片
     $uploaded_images = [];
+
+    $sort_order = 1;
 
     for ($i = 0; $i < $file_count; $i++) {
 
@@ -410,30 +474,39 @@ try {
         }
 
         $file = [
-            "name" => $_FILES["images"]["name"][$i],
-            "type" => $_FILES["images"]["type"][$i],
-            "tmp_name" => $_FILES["images"]["tmp_name"][$i],
-            "error" => $_FILES["images"]["error"][$i],
-            "size" => $_FILES["images"]["size"][$i]
+            "name" =>
+                $_FILES["images"]["name"][$i],
+
+            "type" =>
+                $_FILES["images"]["type"][$i],
+
+            "tmp_name" =>
+                $_FILES["images"]["tmp_name"][$i],
+
+            "error" =>
+                $_FILES["images"]["error"][$i],
+
+            "size" =>
+                $_FILES["images"]["size"][$i]
         ];
 
-        // 使用共用圖片函式
-        $image_url = uploadImage(
-            $file,
-            "products"
-        );
+        $image_url =
+            uploadImage(
+                $file,
+                "products"
+            );
 
-
-        // 加入 store_id
         $sql = "
         INSERT INTO PRODUCT_IMAGE
         (
             product_id,
             store_id,
-            image_url
+            image_url,
+            sort_order
         )
         VALUES
         (
+            ?,
             ?,
             ?,
             ?
@@ -445,46 +518,69 @@ try {
         $stmt->execute([
             $product_id,
             $store_id,
-            $image_url
+            $image_url,
+            $sort_order
         ]);
 
-        $image_id = (int)$pdo->lastInsertId();
+        $image_id =
+            (int)$pdo->lastInsertId();
 
         $uploaded_images[] = [
             "image_id" => $image_id,
-            "image_url" => $image_url
+            "image_url" => $image_url,
+            "sort_order" => $sort_order
         ];
+
+        $sort_order++;
     }
 
-
-    // =========================================================
-    // 4. 完成交易
-    // =========================================================
-
+    // 完成交易
     $pdo->commit();
 
-
-    // =========================================================
-    // 5. 回傳
-    // =========================================================
-
+    // 回傳
     echo json_encode([
-        "message" => "Product created successfully",
+        "message" =>
+            "Product created successfully",
 
-        "store_id" => $store_id,
+        "store_id" =>
+            $store_id,
 
         "product" => [
-            "product_id" => $product_id,
-            "store_id" => $store_id,
-            "category_id" => $category_id,
-            "product_name" => $product_name,
-            "description" => $description,
-            "price" => $price,
-            "stock" => $stock,
-            "has_spec" => (bool)$has_spec,
-            "specs" => $specs,
-            "images" => $uploaded_images,
-            "status" => $status
+            "product_id" =>
+                $product_id,
+
+            "store_id" =>
+                $store_id,
+
+            "category_id" =>
+                $category_id,
+
+            "product_name" =>
+                $product_name,
+
+            "description" =>
+                $description,
+
+            "price" =>
+                $price,
+
+            "stock" =>
+                $stock,
+
+            "has_spec" =>
+                (bool)$has_spec,
+
+            "spec_name" =>
+                $spec_name,
+
+            "specs" =>
+                $specs,
+
+            "images" =>
+                $uploaded_images,
+
+            "status" =>
+                $status
         ]
 
     ], JSON_UNESCAPED_UNICODE);

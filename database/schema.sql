@@ -64,6 +64,7 @@ CREATE TABLE PRODUCT (
     stock INT DEFAULT 0,
 
     has_spec BOOLEAN DEFAULT FALSE,
+    spec_name VARCHAR(100),
 
     status ENUM('active','inactive','deleted')
     DEFAULT 'active',
