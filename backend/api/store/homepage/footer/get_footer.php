@@ -14,7 +14,6 @@ if (
     !isset($_SESSION["role"]) ||
     $_SESSION["role"] !== "store"
 ) {
-
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
@@ -24,10 +23,31 @@ if (
 
 $store_id = (int)$_SESSION["store_id"];
 
+// 檢查 Store ID
 if ($store_id <= 0) {
-
     echo json_encode([
         "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store 是否存在
+$sql = "
+SELECT
+    store_id
+FROM STORE
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$store_id]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

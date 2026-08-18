@@ -32,6 +32,27 @@ if ($customer_id <= 0) {
     exit;
 }
 
+// 檢查 Customer 是否存在
+$sql = "
+SELECT
+    customer_id
+FROM CUSTOMER
+WHERE customer_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$customer_id]);
+
+$customer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$customer) {
+    echo json_encode([
+        "error" => "Customer not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 取得 JSON
 $data = json_decode(
     file_get_contents("php://input"),

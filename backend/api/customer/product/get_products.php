@@ -6,9 +6,57 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
 
+session_start();
+
+// 檢查 Customer Session
+if (
+    !isset($_SESSION["customer_id"]) ||
+    !isset($_SESSION["role"]) ||
+    $_SESSION["role"] !== "customer"
+) {
+    echo json_encode([
+        "error" => "Unauthorized"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$customer_id = (int)$_SESSION["customer_id"];
+
+// 檢查 Customer ID
+if ($customer_id <= 0) {
+    echo json_encode([
+        "error" => "Invalid customer ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Customer 是否存在
+$sql = "
+SELECT
+    customer_id
+FROM CUSTOMER
+WHERE customer_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$customer_id]);
+
+$customer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$customer) {
+    echo json_encode([
+        "error" => "Customer not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 $category_id = $_GET["category_id"] ?? null;
 $store_id = $_GET["store_id"] ?? null;
 $sort = $_GET["sort"] ?? "asc";
+$keyword = trim($_GET["keyword"] ?? "");
 
 // 檢查 Store ID
 if ($store_id === null || $store_id === "") {
@@ -117,6 +165,21 @@ $where = [
 
 $params = [$store_id];
 
+// 關鍵字搜尋
+if ($keyword !== "") {
+    $where[] = "
+        (
+            p.product_name LIKE ?
+            OR p.description LIKE ?
+        )
+    ";
+
+    $search_keyword = "%" . $keyword . "%";
+
+    $params[] = $search_keyword;
+    $params[] = $search_keyword;
+}
+
 if ($category_id !== null && $category_id !== "") {
     $where[] = "p.category_id = ?";
     $params[] = $category_id;
@@ -223,6 +286,7 @@ unset($product);
 echo json_encode([
     "store_id" => $store_id,
     "store_name" => $store["store_name"],
+    "keyword" => $keyword,
     "category_id" => $category_id,
     "sort" => $sort,
     "products" => $products

@@ -424,8 +424,6 @@ CREATE TABLE HOMEPAGE_PRODUCT_SETTING (
 
     store_id INT UNIQUE NOT NULL,
 
-    sort_type VARCHAR(50),
-
     display_limit INT DEFAULT 6,
 
 

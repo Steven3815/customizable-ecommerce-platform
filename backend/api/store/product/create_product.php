@@ -42,6 +42,19 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
+$stmt->execute([$store_id]);
+
+$store = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store) {
+    echo json_encode([
+        "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $store_id
