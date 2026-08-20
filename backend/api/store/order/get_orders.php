@@ -69,6 +69,7 @@ if ($store["status"] !== "active") {
 $search = trim($_GET["search"] ?? "");
 $status = $_GET["status"] ?? "all";
 $refund_status = $_GET["refund_status"] ?? "all";
+$payment_confirm_status = $_GET["payment_confirm_status"] ?? "all";
 $sort = $_GET["sort"] ?? "newest";
 
 // 分頁
@@ -219,6 +220,34 @@ if ($refund_status === "none") {
     exit;
 }
 
+// 付款確認狀態篩選
+if ($payment_confirm_status === "waiting") {
+
+    $where .= "
+        AND p.payment_confirm_status = 'waiting'
+    ";
+
+} elseif ($payment_confirm_status === "confirmed") {
+
+    $where .= "
+        AND p.payment_confirm_status = 'confirmed'
+    ";
+
+} elseif ($payment_confirm_status === "rejected") {
+
+    $where .= "
+        AND p.payment_confirm_status = 'rejected'
+    ";
+
+} elseif ($payment_confirm_status !== "all") {
+
+    echo json_encode([
+        "error" => "Invalid payment confirmation status"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 排序
 switch ($sort) {
 
@@ -253,6 +282,9 @@ SELECT COUNT(*)
 FROM ORDERS o
 JOIN CUSTOMER c
     ON o.customer_id = c.customer_id
+JOIN PAYMENT p
+    ON o.order_id = p.order_id
+    AND o.store_id = p.store_id
 $where
 ";
 
@@ -280,10 +312,14 @@ SELECT
     c.name AS customer_name,
     c.phone,
     o.total_amount,
-    o.delivery_status
+    o.delivery_status,
+    p.payment_confirm_status
 FROM ORDERS o
 JOIN CUSTOMER c
     ON o.customer_id = c.customer_id
+JOIN PAYMENT p
+    ON o.order_id = p.order_id
+    AND o.store_id = p.store_id
 $where
 ORDER BY $orderBy
 LIMIT ? OFFSET ?
@@ -420,6 +456,9 @@ foreach ($orders as $order) {
 
         "delivery_status" =>
             $order["delivery_status"],
+
+        "payment_confirm_status" =>
+            $order["payment_confirm_status"],
 
         "refund_status" =>
             $current_refund_status

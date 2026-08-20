@@ -15,6 +15,13 @@ function uploadImage(
         throw new Exception("Image upload failed");
     }
 
+    // 檢查圖片容量
+    $max_file_size = 5 * 1024 * 1024; // 5 MB
+
+    if ($file["size"] > $max_file_size) {
+        throw new Exception("Image file size must not exceed 5 MB");
+    }
+    
     // 檢查 MIME Type
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
 

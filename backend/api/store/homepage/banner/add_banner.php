@@ -198,7 +198,9 @@ try {
 
         $uploaded_image_url = uploadImage(
             $_FILES["image"],
-            "banners"
+            "banners",
+            1920,
+            600
         );
 
         $image_url =

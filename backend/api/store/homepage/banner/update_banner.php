@@ -235,6 +235,8 @@ try {
             uploadImage(
                 $_FILES["image"],
                 "banners",
+                1920,
+                600
             );
 
         $new_image_url =

@@ -107,7 +107,10 @@ if (
 $order_id = (int)$order_id;
 
 // 檢查配送狀態
-if ($delivery_status !== "shipping") {
+if (
+    $delivery_status !== "shipping" &&
+    $delivery_status !== "completed"
+) {
     echo json_encode([
         "error" => "Invalid delivery status"
     ], JSON_UNESCAPED_UNICODE);
@@ -144,10 +147,18 @@ if (!$order) {
     exit;
 }
 
-// 檢查目前配送狀態
-if ($order["delivery_status"] !== "pending") {
+// 檢查配送狀態流程
+if (
+    ($order["delivery_status"] === "pending" &&
+     $delivery_status !== "shipping") ||
+
+    ($order["delivery_status"] === "shipping" &&
+     $delivery_status !== "completed") ||
+
+    $order["delivery_status"] === "completed"
+) {
     echo json_encode([
-        "error" => "Order cannot be updated"
+        "error" => "Invalid delivery status transition"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -161,7 +172,7 @@ SET
     updated_at = NOW()
 WHERE order_id = ?
 AND store_id = ?
-AND delivery_status = 'pending'
+AND delivery_status = ?
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -169,7 +180,9 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute([
     $delivery_status,
     $order_id,
-    $store_id
+    $store_id,
+    $order["delivery_status"]
+
 ]);
 
 // 確認是否真的更新成功

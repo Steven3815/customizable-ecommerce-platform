@@ -154,7 +154,9 @@ try {
     // 上傳圖片
     $image_url = uploadImage(
         $_FILES["image"],
-        "sliders"
+        "sliders",
+        1920,
+        600
     );
 
     // 新增 Slider Image

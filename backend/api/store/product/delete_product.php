@@ -90,6 +90,7 @@ if ($product_id <= 0) {
 $sql = "
 SELECT
     product_id,
+    category_id,
     product_name,
     status
 FROM PRODUCT
@@ -219,7 +220,78 @@ try {
     if ($stmt->rowCount() !== 1) {
         throw new Exception("Failed to delete product");
     }
+    
+    // 取得該 Category 剩餘的 active 商品依照原本排序重新排列
+    $category_id = (int)$product["category_id"];
 
+    $sql = "
+    SELECT
+        product_id
+    FROM PRODUCT
+    WHERE store_id = ?
+    AND category_id = ?
+    AND status = 'active'
+    ORDER BY
+        sort_order ASC,
+        product_id ASC
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $store_id,
+        $category_id
+    ]);
+
+    $remaining_products =
+        $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $temporary_offset = 1000000;
+
+    $sql = "
+    UPDATE PRODUCT
+    SET
+        sort_order = sort_order + ?
+    WHERE store_id = ?
+    AND category_id = ?
+    AND status = 'active'
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $temporary_offset,
+        $store_id,
+        $category_id
+    ]);
+
+    $sql = "
+    UPDATE PRODUCT
+    SET
+        sort_order = ?,
+        updated_at = NOW()
+    WHERE product_id = ?
+    AND store_id = ?
+    AND category_id = ?
+    AND status = 'active'
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    foreach (
+        $remaining_products
+        as $index => $remaining_product_id
+    ) {
+
+        $sort_order = $index + 1;
+
+        $stmt->execute([
+            $sort_order,
+            (int)$remaining_product_id,
+            $store_id,
+            $category_id
+        ]);
+    }
     // 5. 完成交易
     $pdo->commit();
 

@@ -69,10 +69,45 @@ $limit = 20;
 
 $offset = ($page - 1) * $limit;
 
-// ==================================================
-// 取得退款總筆數
-// ==================================================
+// 取得排序條件
+$sort = $_GET["sort"] ?? "newest";
 
+$allowed_sort = [
+    "newest",
+    "oldest",
+    "price_high",
+    "price_low"
+];
+
+if (!in_array($sort, $allowed_sort, true)) {
+    echo json_encode([
+        "error" => "Invalid sort"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 排序
+switch ($sort) {
+
+    case "newest":
+        $orderBy = "r.requested_at DESC";
+        break;
+
+    case "oldest":
+        $orderBy = "r.requested_at ASC";
+        break;
+
+    case "price_high":
+        $orderBy = "o.total_amount DESC";
+        break;
+
+    case "price_low":
+        $orderBy = "o.total_amount ASC";
+        break;
+}
+
+// 取得退款總筆數
 $countSql = "
 SELECT
     COUNT(*)
@@ -97,10 +132,7 @@ $total_pages = $total > 0
     ? (int)ceil($total / $limit)
     : 0;
 
-// ==================================================
 // 取得退款資料
-// ==================================================
-
 $sql = "
 SELECT
     r.refund_id,
@@ -131,7 +163,7 @@ LEFT JOIN PAYMENT p
 
 WHERE r.store_id = ?
 
-ORDER BY r.requested_at DESC
+ORDER BY $orderBy
 
 LIMIT ? OFFSET ?
 ";
@@ -160,10 +192,7 @@ $stmt->execute();
 
 $refunds = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ==================================================
 // 沒有退款資料
-// ==================================================
-
 if (!$refunds) {
 
     echo json_encode([
@@ -172,6 +201,7 @@ if (!$refunds) {
         "limit" => $limit,
         "total" => $total,
         "total_pages" => $total_pages,
+        "sort" => $sort,
         "message" => "No refunds found",
         "refunds" => []
     ], JSON_UNESCAPED_UNICODE);
@@ -179,20 +209,14 @@ if (!$refunds) {
     exit;
 }
 
-// ==================================================
 // 整理退款資料
-// ==================================================
-
 $result = [];
 
 foreach ($refunds as $refund) {
 
     $order_id = (int)$refund["order_id"];
 
-    // ==================================================
     // 取得該 Store 的訂單商品明細
-    // ==================================================
-
     $sql = "
     SELECT
         order_item_id,
@@ -220,10 +244,7 @@ foreach ($refunds as $refund) {
 
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ==================================================
     // 整理商品資料
-    // ==================================================
-
     foreach ($items as &$item) {
 
         $item["order_item_id"] =
@@ -251,10 +272,7 @@ foreach ($refunds as $refund) {
 
     unset($item);
 
-    // ==================================================
     // 整理退款資料
-    // ==================================================
-
     $refund["refund_id"] =
         (int)$refund["refund_id"];
 
@@ -270,10 +288,7 @@ foreach ($refunds as $refund) {
     $refund["total_amount"] =
         (float)$refund["total_amount"];
 
-    // ==================================================
     // 回傳格式
-    // ==================================================
-
     $result[] = [
 
         "refund_id" =>
@@ -323,10 +338,7 @@ foreach ($refunds as $refund) {
     ];
 }
 
-// ==================================================
 // 回傳
-// ==================================================
-
 echo json_encode([
 
     "message" =>
@@ -346,6 +358,9 @@ echo json_encode([
 
     "total_pages" =>
         $total_pages,
+
+    "sort" =>
+        $sort,
 
     "refunds" =>
         $result

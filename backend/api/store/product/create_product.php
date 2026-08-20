@@ -528,7 +528,9 @@ try {
         $image_url =
             uploadImage(
                 $file,
-                "products"
+                "products",
+                1000,
+                1000
             );
 
         // 記錄已上傳圖片

@@ -1,3 +1,4 @@
+```php
 <?php
 
 // Store 取得單筆訂單詳細資料
@@ -34,19 +35,33 @@ if ($store_id <= 0) {
 // 檢查 Store 是否存在
 $sql = "
 SELECT
-    store_id
+    store_id,
+    store_name,
+    status
 FROM STORE
 WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
     echo json_encode([
         "error" => "Store not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store 是否啟用
+if ($store["status"] !== "active") {
+    echo json_encode([
+        "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -81,43 +96,7 @@ if (
 
 $order_id = (int)$order_id;
 
-// 檢查 Store 是否存在
-$sql = "
-SELECT
-    store_id,
-    store_name,
-    status
-FROM STORE
-WHERE store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$store = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$store) {
-    echo json_encode([
-        "error" => "Store not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查 Store 是否啟用
-if ($store["status"] !== "active") {
-    echo json_encode([
-        "error" => "Store is inactive"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
 // 取得訂單
-// 直接使用 ORDERS.store_id 驗證
 $sql = "
 SELECT
     o.order_id,
@@ -269,7 +248,8 @@ foreach ($items as &$item) {
         (float)$item["price"];
 
     $item["subtotal"] =
-        $item["quantity"] * $item["price"];
+        $item["quantity"] *
+        $item["price"];
 }
 
 unset($item);
@@ -313,9 +293,15 @@ $order["shipping_fee"] =
 $order["total_amount"] =
     (float)$order["total_amount"];
 
+// 取得付款確認狀態
+$payment_confirm_status =
+    $payment["payment_confirm_status"] ?? null;
+
 // 回傳
 echo json_encode([
+
     "store" => [
+
         "store_id" =>
             (int)$store["store_id"],
 
@@ -324,6 +310,7 @@ echo json_encode([
     ],
 
     "order" => [
+
         "order_id" =>
             $order["order_id"],
 
@@ -340,6 +327,7 @@ echo json_encode([
             $order["updated_at"],
 
         "customer" => [
+
             "customer_id" =>
                 $order["customer_id"],
 
@@ -351,6 +339,7 @@ echo json_encode([
         ],
 
         "receiver" => [
+
             "name" =>
                 $order["receiver_name"],
 
@@ -362,6 +351,7 @@ echo json_encode([
         ],
 
         "amount" => [
+
             "product_amount" =>
                 $order["product_amount"],
 
@@ -375,7 +365,11 @@ echo json_encode([
         "payment" =>
             $payment ?: null,
 
+        "payment_confirm_status" =>
+            $payment_confirm_status,
+
         "delivery" => [
+
             "delivery_method" =>
                 $order["delivery_method"],
 
@@ -395,6 +389,7 @@ echo json_encode([
         "items" =>
             $items
     ]
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>
