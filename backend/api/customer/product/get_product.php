@@ -41,7 +41,10 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
+
+$stmt->execute([
+    $customer_id
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -53,50 +56,70 @@ if (!$customer) {
     exit;
 }
 
-$product_id = $_GET["id"] ?? null;
-$store_id = $_GET["store_id"] ?? null;
+// 取得 Product ID
+$product_id =
+    $_GET["id"] ?? null;
+
+// 取得 Store ID
+$store_id =
+    $_GET["store_id"] ?? null;
+
 
 // 檢查 Product ID
-if ($product_id === null || $product_id === "") {
+if (
+    $product_id === null ||
+    $product_id === ""
+) {
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 if (
     !is_numeric($product_id) ||
-    floor((float)$product_id) != (float)$product_id ||
+    floor((float)$product_id)
+        != (float)$product_id ||
     (int)$product_id <= 0
 ) {
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 $product_id = (int)$product_id;
 
+
 // 檢查 Store ID
-if ($store_id === null || $store_id === "") {
+if (
+    $store_id === null ||
+    $store_id === ""
+) {
     echo json_encode([
         "error" => "Store ID is required"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 if (
     !is_numeric($store_id) ||
-    floor((float)$store_id) != (float)$store_id ||
+    floor((float)$store_id)
+        != (float)$store_id ||
     (int)$store_id <= 0
 ) {
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
 $store_id = (int)$store_id;
+
 
 // 檢查 Store
 $sql = "
@@ -109,7 +132,10 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -117,17 +143,29 @@ if (!$store) {
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
+// Store 必須是 active
 if ($store["status"] !== "active") {
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
+
 // 取得商品基本資料
+//
+// 商品必須：
+// 1. 屬於目前 Store
+// 2. status = active
+// 3. Category 必須存在
+// 4. Category 必須屬於目前 Store
+// 5. Category 必須 active
+
 $sql = "
 SELECT
     p.product_id,
@@ -138,12 +176,17 @@ SELECT
     p.stock,
     p.has_spec,
     p.status,
+
     c.category_id,
     c.category_name
+
 FROM PRODUCT p
-LEFT JOIN CATEGORY c
+
+INNER JOIN CATEGORY c
     ON p.category_id = c.category_id
     AND c.store_id = p.store_id
+    AND c.status = 'active'
+
 WHERE p.product_id = ?
 AND p.store_id = ?
 AND p.status = 'active'
@@ -156,30 +199,56 @@ $stmt->execute([
     $store_id
 ]);
 
-$product = $stmt->fetch(PDO::FETCH_ASSOC);
+$product =
+    $stmt->fetch(PDO::FETCH_ASSOC);
 
+
+// 商品不存在
+// 或商品 inactive
+// 或 Category inactive
 if (!$product) {
     echo json_encode([
         "error" => "Product not found"
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
+
 // 整理商品資料
-$product["product_id"] = (int)$product["product_id"];
-$product["store_id"] = (int)$product["store_id"];
+
+$product["product_id"] =
+    (int)$product["product_id"];
+
+$product["store_id"] =
+    (int)$product["store_id"];
 
 $product["category_id"] =
     $product["category_id"] !== null
         ? (int)$product["category_id"]
         : null;
 
-$product["has_spec"] = (bool)$product["has_spec"];
+$product["has_spec"] =
+    (bool)$product["has_spec"];
+
+
+// 商品價格與庫存
+//
+// 無規格：
+// PRODUCT.price
+// PRODUCT.stock
+//
+// 有規格：
+// 實際價格與庫存由 PRODUCT_SPEC 管理
 
 if ($product["has_spec"]) {
+
     $product["price"] = null;
+
     $product["stock"] = null;
+
 } else {
+
     $product["price"] =
         $product["price"] !== null
             ? (float)$product["price"]
@@ -191,7 +260,9 @@ if ($product["has_spec"]) {
             : null;
 }
 
+
 // 取得商品圖片
+
 $sql = "
 SELECT
     image_id,
@@ -200,7 +271,9 @@ SELECT
 FROM PRODUCT_IMAGE
 WHERE product_id = ?
 AND store_id = ?
-ORDER BY sort_order ASC, image_id ASC
+ORDER BY
+    sort_order ASC,
+    image_id ASC
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -210,19 +283,31 @@ $stmt->execute([
     $store_id
 ]);
 
-$images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$images =
+    $stmt->fetchAll(
+        PDO::FETCH_ASSOC
+    );
 
-foreach ($images as &$image) {
-    $image["image_id"] = (int)$image["image_id"];
-    $image["sort_order"] = (int)$image["sort_order"];
+foreach (
+    $images as &$image
+) {
+
+    $image["image_id"] =
+        (int)$image["image_id"];
+
+    $image["sort_order"] =
+        (int)$image["sort_order"];
 }
 
 unset($image);
 
+
 // 取得商品規格
+
 $specs = [];
 
 if ($product["has_spec"]) {
+
     $sql = "
     SELECT
         spec_id,
@@ -233,7 +318,8 @@ if ($product["has_spec"]) {
     WHERE product_id = ?
     AND store_id = ?
     AND status = 'active'
-    ORDER BY spec_id ASC
+    ORDER BY
+        spec_id ASC
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -243,36 +329,83 @@ if ($product["has_spec"]) {
         $store_id
     ]);
 
-    $specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $specs =
+        $stmt->fetchAll(
+            PDO::FETCH_ASSOC
+        );
 
-    foreach ($specs as &$spec) {
-        $spec["spec_id"] = (int)$spec["spec_id"];
-        $spec["price"] = (float)$spec["price"];
-        $spec["stock"] = (int)$spec["stock"];
+    foreach (
+        $specs as &$spec
+    ) {
+
+        $spec["spec_id"] =
+            (int)$spec["spec_id"];
+
+        $spec["price"] =
+            $spec["price"] !== null
+                ? (float)$spec["price"]
+                : null;
+
+        $spec["stock"] =
+            (int)$spec["stock"];
     }
 
     unset($spec);
 }
 
+
 // 回傳商品資料
+
 echo json_encode([
-    "store_id" => $store_id,
-    "store_name" => $store["store_name"],
+
+    "message" =>
+        "Product retrieved successfully",
+
+    "store_id" =>
+        $store_id,
+
+    "store_name" =>
+        $store["store_name"],
+
     "product" => [
-        "product_id" => $product["product_id"],
-        "store_id" => $product["store_id"],
-        "product_name" => $product["product_name"],
-        "description" => $product["description"],
-        "price" => $product["price"],
-        "stock" => $product["stock"],
-        "has_spec" => $product["has_spec"],
+
+        "product_id" =>
+            $product["product_id"],
+
+        "store_id" =>
+            $product["store_id"],
+
+        "product_name" =>
+            $product["product_name"],
+
+        "description" =>
+            $product["description"],
+
+        "price" =>
+            $product["price"],
+
+        "stock" =>
+            $product["stock"],
+
+        "has_spec" =>
+            $product["has_spec"],
+
         "category" => [
-            "category_id" => $product["category_id"],
-            "category_name" => $product["category_name"]
+
+            "category_id" =>
+                $product["category_id"],
+
+            "category_name" =>
+                $product["category_name"]
         ],
-        "images" => $images,
-        "specs" => $specs
+
+        "images" =>
+            $images,
+
+        "specs" =>
+            $specs
     ]
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

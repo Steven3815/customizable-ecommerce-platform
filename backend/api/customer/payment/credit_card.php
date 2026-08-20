@@ -41,7 +41,10 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
+
+$stmt->execute([
+    $customer_id
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -85,9 +88,9 @@ if (
     exit;
 }
 
-$order_id = (int)$data["order_id"];
-$store_id = (int)$data["store_id"];
-$transaction_amount = (float)$data["transaction_amount"];
+$order_id = $data["order_id"];
+$store_id = $data["store_id"];
+$transaction_amount = $data["transaction_amount"];
 
 $card_number = trim($data["card_number"]);
 $expiry_date = trim($data["expiry_date"]);
@@ -95,7 +98,11 @@ $cvv = trim($data["cvv"]);
 $phone = trim($data["phone"]);
 
 // 檢查 Order ID
-if ($order_id <= 0) {
+if (
+    !is_numeric($order_id) ||
+    floor((float)$order_id) != (float)$order_id ||
+    (int)$order_id <= 0
+) {
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -103,8 +110,14 @@ if ($order_id <= 0) {
     exit;
 }
 
+$order_id = (int)$order_id;
+
 // 檢查 Store ID
-if ($store_id <= 0) {
+if (
+    !is_numeric($store_id) ||
+    floor((float)$store_id) != (float)$store_id ||
+    (int)$store_id <= 0
+) {
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -112,14 +125,21 @@ if ($store_id <= 0) {
     exit;
 }
 
+$store_id = (int)$store_id;
+
 // 檢查交易金額
-if ($transaction_amount <= 0) {
+if (
+    !is_numeric($transaction_amount) ||
+    (float)$transaction_amount <= 0
+) {
     echo json_encode([
         "error" => "Invalid transaction amount"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
+
+$transaction_amount = (float)$transaction_amount;
 
 // 檢查卡號
 $card_number = preg_replace(
@@ -176,6 +196,7 @@ SELECT
     o.customer_id,
     o.store_id,
     o.total_amount,
+    o.delivery_status,
 
     p.payment_id,
     p.payment_method,
@@ -212,16 +233,19 @@ if (!$order) {
     exit;
 }
 
-// 檢查 Store 狀態
+// 檢查 Store 與 Store Setting
 $sql = "
 SELECT
     s.store_id,
     s.status AS store_status,
     ss.store_status AS business_status,
     ss.store_mode
+
 FROM STORE s
+
 INNER JOIN STORE_SETTING ss
     ON s.store_id = ss.store_id
+
 WHERE s.store_id = ?
 ";
 
@@ -269,7 +293,7 @@ if ($store["store_mode"] !== "shopping") {
     exit;
 }
 
-// 檢查 Payment
+// 檢查 Payment 是否已建立
 if (!$order["payment_id"]) {
     echo json_encode([
         "error" => "Payment has not been created"
@@ -288,7 +312,10 @@ if ($order["payment_method"] !== "credit_card") {
 }
 
 // 檢查付款狀態
-if ($order["payment_status"] === "paid") {
+if (
+    $order["payment_status"] === "paid" &&
+    $order["payment_confirm_status"] === "confirmed"
+) {
     echo json_encode([
         "error" => "Order has already been paid"
     ], JSON_UNESCAPED_UNICODE);
@@ -296,7 +323,11 @@ if ($order["payment_status"] === "paid") {
     exit;
 }
 
-if ($order["payment_status"] !== "pending") {
+// 信用卡付款必須是 pending / waiting
+if (
+    $order["payment_status"] !== "pending" ||
+    $order["payment_confirm_status"] !== "waiting"
+) {
     echo json_encode([
         "error" => "Payment is not available for credit card payment"
     ], JSON_UNESCAPED_UNICODE);
@@ -320,10 +351,12 @@ if (
 // 模擬信用卡付款
 $payment_success = true;
 
+// 付款失敗
 if (!$payment_success) {
 
     $sql = "
     UPDATE PAYMENT
+
     SET
         payment_status = 'failed',
         payment_confirm_status = 'rejected',
@@ -332,7 +365,9 @@ if (!$payment_success) {
     WHERE payment_id = ?
     AND order_id = ?
     AND store_id = ?
+    AND payment_method = 'credit_card'
     AND payment_status = 'pending'
+    AND payment_confirm_status = 'waiting'
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -357,6 +392,7 @@ try {
 
     $sql = "
     UPDATE PAYMENT
+
     SET
         payment_status = 'paid',
         payment_confirm_status = 'confirmed',
@@ -367,8 +403,9 @@ try {
     WHERE payment_id = ?
     AND order_id = ?
     AND store_id = ?
-    AND payment_status = 'pending'
     AND payment_method = 'credit_card'
+    AND payment_status = 'pending'
+    AND payment_confirm_status = 'waiting'
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -434,21 +471,48 @@ echo json_encode([
     "message" => "Payment successful",
 
     "payment" => [
-        "payment_id" => (int)$order["payment_id"],
-        "order_id" => $order_id,
-        "store_id" => $store_id,
-        "payment_method" => "credit_card",
-        "transaction_amount" => $transaction_amount,
-        "payment_status" => "paid",
-        "payment_confirm_status" => "confirmed",
-        "paid_at" => $paid_info["paid_at"],
-        "confirmed_at" => $paid_info["confirmed_at"]
+
+        "payment_id" =>
+            (int)$order["payment_id"],
+
+        "order_id" =>
+            $order_id,
+
+        "store_id" =>
+            $store_id,
+
+        "payment_method" =>
+            "credit_card",
+
+        "transaction_amount" =>
+            $transaction_amount,
+
+        "payment_status" =>
+            "paid",
+
+        "payment_confirm_status" =>
+            "confirmed",
+
+        "paid_at" =>
+            $paid_info["paid_at"],
+
+        "confirmed_at" =>
+            $paid_info["confirmed_at"]
     ],
 
     "order" => [
-        "order_id" => $order_id,
-        "store_id" => $store_id,
-        "total_amount" => $order_total
+
+        "order_id" =>
+            $order_id,
+
+        "customer_id" =>
+            (int)$order["customer_id"],
+
+        "store_id" =>
+            $store_id,
+
+        "total_amount" =>
+            $order_total
     ]
 
 ], JSON_UNESCAPED_UNICODE);

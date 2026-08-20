@@ -42,19 +42,6 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
-
-$store = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$store) {
-    echo json_encode([
-        "error" => "Store not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $store_id
@@ -70,7 +57,7 @@ if (!$store) {
     exit;
 }
 
-// 取得基本資料
+// 取得商品基本資料
 $category_id =
     $_POST["category_id"] ?? null;
 
@@ -87,16 +74,14 @@ $stock =
     $_POST["stock"] ?? null;
 
 // 是否開啟規格
-// 預設關閉
 $has_spec = isset($_POST["has_spec"])
     ? (int)$_POST["has_spec"]
     : 0;
 
-// 商品建立時固定 active
+// 商品建立時固定為 active
 $status = "active";
 
-// 規格名稱
-// 例如：尺寸、顏色
+// 規格類型名稱
 $spec_name =
     trim($_POST["spec_name"] ?? "");
 
@@ -136,6 +121,15 @@ if (mb_strlen($product_name) > 200) {
     exit;
 }
 
+// 檢查商品描述
+if (mb_strlen($description) > 5000) {
+    echo json_encode([
+        "error" => "Description is too long"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 檢查 has_spec
 if (
     $has_spec !== 0 &&
@@ -149,8 +143,6 @@ if (
 }
 
 // 檢查商品價格
-// 不論有沒有規格
-// PRODUCT.price 都是商品價格
 if (
     $price === null ||
     $price === "" ||
@@ -169,7 +161,7 @@ $price = (float)$price;
 // 無規格商品
 if ($has_spec === 0) {
 
-    // 無規格時 PRODUCT.stock 必須填寫
+    // 無規格時必須填寫商品庫存
     if (
         $stock === null ||
         $stock === "" ||
@@ -186,15 +178,12 @@ if ($has_spec === 0) {
 
     $stock = (int)$stock;
 
-    // 沒有規格
-    // PRODUCT.spec_name 為 NULL
+    // 無規格商品不需要規格名稱
     $spec_name = null;
 
 } else {
 
-    // 有規格商品
-
-    // 規格類型名稱必填
+    // 有規格商品時必須填寫規格類型名稱
     if ($spec_name === "") {
         echo json_encode([
             "error" => "Specification name is required"
@@ -238,11 +227,12 @@ if (!$category) {
     exit;
 }
 
-// 取得商品規格
+// 商品規格
 $specs = [];
 
 if ($has_spec === 1) {
 
+    // 有規格時必須傳入 specs
     if (
         !isset($_POST["specs"]) ||
         !is_array($_POST["specs"])
@@ -274,7 +264,9 @@ if ($has_spec === 1) {
         exit;
     }
 
-    foreach ($specs as $index => $spec) {
+    $validated_specs = [];
+
+    foreach ($specs as $spec) {
 
         if (!is_array($spec)) {
             echo json_encode([
@@ -284,12 +276,9 @@ if ($has_spec === 1) {
             exit;
         }
 
-        // 實際規格值
-        // 例如 S、M、L
         $spec_value =
             trim($spec["spec_name"] ?? "");
 
-        // 規格庫存
         $spec_stock =
             $spec["stock"] ?? null;
 
@@ -327,9 +316,7 @@ if ($has_spec === 1) {
 
         $spec_stock = (int)$spec_stock;
 
-        // 建立規格資料
-        // PRODUCT_SPEC.price 自動使用 PRODUCT.price
-        $specs[$index] = [
+        $validated_specs[] = [
             "spec_name" => $spec_value,
             "price" => $price,
             "stock" => $spec_stock,
@@ -337,13 +324,38 @@ if ($has_spec === 1) {
         ];
     }
 
+    // 防止相同規格值重複
+    $spec_names = [];
+
+    foreach ($validated_specs as $spec) {
+
+        if (
+            in_array(
+                $spec["spec_name"],
+                $spec_names,
+                true
+            )
+        ) {
+            echo json_encode([
+                "error" => "Duplicate specification value"
+            ], JSON_UNESCAPED_UNICODE);
+
+            exit;
+        }
+
+        $spec_names[] =
+            $spec["spec_name"];
+    }
+
+    $specs = $validated_specs;
+
     // 有規格時
-    // 實際庫存由 PRODUCT_SPEC 管理
+    // PRODUCT.stock 不直接代表實際庫存
     $stock = 0;
 
 } else {
 
-    // 無規格時不建立 PRODUCT_SPEC
+    // 無規格商品不建立 PRODUCT_SPEC
     $specs = [];
 }
 
@@ -384,9 +396,11 @@ if ($valid_image_count < 1) {
 }
 
 // 開始交易
-$pdo->beginTransaction();
+$uploaded_images = [];
 
 try {
+
+    $pdo->beginTransaction();
 
     // 建立商品
     $sql = "
@@ -465,16 +479,14 @@ try {
                 $product_id,
                 $store_id,
                 $spec["spec_name"],
-                $price,
+                $spec["price"],
                 $spec["stock"],
-                "active"
+                $spec["status"]
             ]);
         }
     }
 
     // 建立商品圖片
-    $uploaded_images = [];
-
     $sort_order = 1;
 
     for ($i = 0; $i < $file_count; $i++) {
@@ -484,6 +496,16 @@ try {
             === UPLOAD_ERR_NO_FILE
         ) {
             continue;
+        }
+
+        // 檢查圖片上傳錯誤
+        if (
+            $_FILES["images"]["error"][$i]
+            !== UPLOAD_ERR_OK
+        ) {
+            throw new Exception(
+                "Image upload failed"
+            );
         }
 
         $file = [
@@ -509,6 +531,14 @@ try {
                 "products"
             );
 
+        // 記錄已上傳圖片
+        // 如果後面失敗，可以刪除
+        $uploaded_images[] = [
+            "image_url" => $image_url,
+            "sort_order" => $sort_order
+        ];
+
+        // 建立商品圖片資料
         $sql = "
         INSERT INTO PRODUCT_IMAGE
         (
@@ -538,11 +568,9 @@ try {
         $image_id =
             (int)$pdo->lastInsertId();
 
-        $uploaded_images[] = [
-            "image_id" => $image_id,
-            "image_url" => $image_url,
-            "sort_order" => $sort_order
-        ];
+        $uploaded_images[
+            count($uploaded_images) - 1
+        ]["image_id"] = $image_id;
 
         $sort_order++;
     }
@@ -550,7 +578,6 @@ try {
     // 完成交易
     $pdo->commit();
 
-    // 回傳
     echo json_encode([
         "message" =>
             "Product created successfully",
@@ -604,9 +631,29 @@ try {
         $pdo->rollBack();
     }
 
+    // 刪除已經成功上傳的圖片
+    foreach ($uploaded_images as $image) {
+
+        if (
+            isset($image["image_url"]) &&
+            $image["image_url"] !== null
+        ) {
+            try {
+                deleteImage(
+                    $image["image_url"]
+                );
+            } catch (Exception $deleteException) {
+                // 忽略圖片刪除錯誤
+            }
+        }
+    }
+
     echo json_encode([
-        "error" => $e->getMessage()
+        "error" =>
+            $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
+
+    exit;
 }
 
 ?>

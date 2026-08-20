@@ -53,6 +53,7 @@ if (!$customer) {
     exit;
 }
 
+// 取得 JSON 資料
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -77,6 +78,7 @@ if (!isset($data["order_id"])) {
 
 $order_id = $data["order_id"];
 
+// 檢查 Order ID
 if (
     !is_numeric($order_id) ||
     floor((float)$order_id) != (float)$order_id ||
@@ -126,8 +128,10 @@ SELECT
     ss.store_status AS business_status,
     ss.store_mode
 FROM STORE s
+
 INNER JOIN STORE_SETTING ss
     ON s.store_id = ss.store_id
+
 WHERE s.store_id = ?
 ";
 
@@ -187,7 +191,8 @@ if ($order["delivery_status"] !== "pending") {
 if (
     !isset($data["receiver_name"]) ||
     !isset($data["receiver_phone"]) ||
-    !isset($data["receiver_address"])
+    !isset($data["receiver_address"]) ||
+    !isset($data["delivery_method"])
 ) {
     echo json_encode([
         "error" => "Missing order information"
@@ -196,9 +201,17 @@ if (
     exit;
 }
 
-$receiver_name = trim($data["receiver_name"]);
-$receiver_phone = trim($data["receiver_phone"]);
-$receiver_address = trim($data["receiver_address"]);
+$receiver_name =
+    trim($data["receiver_name"]);
+
+$receiver_phone =
+    trim($data["receiver_phone"]);
+
+$receiver_address =
+    trim($data["receiver_address"]);
+
+$delivery_method =
+    trim($data["delivery_method"]);
 
 // 檢查收件資料
 if (
@@ -213,14 +226,58 @@ if (
     exit;
 }
 
+// 檢查配送方式
+if ($delivery_method === "") {
+    echo json_encode([
+        "error" => "Delivery method is required"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 驗證商店是否啟用此配送方式
+$sql = "
+SELECT
+    store_delivery_id,
+    delivery_method,
+    status
+FROM STORE_DELIVERY_METHOD
+
+WHERE store_id = ?
+AND delivery_method = ?
+AND status = 'active'
+
+LIMIT 1
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $order["store_id"],
+    $delivery_method
+]);
+
+$delivery = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$delivery) {
+    echo json_encode([
+        "error" => "Selected delivery method is not available"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 更新訂單
 $sql = "
 UPDATE ORDERS
+
 SET
     receiver_name = ?,
     receiver_phone = ?,
     receiver_address = ?,
+    delivery_method = ?,
     updated_at = NOW()
+
 WHERE order_id = ?
 AND customer_id = ?
 AND store_id = ?
@@ -233,6 +290,8 @@ $stmt->execute([
     $receiver_name,
     $receiver_phone,
     $receiver_address,
+    $delivery_method,
+
     $order_id,
     $customer_id,
     $order["store_id"]
@@ -240,8 +299,19 @@ $stmt->execute([
 
 echo json_encode([
     "message" => "Order updated successfully",
+
     "order_id" => $order_id,
-    "store_id" => (int)$order["store_id"]
+
+    "store_id" => (int)$order["store_id"],
+
+    "receiver_name" => $receiver_name,
+
+    "receiver_phone" => $receiver_phone,
+
+    "receiver_address" => $receiver_address,
+
+    "delivery_method" => $delivery_method
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

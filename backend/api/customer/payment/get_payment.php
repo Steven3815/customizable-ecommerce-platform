@@ -35,13 +35,18 @@ if ($customer_id <= 0) {
 // 檢查 Customer 是否存在
 $sql = "
 SELECT
-    customer_id
+    customer_id,
+    email,
+    preferred_payment
 FROM CUSTOMER
 WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
+
+$stmt->execute([
+    $customer_id
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -70,7 +75,6 @@ $order_id = (int)$_GET["order_id"];
 $store_id = (int)$_GET["store_id"];
 
 // 檢查 Order ID
-
 if ($order_id <= 0) {
     echo json_encode([
         "error" => "Invalid order ID"
@@ -80,7 +84,6 @@ if ($order_id <= 0) {
 }
 
 // 檢查 Store ID
-
 if ($store_id <= 0) {
     echo json_encode([
         "error" => "Invalid store ID"
@@ -96,16 +99,17 @@ SELECT
     o.order_id,
     o.customer_id,
     o.store_id,
+
     o.product_amount,
     o.shipping_fee,
     o.total_amount,
+
     o.receiver_name,
     o.receiver_phone,
     o.receiver_address,
+
     o.delivery_method,
     o.delivery_status,
-
-    c.email AS customer_email,
 
     s.store_name,
     s.status AS store_status,
@@ -114,9 +118,6 @@ SELECT
     ss.store_mode
 
 FROM ORDERS o
-
-JOIN CUSTOMER c
-    ON o.customer_id = c.customer_id
 
 JOIN STORE s
     ON o.store_id = s.store_id
@@ -235,12 +236,17 @@ if ($payment) {
         "payment_id" => (int)$payment["payment_id"],
         "order_id" => (int)$payment["order_id"],
         "store_id" => (int)$payment["store_id"],
+
         "payment_method" => $payment["payment_method"],
+
         "amount" => (float)$payment["amount"],
+
         "payment_status" => $payment["payment_status"],
         "payment_confirm_status" => $payment["payment_confirm_status"],
+
         "paid_at" => $payment["paid_at"],
         "confirmed_at" => $payment["confirmed_at"],
+
         "created_at" => $payment["created_at"],
         "updated_at" => $payment["updated_at"]
     ];
@@ -292,6 +298,11 @@ $stmt->execute([
 
 $delivery_methods = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Customer 預設付款方式
+
+$preferred_payment =
+    $customer["preferred_payment"];
+
 // 付款方式名稱
 
 $payment_method_names = [
@@ -316,13 +327,45 @@ $available_payment_methods = [];
 
 foreach ($payment_methods as $method) {
 
-    $payment_method = $method["payment_method"];
+    $payment_method =
+        $method["payment_method"];
+
+    // 如果尚未建立 Payment
+    // 且 Customer 的 preferred_payment
+    // 與目前 active 的付款方式相同
+    // 就預設 selected = true
+
+    $selected = (
+        !$payment &&
+        $preferred_payment !== null &&
+        $preferred_payment !== "" &&
+        $preferred_payment === $payment_method
+    );
+
+    // 如果已經有 Payment
+    // 則以實際 Payment 的付款方式為準
+
+    if (
+        $payment &&
+        $payment["payment_method"] === $payment_method
+    ) {
+        $selected = true;
+    }
 
     $available_payment_methods[] = [
-        "store_payment_id" => (int)$method["store_payment_id"],
-        "payment_method" => $payment_method,
-        "name" => $payment_method_names[$payment_method]
-            ?? $payment_method
+
+        "store_payment_id" =>
+            (int)$method["store_payment_id"],
+
+        "payment_method" =>
+            $payment_method,
+
+        "name" =>
+            $payment_method_names[$payment_method]
+            ?? $payment_method,
+
+        "selected" =>
+            $selected
     ];
 }
 
@@ -332,13 +375,32 @@ $available_delivery_methods = [];
 
 foreach ($delivery_methods as $method) {
 
-    $delivery_method = $method["delivery_method"];
+    $delivery_method =
+        $method["delivery_method"];
+
+    // 配送方式以目前訂單的
+    // ORDERS.delivery_method 為準
+
+    $selected = (
+        $order["delivery_method"] !== null &&
+        $order["delivery_method"] !== "" &&
+        $order["delivery_method"] === $delivery_method
+    );
 
     $available_delivery_methods[] = [
-        "store_delivery_id" => (int)$method["store_delivery_id"],
-        "delivery_method" => $delivery_method,
-        "name" => $delivery_method_names[$delivery_method]
-            ?? $delivery_method
+
+        "store_delivery_id" =>
+            (int)$method["store_delivery_id"],
+
+        "delivery_method" =>
+            $delivery_method,
+
+        "name" =>
+            $delivery_method_names[$delivery_method]
+            ?? $delivery_method,
+
+        "selected" =>
+            $selected
     ];
 }
 
@@ -346,36 +408,71 @@ foreach ($delivery_methods as $method) {
 
 echo json_encode([
 
-    "message" => "Payment information retrieved successfully",
+    "message" =>
+        "Payment information retrieved successfully",
 
     "order" => [
-        "order_id" => (int)$order["order_id"],
-        "customer_id" => (int)$order["customer_id"],
-        "store_id" => $store_id,
 
-        "product_amount" => (float)$order["product_amount"],
-        "shipping_fee" => (float)$order["shipping_fee"],
-        "total_amount" => (float)$order["total_amount"],
+        "order_id" =>
+            (int)$order["order_id"],
 
-        "receiver_name" => $order["receiver_name"],
-        "receiver_email" => $order["customer_email"],
-        "receiver_phone" => $order["receiver_phone"],
-        "receiver_address" => $order["receiver_address"],
+        "customer_id" =>
+            (int)$order["customer_id"],
 
-        "delivery_method" => $order["delivery_method"],
-        "delivery_status" => $order["delivery_status"]
+        "store_id" =>
+            $store_id,
+
+        "product_amount" =>
+            (float)$order["product_amount"],
+
+        "shipping_fee" =>
+            (float)$order["shipping_fee"],
+
+        "total_amount" =>
+            (float)$order["total_amount"],
+
+        "receiver_name" =>
+            $order["receiver_name"],
+
+        "receiver_email" =>
+            $customer["email"],
+
+        "receiver_phone" =>
+            $order["receiver_phone"],
+
+        "receiver_address" =>
+            $order["receiver_address"],
+
+        "delivery_method" =>
+            $order["delivery_method"],
+
+        "delivery_status" =>
+            $order["delivery_status"]
     ],
 
-    "payment" => $payment_data,
+    "payment" =>
+        $payment_data,
+
+    "customer" => [
+
+        "preferred_payment" =>
+            $preferred_payment
+    ],
 
     "store" => [
-        "store_id" => $store_id,
-        "store_name" => $store_name
+
+        "store_id" =>
+            $store_id,
+
+        "store_name" =>
+            $store_name
     ],
 
-    "payment_methods" => $available_payment_methods,
+    "payment_methods" =>
+        $available_payment_methods,
 
-    "delivery_methods" => $available_delivery_methods
+    "delivery_methods" =>
+        $available_delivery_methods
 
 ], JSON_UNESCAPED_UNICODE);
 

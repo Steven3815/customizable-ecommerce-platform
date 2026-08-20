@@ -41,7 +41,10 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -54,7 +57,8 @@ if (!$store) {
 }
 
 try {
-    // 取得商店基本設定
+
+    // 取得商店設定
     $sql = "
     SELECT
         store_id,
@@ -66,20 +70,21 @@ try {
         delivery_days,
         stock_alert_enable,
         stock_alert_threshold,
+        spec_stock_alert_threshold,
         customer_service_enable
     FROM STORE_SETTING
     WHERE store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$store_id]);
 
-    $store_settings =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt->execute([
+        $store_id
+    ]);
 
+    $store_settings = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store_settings) {
-
         echo json_encode([
             "error" => "Store settings not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -87,50 +92,39 @@ try {
         exit;
     }
 
-    // 資料型態整理
+    // 資料型別整理
     $store_settings["store_id"] =
         (int)$store_settings["store_id"];
-
 
     $store_settings["refund_enable"] =
         (bool)$store_settings["refund_enable"];
 
-
     $store_settings["refund_days_limit"] =
         (int)$store_settings["refund_days_limit"];
-
 
     $store_settings["shipping_days"] =
         (int)$store_settings["shipping_days"];
 
-
     $store_settings["delivery_days"] =
         (int)$store_settings["delivery_days"];
-
 
     $store_settings["stock_alert_enable"] =
         (bool)$store_settings["stock_alert_enable"];
 
-
-    if (
-        $store_settings["stock_alert_threshold"] !== null
-    ) {
-
+    if ($store_settings["stock_alert_threshold"] !== null) {
         $store_settings["stock_alert_threshold"] =
             (int)$store_settings["stock_alert_threshold"];
     }
 
+    if ($store_settings["spec_stock_alert_threshold"] !== null) {
+        $store_settings["spec_stock_alert_threshold"] =
+            (int)$store_settings["spec_stock_alert_threshold"];
+    }
 
     $store_settings["customer_service_enable"] =
         (bool)$store_settings["customer_service_enable"];
 
     // 取得付款方式
-    // 1 = credit_card
-    // 2 = atm
-    // 3 = post_office
-    // 4 = cash_on_delivery
-    // 5 = in_store
-    // STORE_PAYMENT_METHOD PK = (store_id, store_payment_id)
     $sql = "
     SELECT
         spm.store_payment_id,
@@ -141,19 +135,25 @@ try {
         spa.bank_name,
         spa.bank_number,
         spa.post_office_number
+
     FROM STORE_PAYMENT_METHOD spm
+
     LEFT JOIN STORE_PAYMENT_ACCOUNT spa
         ON spm.store_id = spa.store_id
         AND spm.store_payment_id = spa.store_payment_id
+
     WHERE spm.store_id = ?
+
     ORDER BY spm.store_payment_id ASC
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$store_id]);
 
-    $payment_rows =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([
+        $store_id
+    ]);
+
+    $payment_rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $payment_methods = [];
 
@@ -162,21 +162,23 @@ try {
         $store_payment_id =
             (int)$payment["store_payment_id"];
 
+        $payment_method =
+            $payment["payment_method"];
+
         $item = [
 
             "store_payment_id" =>
                 $store_payment_id,
 
             "payment_method" =>
-                $payment["payment_method"],
+                $payment_method,
 
             "enabled" =>
                 $payment["status"] === "active"
-
         ];
 
         // ATM
-        if ($store_payment_id === 2) {
+        if ($payment_method === "atm") {
 
             $item["account"] = [
 
@@ -190,12 +192,11 @@ try {
 
                 "bank_number" =>
                     $payment["bank_number"]
-
             ];
         }
 
-        // 郵局
-        if ($store_payment_id === 3) {
+        // 郵局轉帳
+        if ($payment_method === "post_office") {
 
             $item["account"] = [
 
@@ -206,55 +207,51 @@ try {
 
                 "post_office_number" =>
                     $payment["post_office_number"]
-
             ];
         }
 
-        $payment_methods[] = $item;
+        $payment_methods[] =
+            $item;
     }
 
     // 取得配送方式
-    // 1 = home_delivery
-    // 2 = convenience_store
-    // 3 = store_pickup
-    // STORE_DELIVERY_METHOD PK = (store_id, store_delivery_id)
-
     $sql = "
     SELECT
-        sdm.store_delivery_id,
-        sdm.delivery_method,
-        sdm.status
+        store_delivery_id,
+        delivery_method,
+        status
 
-    FROM STORE_DELIVERY_METHOD sdm
-    WHERE sdm.store_id = ?
-    ORDER BY sdm.store_delivery_id ASC";
+    FROM STORE_DELIVERY_METHOD
+
+    WHERE store_id = ?
+
+    ORDER BY store_delivery_id ASC
+    ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$store_id]);
 
-    $delivery_rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([
+        $store_id
+    ]);
+
+    $delivery_rows =
+        $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $delivery_methods = [];
 
     foreach ($delivery_rows as $delivery) {
 
-        $store_delivery_id =
-            (int)$delivery["store_delivery_id"];
-
-        $item = [
+        $delivery_methods[] = [
 
             "store_delivery_id" =>
-                $store_delivery_id,
+                (int)$delivery["store_delivery_id"],
 
             "delivery_method" =>
                 $delivery["delivery_method"],
 
             "enabled" =>
                 $delivery["status"] === "active"
-
         ];
-
-        $delivery_methods[] = $item;
     }
 
     // 回傳
@@ -271,14 +268,10 @@ try {
 
     ], JSON_UNESCAPED_UNICODE);
 
-
 } catch (PDOException $e) {
-    
+
     echo json_encode([
-
-        "error" =>
-            "Failed to get store settings"
-
+        "error" => "Failed to get store settings"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

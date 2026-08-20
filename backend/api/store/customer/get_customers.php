@@ -39,7 +39,10 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -51,6 +54,7 @@ if (!$store) {
     exit;
 }
 
+// 分頁
 $page = isset($_GET["page"])
     ? (int)$_GET["page"]
     : 1;
@@ -63,10 +67,16 @@ if ($page < 1) {
     exit;
 }
 
+$limit = 30;
+
+$offset = ($page - 1) * $limit;
+
+// 搜尋
 $search = isset($_GET["search"])
     ? trim($_GET["search"])
     : "";
 
+// 排序
 $sort = $_GET["sort"] ?? "created_at_desc";
 
 $allowed_sort = [
@@ -86,12 +96,14 @@ if (!in_array($sort, $allowed_sort, true)) {
     exit;
 }
 
-$limit = 30;
-
-$offset = ($page - 1) * $limit;
-
+// 搜尋條件
 $search_condition = "";
-$params = [
+
+$count_params = [
+    $store_id
+];
+
+$data_params = [
     $store_id
 ];
 
@@ -107,35 +119,54 @@ if ($search !== "") {
 
     $search_value = "%" . $search . "%";
 
-    $params[] = $search_value;
-    $params[] = $search_value;
-    $params[] = $search_value;
+    $count_params[] = $search_value;
+    $count_params[] = $search_value;
+    $count_params[] = $search_value;
+
+    $data_params[] = $search_value;
+    $data_params[] = $search_value;
+    $data_params[] = $search_value;
 }
 
-$order_by = match ($sort) {
+// 排序條件
+switch ($sort) {
 
-    "order_count_asc"
-        => "order_count ASC",
+    case "order_count_asc":
+        $order_by = "order_count ASC";
+        break;
 
-    "order_count_desc"
-        => "order_count DESC",
+    case "order_count_desc":
+        $order_by = "order_count DESC";
+        break;
 
-    "total_spending_asc"
-        => "total_spending ASC",
+    case "total_spending_asc":
+        $order_by = "total_spending ASC";
+        break;
 
-    "total_spending_desc"
-        => "total_spending DESC",
+    case "total_spending_desc":
+        $order_by = "total_spending DESC";
+        break;
 
-    "created_at_asc"
-        => "c.created_at ASC",
+    case "created_at_asc":
+        $order_by = "c.created_at ASC";
+        break;
 
-    "created_at_desc"
-        => "c.created_at DESC"
-};
+    case "created_at_desc":
+        $order_by = "c.created_at DESC";
+        break;
+
+    default:
+        echo json_encode([
+            "error" => "Invalid sort option"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+}
 
 // 計算符合條件的客戶數
 $count_sql = "
-SELECT COUNT(*)
+SELECT
+    COUNT(*)
 FROM CUSTOMER c
 WHERE EXISTS (
     SELECT 1
@@ -148,12 +179,17 @@ $search_condition
 
 $count_stmt = $pdo->prepare($count_sql);
 
-$count_stmt->execute($params);
+$count_stmt->execute(
+    $count_params
+);
 
-$total_customers = (int)$count_stmt->fetchColumn();
+$total_customers =
+    (int)$count_stmt->fetchColumn();
 
 $total_pages = $total_customers > 0
-    ? (int)ceil($total_customers / $limit)
+    ? (int)ceil(
+        $total_customers / $limit
+    )
     : 0;
 
 // 取得客戶資料
@@ -192,69 +228,74 @@ GROUP BY
 ORDER BY
     $order_by
 
-LIMIT ?
-OFFSET ?
+LIMIT $limit
+OFFSET $offset
 ";
-
-$data_params = [
-    $store_id
-];
-
-if ($search !== "") {
-
-    $search_value = "%" . $search . "%";
-
-    $data_params[] = $search_value;
-    $data_params[] = $search_value;
-    $data_params[] = $search_value;
-}
-
-$data_params[] = $limit;
-$data_params[] = $offset;
 
 $stmt = $pdo->prepare($sql);
 
-$stmt->execute($data_params);
+$stmt->execute(
+    $data_params
+);
 
-$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$customers =
+    $stmt->fetchAll(
+        PDO::FETCH_ASSOC
+    );
 
+// 整理資料
 $result = [];
 
 foreach ($customers as $customer) {
 
     $result[] = [
 
-        "customer_id" => (int)$customer["customer_id"],
+        "customer_id" =>
+            (int)$customer["customer_id"],
 
-        "name" => $customer["name"],
+        "name" =>
+            $customer["name"],
 
-        "phone" => $customer["phone"],
+        "phone" =>
+            $customer["phone"],
 
-        "email" => $customer["email"],
+        "email" =>
+            $customer["email"],
 
-        "order_count" => (int)$customer["order_count"],
+        "order_count" =>
+            (int)$customer["order_count"],
 
-        "total_spending" => (float)$customer["total_spending"],
+        "total_spending" =>
+            (float)$customer["total_spending"],
 
-        "created_at" => $customer["created_at"]
+        "created_at" =>
+            $customer["created_at"]
     ];
 }
 
+// 回傳
 echo json_encode([
 
-    "page" => $page,
+    "page" =>
+        $page,
 
-    "limit" => $limit,
+    "limit" =>
+        $limit,
 
-    "total_customers" => $total_customers,
+    "total_customers" =>
+        $total_customers,
 
-    "total_pages" => $total_pages,
+    "total_pages" =>
+        $total_pages,
 
-    "search" => $search,
+    "search" =>
+        $search,
 
-    "sort" => $sort,
+    "sort" =>
+        $sort,
 
-    "customers" => $result
+    "customers" =>
+        $result
 
 ], JSON_UNESCAPED_UNICODE);
 

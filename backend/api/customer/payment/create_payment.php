@@ -72,11 +72,10 @@ if (!is_array($data)) {
 if (
     !isset($data["order_id"]) ||
     !isset($data["store_id"]) ||
-    !isset($data["payment_method"]) ||
-    !isset($data["delivery_method"])
+    !isset($data["payment_method"])
 ) {
     echo json_encode([
-        "error" => "Order ID, store ID, payment method and delivery method are required"
+        "error" => "Order ID, store ID and payment method are required"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -86,7 +85,6 @@ $order_id = $data["order_id"];
 $store_id = $data["store_id"];
 
 $payment_method = trim($data["payment_method"]);
-$delivery_method = trim($data["delivery_method"]);
 
 // 檢查 Order ID
 if (
@@ -141,64 +139,22 @@ if (
     exit;
 }
 
-// 檢查配送方式
-$allowed_delivery_methods = [
-    "home_delivery",
-    "convenience_store",
-    "store_pickup"
-];
-
-if (
-    !in_array(
-        $delivery_method,
-        $allowed_delivery_methods,
-        true
-    )
-) {
-    echo json_encode([
-        "error" => "Invalid delivery method"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查 Customer 是否存在
-$sql = "
-SELECT
-    customer_id,
-    name,
-    email,
-    phone,
-    address
-FROM CUSTOMER
-WHERE customer_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $customer_id
-]);
-
-$customer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$customer) {
-    echo json_encode([
-        "error" => "Customer not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
 // 取得訂單
 $sql = "
 SELECT
     o.order_id,
     o.customer_id,
     o.store_id,
+
     o.product_amount,
     o.shipping_fee,
     o.total_amount,
+
+    o.receiver_name,
+    o.receiver_phone,
+    o.receiver_address,
+
+    o.delivery_method,
     o.delivery_status,
 
     c.name AS customer_name,
@@ -208,7 +164,7 @@ SELECT
 
 FROM ORDERS o
 
-JOIN CUSTOMER c
+INNER JOIN CUSTOMER c
     ON o.customer_id = c.customer_id
 
 WHERE o.order_id = ?
@@ -235,14 +191,30 @@ if (!$order) {
     exit;
 }
 
+// 檢查配送方式是否存在
+if (
+    $order["delivery_method"] === null ||
+    trim($order["delivery_method"]) === ""
+) {
+    echo json_encode([
+        "error" => "Order delivery method is not set"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$delivery_method = $order["delivery_method"];
+
 // 檢查 Store 與 Store Setting
 $sql = "
 SELECT
     s.store_id,
     s.store_name,
     s.status AS store_status,
+
     ss.store_status AS business_status,
     ss.store_mode
+
 FROM STORE s
 
 INNER JOIN STORE_SETTING ss
@@ -305,6 +277,82 @@ if ($order["delivery_status"] !== "pending") {
     exit;
 }
 
+// 檢查 Store 是否開放此付款方式
+$sql = "
+SELECT
+    store_payment_id,
+    payment_method,
+    status
+
+FROM STORE_PAYMENT_METHOD
+
+WHERE store_id = ?
+AND payment_method = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id,
+    $payment_method
+]);
+
+$store_payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store_payment) {
+    echo json_encode([
+        "error" => "Payment method is not available for this store"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+if ($store_payment["status"] !== "active") {
+    echo json_encode([
+        "error" => "Selected payment method is currently unavailable"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查 Store 是否開放訂單中的配送方式
+$sql = "
+SELECT
+    store_delivery_id,
+    delivery_method,
+    status
+
+FROM STORE_DELIVERY_METHOD
+
+WHERE store_id = ?
+AND delivery_method = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id,
+    $delivery_method
+]);
+
+$store_delivery = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$store_delivery) {
+    echo json_encode([
+        "error" => "Order delivery method is no longer available"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+if ($store_delivery["status"] !== "active") {
+    echo json_encode([
+        "error" => "Order delivery method is currently unavailable"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 取得目前 Payment
 $sql = "
 SELECT
@@ -315,7 +363,9 @@ SELECT
     amount,
     payment_status,
     payment_confirm_status
+
 FROM PAYMENT
+
 WHERE order_id = ?
 AND store_id = ?
 ";
@@ -379,78 +429,6 @@ if ($existing_payment) {
     }
 }
 
-// 檢查 Store 是否開放付款方式
-$sql = "
-SELECT
-    store_payment_id,
-    payment_method,
-    status
-FROM STORE_PAYMENT_METHOD
-WHERE store_id = ?
-AND payment_method = ?
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id,
-    $payment_method
-]);
-
-$store_payment = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$store_payment) {
-    echo json_encode([
-        "error" => "Payment method is not available for this store"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-if ($store_payment["status"] !== "active") {
-    echo json_encode([
-        "error" => "Selected payment method is currently unavailable"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查 Store 是否開放配送方式
-$sql = "
-SELECT
-    store_delivery_id,
-    delivery_method,
-    status
-FROM STORE_DELIVERY_METHOD
-WHERE store_id = ?
-AND delivery_method = ?
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id,
-    $delivery_method
-]);
-
-$store_delivery = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$store_delivery) {
-    echo json_encode([
-        "error" => "Delivery method is not available for this store"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-if ($store_delivery["status"] !== "active") {
-    echo json_encode([
-        "error" => "Selected delivery method is currently unavailable"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
 // 建立 / 修改 Payment
 try {
 
@@ -465,7 +443,6 @@ try {
             order_id,
             store_id,
             payment_method,
-            delivery_method,
             amount,
             payment_status,
             payment_confirm_status,
@@ -474,7 +451,6 @@ try {
         )
         VALUES
         (
-            ?,
             ?,
             ?,
             ?,
@@ -492,11 +468,12 @@ try {
             $order_id,
             $store_id,
             $payment_method,
-            $delivery_method,
             $order["total_amount"]
         ]);
 
         $payment_id = (int)$pdo->lastInsertId();
+
+        $message = "Payment created successfully";
 
     } else {
 
@@ -505,7 +482,6 @@ try {
         UPDATE PAYMENT
         SET
             payment_method = ?,
-            delivery_method = ?,
             amount = ?,
             updated_at = NOW()
 
@@ -520,7 +496,6 @@ try {
 
         $stmt->execute([
             $payment_method,
-            $delivery_method,
             $order["total_amount"],
             $existing_payment["payment_id"],
             $order_id,
@@ -539,6 +514,8 @@ try {
         }
 
         $payment_id = (int)$existing_payment["payment_id"];
+
+        $message = "Payment updated successfully";
     }
 
     $pdo->commit();
@@ -585,38 +562,78 @@ switch ($payment_method) {
 // 回傳
 echo json_encode([
 
-    "message" => $existing_payment
-        ? "Payment updated successfully"
-        : "Payment created successfully",
+    "message" => $message,
 
     "payment" => [
-        "payment_id" => $payment_id,
-        "order_id" => $order_id,
-        "store_id" => $store_id,
-        "payment_method" => $payment_method,
-        "delivery_method" => $delivery_method,
-        "amount" => (float)$order["total_amount"],
-        "payment_status" => "pending",
-        "payment_confirm_status" => "waiting",
-        "next_action" => $next_action
+
+        "payment_id" =>
+            $payment_id,
+
+        "order_id" =>
+            $order_id,
+
+        "store_id" =>
+            $store_id,
+
+        "payment_method" =>
+            $payment_method,
+
+        "amount" =>
+            (float)$order["total_amount"],
+
+        "payment_status" =>
+            "pending",
+
+        "payment_confirm_status" =>
+            "waiting",
+
+        "next_action" =>
+            $next_action
     ],
 
     "order" => [
-        "order_id" => $order_id,
-        "customer_id" => $order["customer_id"],
-        "store_id" => $store_id,
-        "product_amount" => (float)$order["product_amount"],
-        "shipping_fee" => (float)$order["shipping_fee"],
-        "total_amount" => (float)$order["total_amount"],
-        "receiver_name" => $order["customer_name"],
-        "receiver_email" => $order["customer_email"],
-        "receiver_phone" => $order["customer_phone"],
-        "receiver_address" => $order["customer_address"]
+
+        "order_id" =>
+            $order_id,
+
+        "customer_id" =>
+            (int)$order["customer_id"],
+
+        "store_id" =>
+            $store_id,
+
+        "product_amount" =>
+            (float)$order["product_amount"],
+
+        "shipping_fee" =>
+            (float)$order["shipping_fee"],
+
+        "total_amount" =>
+            (float)$order["total_amount"],
+
+        "receiver_name" =>
+            $order["receiver_name"],
+
+        "receiver_email" =>
+            $order["customer_email"],
+
+        "receiver_phone" =>
+            $order["receiver_phone"],
+
+        "receiver_address" =>
+            $order["receiver_address"],
+
+        "delivery_method" =>
+            $delivery_method
     ],
 
     "store" => [
-        "store_id" => $store_id,
-        "store_name" => $store_name
+
+        "store_id" =>
+            $store_id,
+
+        "store_name" =>
+            $store_name
     ]
 
 ], JSON_UNESCAPED_UNICODE);

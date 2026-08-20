@@ -54,7 +54,6 @@ if (!$store) {
 }
 
 // 取得首頁區塊設定
-
 $sql = "
 SELECT
     intro_section_enable,
@@ -79,8 +78,14 @@ if (!$website_setting) {
     exit;
 }
 
-// 取得首頁商品排列設定
+// 整理 Website 設定資料型態
+$website_setting["intro_section_enable"] =
+    (int)$website_setting["intro_section_enable"];
 
+$website_setting["banner_section_enable"] =
+    (int)$website_setting["banner_section_enable"];
+
+// 取得首頁商品排列設定
 $sql = "
 SELECT
     display_limit
@@ -104,8 +109,11 @@ if (!$product_setting) {
     exit;
 }
 
-// 取得商品類別
+// 整理 Product 設定資料型態
+$product_setting["display_limit"] =
+    (int)$product_setting["display_limit"];
 
+// 取得商品類別
 $sql = "
 SELECT
     category_id,
@@ -125,13 +133,78 @@ $stmt->execute([
 
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// 整理 Category 資料型態
+foreach ($categories as &$category) {
+
+    $category["category_id"] =
+        (int)$category["category_id"];
+
+    $category["sort_order"] =
+        (int)$category["sort_order"];
+}
+
+unset($category);
+
+// 取得 Footer 設定
+$sql = "
+SELECT
+    contact_phone_enable,
+    address_enable,
+    email_enable,
+    service_phone_enable
+FROM FOOTER_SETTING
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$footer_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$footer_setting) {
+    echo json_encode([
+        "error" => "Footer setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 整理 Footer 設定資料型態
+$footer_setting["contact_phone_enable"] =
+    (int)$footer_setting["contact_phone_enable"];
+
+$footer_setting["address_enable"] =
+    (int)$footer_setting["address_enable"];
+
+$footer_setting["email_enable"] =
+    (int)$footer_setting["email_enable"];
+
+$footer_setting["service_phone_enable"] =
+    (int)$footer_setting["service_phone_enable"];
+
 // 回傳首頁管理資料
 echo json_encode([
-    "message" => "Homepage settings retrieved successfully",
-    "store_id" => $store_id,
-    "website" => $website_setting,
-    "product" => $product_setting,
-    "categories" => $categories
+    "message" =>
+        "Homepage settings retrieved successfully",
+
+    "store_id" =>
+        $store_id,
+
+    "website" =>
+        $website_setting,
+
+    "product" =>
+        $product_setting,
+
+    "categories" =>
+        $categories,
+
+    "footer" =>
+        $footer_setting
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

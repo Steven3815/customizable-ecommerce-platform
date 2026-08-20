@@ -1,12 +1,14 @@
 <?php
 
-// Store 取得單一商品詳細資料
+// Store 取得商品管理資料
 
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
 
 session_start();
+
+$per_page = 50;
 
 // 檢查 Store Session
 if (
@@ -41,7 +43,10 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -53,273 +58,592 @@ if (!$store) {
     exit;
 }
 
-// 檢查 Product ID
+// 取得頁數
+$page =
+    isset($_GET["page"]) &&
+    $_GET["page"] !== ""
+        ? $_GET["page"]
+        : 1;
+
+// 檢查頁數
 if (
-    !isset($_GET["product_id"]) ||
-    $_GET["product_id"] === ""
+    !is_numeric($page) ||
+    floor((float)$page) != (float)$page ||
+    (int)$page < 1
 ) {
     echo json_encode([
-        "error" => "Product ID is required"
+        "error" => "Invalid page"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
-// 驗證 Product ID
-if (
-    !is_numeric($_GET["product_id"]) ||
-    floor((float)$_GET["product_id"]) != (float)$_GET["product_id"]
-) {
-    echo json_encode([
-        "error" => "Invalid product ID"
-    ], JSON_UNESCAPED_UNICODE);
+$page = (int)$page;
 
-    exit;
-}
-
-$product_id = (int)$_GET["product_id"];
-
-if ($product_id <= 0) {
-    echo json_encode([
-        "error" => "Invalid product ID"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查商品是否屬於目前 Store
-$sql = "
-SELECT
-    p.product_id,
-    p.store_id,
-    p.category_id,
-    c.category_name,
-    p.product_name,
-    p.description,
-    p.price,
-    p.stock,
-    p.has_spec,
-    p.spec_name,
-    p.status,
-    p.created_at,
-    p.updated_at
-FROM PRODUCT p
-LEFT JOIN CATEGORY c
-    ON p.category_id = c.category_id
-    AND c.store_id = p.store_id
-WHERE p.product_id = ?
-AND p.store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $product_id,
-    $store_id
-]);
-
-$product = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// 商品不存在或不屬於目前 Store
-if (!$product) {
-    echo json_encode([
-        "error" => "Product not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 整理基本資料
-$product["product_id"] = (int)$product["product_id"];
-
-$product["store_id"] = (int)$product["store_id"];
-
-$product["category_id"] =
-    $product["category_id"] !== null
-        ? (int)$product["category_id"]
+// 取得篩選條件
+$category_id =
+    isset($_GET["category_id"]) &&
+    $_GET["category_id"] !== ""
+        ? $_GET["category_id"]
         : null;
 
-$product["has_spec"] = (bool)$product["has_spec"];
-
-// 商品價格
-// 不論有沒有開啟規格
-// 商品價格都來自 PRODUCT.price
-
-$product["price"] =
-    $product["price"] !== null
-        ? (float)$product["price"]
+$status =
+    isset($_GET["status"]) &&
+    $_GET["status"] !== ""
+        ? $_GET["status"]
         : null;
 
+$stock_status =
+    isset($_GET["stock_status"]) &&
+    $_GET["stock_status"] !== ""
+        ? $_GET["stock_status"]
+        : null;
 
-// 商品庫存
-// 無規格：使用 PRODUCT.stock
-// 有規格：實際庫存由 PRODUCT_SPEC 管理
+// 檢查 Category ID
+if ($category_id !== null) {
 
-if ($product["has_spec"]) {
+    if (
+        !is_numeric($category_id) ||
+        floor((float)$category_id)
+            != (float)$category_id
+    ) {
+        echo json_encode([
+            "error" => "Invalid category ID"
+        ], JSON_UNESCAPED_UNICODE);
 
-    $product["stock"] = null;
+        exit;
+    }
 
-} else {
+    $category_id = (int)$category_id;
 
-    $product["stock"] =
-        $product["stock"] !== null
-            ? (int)$product["stock"]
-            : null;
-}
+    if ($category_id <= 0) {
+        echo json_encode([
+            "error" => "Invalid category ID"
+        ], JSON_UNESCAPED_UNICODE);
 
+        exit;
+    }
 
-// 取得商品圖片
-$sql = "
-SELECT
-    image_id,
-    image_url,
-    sort_order
-FROM PRODUCT_IMAGE
-WHERE product_id = ?
-ORDER BY sort_order ASC, image_id ASC
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $product_id
-]);
-
-$images = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-foreach ($images as &$image) {
-
-    $image["image_id"] =
-        (int)$image["image_id"];
-
-    $image["sort_order"] =
-        (int)$image["sort_order"];
-}
-
-unset($image);
-
-
-// 取得商品規格
-$specs = [];
-
-if ($product["has_spec"]) {
-
+    // 確認 Category 屬於目前 Store
     $sql = "
     SELECT
-        spec_id,
-        spec_name,
-        price,
-        stock,
-        status,
-        created_at,
-        updated_at
-    FROM PRODUCT_SPEC
-    WHERE product_id = ?
-    ORDER BY spec_id ASC
+        category_id,
+        category_name
+    FROM CATEGORY
+    WHERE category_id = ?
+    AND store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
 
     $stmt->execute([
-        $product_id
+        $category_id,
+        $store_id
     ]);
 
-    $specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    foreach ($specs as &$spec) {
+    if (!$category) {
+        echo json_encode([
+            "error" => "Category does not belong to this store"
+        ], JSON_UNESCAPED_UNICODE);
 
-        $spec["spec_id"] =
-            (int)$spec["spec_id"];
-
-        // PRODUCT_SPEC.price 保留
-        // 目前建立 / 更新規格時
-        // 由後端自動等於 PRODUCT.price
-
-        $spec["price"] =
-            $spec["price"] !== null
-                ? (float)$spec["price"]
-                : null;
-
-        $spec["stock"] =
-            (int)$spec["stock"];
+        exit;
     }
-
-    unset($spec);
 }
 
+// 檢查 Status
+if ($status !== null) {
 
-// 回傳
-echo json_encode([
-    "message" => "Product retrieved successfully",
+    if (
+        $status !== "active" &&
+        $status !== "inactive"
+    ) {
+        echo json_encode([
+            "error" => "Invalid status"
+        ], JSON_UNESCAPED_UNICODE);
 
-    "store_id" => $store_id,
+        exit;
+    }
+}
 
-    "product" => [
+// 檢查 Stock Status
+if ($stock_status !== null) {
 
-        // 商品 ID
-        "product_id" =>
-            $product["product_id"],
+    if (
+        $stock_status !== "in_stock" &&
+        $stock_status !== "low_stock" &&
+        $stock_status !== "out_of_stock"
+    ) {
+        echo json_encode([
+            "error" => "Invalid stock status"
+        ], JSON_UNESCAPED_UNICODE);
 
-        // 類別
-        // 編輯頁只顯示，不允許修改
-        "category" => [
+        exit;
+    }
+}
+
+try {
+
+    // 取得 Store 庫存預警門檻
+    $sql = "
+    SELECT
+        stock_alert_threshold,
+        spec_stock_alert_threshold
+    FROM STORE_SETTING
+    WHERE store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $store_id
+    ]);
+
+    $store_setting =
+        $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$store_setting) {
+        echo json_encode([
+            "error" => "Store setting not found"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 一般商品庫存預警門檻
+    $stock_alert_threshold =
+        $store_setting["stock_alert_threshold"] !== null
+            ? (int)$store_setting["stock_alert_threshold"]
+            : 0;
+
+    // 商品規格庫存預警門檻
+    $spec_stock_alert_threshold =
+        $store_setting["spec_stock_alert_threshold"] !== null
+            ? (int)$store_setting["spec_stock_alert_threshold"]
+            : 0;
+
+    // 建立 Product WHERE 條件
+    $where = [
+        "p.store_id = ?"
+    ];
+
+    $params = [
+        $store_id
+    ];
+
+    // Category 篩選
+    if ($category_id !== null) {
+
+        $where[] = "p.category_id = ?";
+
+        $params[] = $category_id;
+    }
+
+    // Status 篩選
+    if ($status !== null) {
+
+        $where[] = "p.status = ?";
+
+        $params[] = $status;
+    }
+
+    $where_sql =
+        implode(" AND ", $where);
+
+    // 取得商品
+    $sql = "
+    SELECT
+        p.product_id,
+        p.store_id,
+        p.category_id,
+        c.category_name,
+        p.product_name,
+        p.description,
+        p.price,
+        p.stock,
+        p.has_spec,
+        p.spec_name,
+        p.sort_order,
+        p.status
+    FROM PRODUCT p
+    LEFT JOIN CATEGORY c
+        ON p.category_id = c.category_id
+        AND c.store_id = p.store_id
+    WHERE $where_sql
+    ORDER BY
+        p.sort_order ASC,
+        p.product_id ASC
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute($params);
+
+    $products =
+        $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $result_products = [];
+
+    foreach ($products as $product) {
+
+        $product_id =
+            (int)$product["product_id"];
+
+        $has_spec =
+            (bool)$product["has_spec"];
+
+        // 無規格商品
+        if (!$has_spec) {
+
+            $stock =
+                $product["stock"] !== null
+                    ? (int)$product["stock"]
+                    : 0;
+
+            // 判斷庫存狀態
+            if ($stock <= 0) {
+
+                $current_stock_status =
+                    "out_of_stock";
+
+            } elseif (
+                $stock <= $stock_alert_threshold
+            ) {
+
+                $current_stock_status =
+                    "low_stock";
+
+            } else {
+
+                $current_stock_status =
+                    "in_stock";
+            }
+
+            // Stock Status 篩選
+            if (
+                $stock_status !== null &&
+                $stock_status !==
+                    $current_stock_status
+            ) {
+                continue;
+            }
+
+            $result_products[] = [
+
+                "product_id" =>
+                    $product_id,
+
+                "store_id" =>
+                    (int)$product["store_id"],
+
+                "category_id" =>
+                    $product["category_id"] !== null
+                        ? (int)$product["category_id"]
+                        : null,
+
+                "category_name" =>
+                    $product["category_name"],
+
+                "product_name" =>
+                    $product["product_name"],
+
+                "has_spec" =>
+                    false,
+
+                "spec_name" =>
+                    null,
+
+                "spec_id" =>
+                    null,
+
+                "spec_value" =>
+                    null,
+
+                "price" =>
+                    $product["price"] !== null
+                        ? (float)$product["price"]
+                        : null,
+
+                "stock" =>
+                    $stock,
+
+                "stock_status" =>
+                    $current_stock_status,
+
+                "sort_order" =>
+                    $product["sort_order"] !== null
+                        ? (int)$product["sort_order"]
+                        : null,
+
+                "status" =>
+                    $product["status"]
+            ];
+
+            continue;
+        }
+
+        // 有規格商品
+        $sql = "
+        SELECT
+            spec_id,
+            spec_name,
+            price,
+            stock,
+            status,
+            created_at,
+            updated_at
+        FROM PRODUCT_SPEC
+        WHERE product_id = ?
+        AND status = 'active'
+        ORDER BY
+            spec_id ASC
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            $product_id
+        ]);
+
+        $specs =
+            $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 沒有規格資料
+        if (!$specs) {
+            continue;
+        }
+
+        // 每個規格算一筆
+        foreach ($specs as $spec) {
+
+            $spec_id =
+                (int)$spec["spec_id"];
+
+            $spec_stock =
+                (int)$spec["stock"];
+
+            // 判斷規格庫存狀態
+            if ($spec_stock <= 0) {
+
+                $current_stock_status =
+                    "out_of_stock";
+
+            } elseif (
+                $spec_stock <=
+                $spec_stock_alert_threshold
+            ) {
+
+                $current_stock_status =
+                    "low_stock";
+
+            } else {
+
+                $current_stock_status =
+                    "in_stock";
+            }
+
+            // Stock Status 篩選
+            if (
+                $stock_status !== null &&
+                $stock_status !==
+                    $current_stock_status
+            ) {
+                continue;
+            }
+
+            $result_products[] = [
+
+                "product_id" =>
+                    $product_id,
+
+                "store_id" =>
+                    (int)$product["store_id"],
+
+                "category_id" =>
+                    $product["category_id"] !== null
+                        ? (int)$product["category_id"]
+                        : null,
+
+                "category_name" =>
+                    $product["category_name"],
+
+                "product_name" =>
+                    $product["product_name"],
+
+                "has_spec" =>
+                    true,
+
+                // 規格名稱
+                // PRODUCT.spec_name
+                "spec_name" =>
+                    $product["spec_name"],
+
+                "spec_id" =>
+                    $spec_id,
+
+                // 規格值
+                // PRODUCT_SPEC.spec_name
+                "spec_value" =>
+                    $spec["spec_name"],
+
+                "price" =>
+                    $spec["price"] !== null
+                        ? (float)$spec["price"]
+                        : null,
+
+                "stock" =>
+                    $spec_stock,
+
+                "stock_status" =>
+                    $current_stock_status,
+
+                "sort_order" =>
+                    $product["sort_order"] !== null
+                        ? (int)$product["sort_order"]
+                        : null,
+
+                "status" =>
+                    $product["status"]
+            ];
+        }
+    }
+
+    // 符合條件的總筆數
+    // 有規格商品會按照規格數量計算
+    $total =
+        count($result_products);
+
+    // 計算總頁數
+    $total_pages =
+        $total > 0
+            ? (int)ceil($total / $per_page)
+            : 0;
+
+    // 如果沒有資料
+    if ($total === 0) {
+
+        echo json_encode([
+
+            "message" =>
+                "No products found",
+
+            "store_id" =>
+                $store_id,
 
             "category_id" =>
-                $product["category_id"],
+                $category_id,
 
-            "category_name" =>
-                $product["category_name"]
+            "status" =>
+                $status,
+
+            "stock_status" =>
+                $stock_status,
+
+            "pagination" => [
+
+                "current_page" =>
+                    $page,
+
+                "per_page" =>
+                    $per_page,
+
+                "total" =>
+                    0,
+
+                "total_pages" =>
+                    0,
+
+                "has_previous_page" =>
+                    false,
+
+                "has_next_page" =>
+                    false
+            ],
+
+            "products" =>
+                []
+
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 頁數超過範圍
+    if ($page > $total_pages) {
+
+        echo json_encode([
+            "error" => "Page out of range",
+            "total_pages" => $total_pages
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 計算起始位置
+    $offset =
+        ($page - 1) * $per_page;
+
+    // 取得目前頁面的 50 筆
+    $paged_products =
+        array_slice(
+            $result_products,
+            $offset,
+            $per_page
+        );
+
+    // 回傳
+    echo json_encode([
+
+        "message" =>
+            "Product management data retrieved successfully",
+
+        "store_id" =>
+            $store_id,
+
+        "category_id" =>
+            $category_id,
+
+        "status" =>
+            $status,
+
+        "stock_status" =>
+            $stock_status,
+
+        "pagination" => [
+
+            "current_page" =>
+                $page,
+
+            "per_page" =>
+                $per_page,
+
+            "total" =>
+                $total,
+
+            "total_pages" =>
+                $total_pages,
+
+            "has_previous_page" =>
+                $page > 1,
+
+            "has_next_page" =>
+                $page < $total_pages
         ],
 
-        // 商品名稱
-        "product_name" =>
-            $product["product_name"],
+        "products" =>
+            $paged_products
 
-        // 商品描述
-        "description" =>
-            $product["description"],
+    ], JSON_UNESCAPED_UNICODE);
 
-        // 商品價格
-        // 有規格 / 無規格都使用 PRODUCT.price
-        "price" =>
-            $product["price"],
+} catch (Exception $e) {
 
-        // 商品庫存
-        // 有規格時為 null
-        // 無規格時使用 PRODUCT.stock
-        "stock" =>
-            $product["stock"],
+    echo json_encode([
+        "error" =>
+            $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
 
-        // 是否開啟規格
-        "has_spec" =>
-            $product["has_spec"],
-
-        // 商品規格名稱
-        // 例如：尺寸、顏色
-        "spec_name" =>
-            $product["spec_name"],
-
-        // 規格詳細資料
-        "specs" =>
-            $specs,
-
-        // 商品圖片
-        "images" =>
-            $images,
-
-        // 商品狀態
-        "status" =>
-            $product["status"],
-
-        // 建立時間
-        "created_at" =>
-            $product["created_at"],
-
-        // 更新時間
-        "updated_at" =>
-            $product["updated_at"]
-    ]
-
-], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 ?>

@@ -59,7 +59,6 @@ $data = json_decode(
     true
 );
 
-// 檢查 JSON
 if (!is_array($data)) {
     echo json_encode([
         "error" => "Invalid JSON"
@@ -68,7 +67,7 @@ if (!is_array($data)) {
     exit;
 }
 
-// 檢查 store_id
+// Store ID
 if (!isset($data["store_id"])) {
     echo json_encode([
         "error" => "Store ID is required"
@@ -79,10 +78,9 @@ if (!isset($data["store_id"])) {
 
 $store_id = $data["store_id"];
 
-// 檢查 store_id
 if (
     !is_numeric($store_id) ||
-    floor($store_id) != $store_id ||
+    floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
     echo json_encode([
@@ -94,7 +92,58 @@ if (
 
 $store_id = (int)$store_id;
 
-// 檢查 Store
+// 排序
+$sort_by = $data["sort_by"] ?? "created_at";
+$sort_order = $data["sort_order"] ?? "desc";
+
+if (
+    !in_array(
+        $sort_by,
+        ["price", "created_at"],
+        true
+    )
+) {
+    echo json_encode([
+        "error" => "Invalid sort field"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+if (
+    !in_array(
+        $sort_order,
+        ["asc", "desc"],
+        true
+    )
+) {
+    echo json_encode([
+        "error" => "Invalid sort order"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+if ($sort_by === "price") {
+
+    $order_by = "
+        CASE
+            WHEN p.has_spec = 1
+            THEN ps.price
+            ELSE p.price
+        END
+        $sort_order
+    ";
+
+} else {
+
+    $order_by = "
+        ci.created_at
+        $sort_order
+    ";
+}
+
+// Store
 $sql = "
 SELECT
     store_id,
@@ -104,10 +153,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
+$stmt->execute([$store_id]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -119,7 +165,6 @@ if (!$store) {
     exit;
 }
 
-// Store 必須為 active
 if ($store["status"] !== "active") {
     echo json_encode([
         "error" => "Store is inactive"
@@ -128,7 +173,7 @@ if ($store["status"] !== "active") {
     exit;
 }
 
-// 檢查 Store 模式
+// Store Setting
 $sql = "
 SELECT
     store_mode
@@ -137,10 +182,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
+$stmt->execute([$store_id]);
 
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -152,7 +194,6 @@ if (!$store_setting) {
     exit;
 }
 
-// 展示模式不可使用購物車
 if ($store_setting["store_mode"] !== "shopping") {
     echo json_encode([
         "error" => "Store is currently in showcase mode"
@@ -161,7 +202,7 @@ if ($store_setting["store_mode"] !== "shopping") {
     exit;
 }
 
-// 找會員指定商店的購物車
+// 取得購物車
 $sql = "
 SELECT
     cart_id
@@ -171,7 +212,6 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $customer_id,
     $store_id
@@ -182,6 +222,7 @@ $cart = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$cart) {
     echo json_encode([
         "message" => "Cart is empty",
+        "customer_id" => $customer_id,
         "store_id" => $store_id,
         "items" => [],
         "total_amount" => 0
@@ -196,9 +237,12 @@ $cart_id = (int)$cart["cart_id"];
 $sql = "
 SELECT
     ci.cart_item_id,
+    ci.created_at AS cart_item_created_at,
+
     p.product_id,
     p.product_name,
     p.description,
+
     ci.quantity,
 
     CASE
@@ -217,13 +261,29 @@ SELECT
     ) AS subtotal,
 
     ps.spec_id,
-    ps.spec_name
+    ps.spec_name,
+
+    (
+        SELECT pi2.image_url
+        FROM PRODUCT_IMAGE pi2
+        WHERE pi2.product_id = p.product_id
+        AND pi2.store_id = p.store_id
+        ORDER BY
+            pi2.sort_order ASC,
+            pi2.image_id ASC
+        LIMIT 1
+    ) AS image_url
 
 FROM CART_ITEM ci
 
-JOIN PRODUCT p
+INNER JOIN PRODUCT p
     ON ci.product_id = p.product_id
     AND ci.store_id = p.store_id
+
+INNER JOIN CATEGORY c
+    ON p.category_id = c.category_id
+    AND p.store_id = c.store_id
+    AND c.status = 'active'
 
 LEFT JOIN PRODUCT_SPEC ps
     ON ci.spec_id = ps.spec_id
@@ -232,20 +292,25 @@ LEFT JOIN PRODUCT_SPEC ps
 
 WHERE ci.cart_id = ?
 AND ci.store_id = ?
-AND p.store_id = ?
 AND p.status = 'active'
 
 AND (
     p.has_spec = 0
-    OR ps.status = 'active'
+    OR (
+        ps.spec_id IS NOT NULL
+        AND ps.status = 'active'
+    )
 )
+
+ORDER BY
+    $order_by,
+    ci.cart_item_id ASC
 ";
 
 $stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $cart_id,
-    $store_id,
     $store_id
 ]);
 
@@ -256,9 +321,14 @@ $total_amount = 0;
 
 foreach ($items as &$item) {
 
-    $item["cart_item_id"] = (int)$item["cart_item_id"];
-    $item["product_id"] = (int)$item["product_id"];
-    $item["quantity"] = (int)$item["quantity"];
+    $item["cart_item_id"] =
+        (int)$item["cart_item_id"];
+
+    $item["product_id"] =
+        (int)$item["product_id"];
+
+    $item["quantity"] =
+        (int)$item["quantity"];
 
     $item["spec_id"] =
         $item["spec_id"] !== null
@@ -284,10 +354,29 @@ unset($item);
 
 // 回傳
 echo json_encode([
-    "cart_id" => $cart_id,
-    "store_id" => $store_id,
-    "items" => $items,
-    "total_amount" => $total_amount
+    "message" => "Cart retrieved successfully",
+
+    "customer_id" =>
+        $customer_id,
+
+    "cart_id" =>
+        $cart_id,
+
+    "store_id" =>
+        $store_id,
+
+    "sort_by" =>
+        $sort_by,
+
+    "sort_order" =>
+        $sort_order,
+
+    "items" =>
+        $items,
+
+    "total_amount" =>
+        $total_amount
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

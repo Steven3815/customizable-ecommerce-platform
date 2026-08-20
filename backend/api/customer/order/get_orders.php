@@ -41,54 +41,6 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
-
-$customer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$customer) {
-    echo json_encode([
-        "error" => "Customer not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 取得 store_id
-if (!isset($_GET["store_id"])) {
-    echo json_encode([
-        "error" => "Store ID is required"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$store_id = $_GET["store_id"];
-
-if (
-    !is_numeric($store_id) ||
-    floor($store_id) != $store_id ||
-    (int)$store_id <= 0
-) {
-    echo json_encode([
-        "error" => "Invalid store ID"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$store_id = (int)$store_id;
-
-// 篩選條件
-$status = $_GET["status"] ?? "all";
-
-// 檢查會員
-$sql = "
-SELECT customer_id
-FROM CUSTOMER
-WHERE customer_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
 
 $stmt->execute([
     $customer_id
@@ -104,6 +56,109 @@ if (!$customer) {
     exit;
 }
 
+// 取得 Store ID
+if (!isset($_GET["store_id"])) {
+    echo json_encode([
+        "error" => "Store ID is required"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$store_id = $_GET["store_id"];
+
+// 檢查 Store ID
+if (
+    !is_numeric($store_id) ||
+    floor((float)$store_id) != (float)$store_id ||
+    (int)$store_id <= 0
+) {
+    echo json_encode([
+        "error" => "Invalid store ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$store_id = (int)$store_id;
+
+// 取得篩選條件
+$payment_status = $_GET["payment_status"] ?? "all";
+$payment_confirm_status = $_GET["payment_confirm_status"] ?? "all";
+$delivery_status = $_GET["delivery_status"] ?? "all";
+$refund_status = $_GET["refund_status"] ?? "all";
+
+// Payment Status
+$allowed_payment_status = [
+    "all",
+    "pending",
+    "processing",
+    "paid",
+    "failed"
+];
+
+if (!in_array($payment_status, $allowed_payment_status, true)) {
+    echo json_encode([
+        "error" => "Invalid payment status"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// Payment Confirm Status
+$allowed_payment_confirm_status = [
+    "all",
+    "waiting",
+    "confirmed",
+    "rejected"
+];
+
+if (
+    !in_array(
+        $payment_confirm_status,
+        $allowed_payment_confirm_status,
+        true
+    )
+) {
+    echo json_encode([
+        "error" => "Invalid payment confirm status"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// Delivery Status
+$allowed_delivery_status = [
+    "all",
+    "pending",
+    "shipping",
+    "completed"
+];
+
+if (!in_array($delivery_status, $allowed_delivery_status, true)) {
+    echo json_encode([
+        "error" => "Invalid delivery status"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// Refund Status
+$allowed_refund_status = [
+    "all",
+    "pending",
+    "approved",
+    "rejected"
+];
+
+if (!in_array($refund_status, $allowed_refund_status, true)) {
+    echo json_encode([
+        "error" => "Invalid refund status"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
 // 檢查 Store
 $sql = "
 SELECT
@@ -112,8 +167,10 @@ SELECT
     s.status AS store_status,
     ss.store_mode
 FROM STORE s
+
 INNER JOIN STORE_SETTING ss
     ON s.store_id = ss.store_id
+
 WHERE s.store_id = ?
 ";
 
@@ -151,7 +208,7 @@ if ($store["store_mode"] !== "shopping") {
     exit;
 }
 
-// 建立訂單篩選條件
+// 建立基本條件
 $where = "
 WHERE o.customer_id = ?
 AND o.store_id = ?
@@ -162,141 +219,62 @@ $params = [
     $store_id
 ];
 
-if ($status === "all") {
-
-} elseif ($status === "pending_payment") {
-
-    $where .= "
-        AND EXISTS (
-            SELECT 1
-            FROM PAYMENT p2
-            WHERE p2.order_id = o.order_id
-            AND p2.store_id = o.store_id
-            AND p2.payment_status = 'pending'
-        )
-    ";
-
-} elseif ($status === "paid") {
+// Payment Status 篩選
+if ($payment_status !== "all") {
 
     $where .= "
         AND EXISTS (
             SELECT 1
-            FROM PAYMENT p2
-            WHERE p2.order_id = o.order_id
-            AND p2.store_id = o.store_id
-            AND p2.payment_status = 'paid'
+            FROM PAYMENT p
+            WHERE p.order_id = o.order_id
+            AND p.store_id = o.store_id
+            AND p.payment_status = ?
         )
     ";
 
-} elseif ($status === "failed") {
+    $params[] = $payment_status;
+}
+
+// Payment Confirm Status 篩選
+if ($payment_confirm_status !== "all") {
 
     $where .= "
         AND EXISTS (
             SELECT 1
-            FROM PAYMENT p2
-            WHERE p2.order_id = o.order_id
-            AND p2.store_id = o.store_id
-            AND p2.payment_status = 'failed'
+            FROM PAYMENT p
+            WHERE p.order_id = o.order_id
+            AND p.store_id = o.store_id
+            AND p.payment_confirm_status = ?
         )
     ";
 
-} elseif ($status === "payment_waiting") {
+    $params[] = $payment_confirm_status;
+}
+
+// Delivery Status 篩選
+if ($delivery_status !== "all") {
+
+    $where .= "
+        AND o.delivery_status = ?
+    ";
+
+    $params[] = $delivery_status;
+}
+
+// Refund Status 篩選
+if ($refund_status !== "all") {
 
     $where .= "
         AND EXISTS (
             SELECT 1
-            FROM PAYMENT p2
-            WHERE p2.order_id = o.order_id
-            AND p2.store_id = o.store_id
-            AND p2.payment_confirm_status = 'waiting'
+            FROM REFUND r
+            WHERE r.order_id = o.order_id
+            AND r.store_id = o.store_id
+            AND r.refund_status = ?
         )
     ";
 
-} elseif ($status === "payment_confirmed") {
-
-    $where .= "
-        AND EXISTS (
-            SELECT 1
-            FROM PAYMENT p2
-            WHERE p2.order_id = o.order_id
-            AND p2.store_id = o.store_id
-            AND p2.payment_confirm_status = 'confirmed'
-        )
-    ";
-
-} elseif ($status === "payment_rejected") {
-
-    $where .= "
-        AND EXISTS (
-            SELECT 1
-            FROM PAYMENT p2
-            WHERE p2.order_id = o.order_id
-            AND p2.store_id = o.store_id
-            AND p2.payment_confirm_status = 'rejected'
-        )
-    ";
-
-} elseif ($status === "delivery_pending") {
-
-    $where .= "
-        AND o.delivery_status = 'pending'
-    ";
-
-} elseif ($status === "shipping") {
-
-    $where .= "
-        AND o.delivery_status = 'shipping'
-    ";
-
-} elseif ($status === "completed") {
-
-    $where .= "
-        AND o.delivery_status = 'completed'
-    ";
-
-} elseif ($status === "refund_pending") {
-
-    $where .= "
-        AND EXISTS (
-            SELECT 1
-            FROM REFUND r2
-            WHERE r2.order_id = o.order_id
-            AND r2.store_id = o.store_id
-            AND r2.refund_status = 'pending'
-        )
-    ";
-
-} elseif ($status === "refund_approved") {
-
-    $where .= "
-        AND EXISTS (
-            SELECT 1
-            FROM REFUND r2
-            WHERE r2.order_id = o.order_id
-            AND r2.store_id = o.store_id
-            AND r2.refund_status = 'approved'
-        )
-    ";
-
-} elseif ($status === "refund_rejected") {
-
-    $where .= "
-        AND EXISTS (
-            SELECT 1
-            FROM REFUND r2
-            WHERE r2.order_id = o.order_id
-            AND r2.store_id = o.store_id
-            AND r2.refund_status = 'rejected'
-        )
-    ";
-
-} else {
-
-    echo json_encode([
-        "error" => "Invalid status"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
+    $params[] = $refund_status;
 }
 
 // 取得訂單
@@ -306,21 +284,31 @@ SELECT
     o.store_id,
     s.store_name,
     o.order_date,
+
     o.receiver_name,
     o.receiver_phone,
     o.receiver_address,
+
     o.product_amount,
     o.shipping_fee,
     o.total_amount,
+
+    o.delivery_method,
     o.delivery_status,
+
     o.estimated_ship_date,
     o.estimated_arrival_date,
+
     o.created_at,
     o.updated_at
+
 FROM ORDERS o
+
 INNER JOIN STORE s
     ON o.store_id = s.store_id
+
 $where
+
 ORDER BY o.order_date DESC
 ";
 
@@ -330,11 +318,33 @@ $stmt->execute($params);
 
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// 沒有訂單
 if (!$orders) {
+
     echo json_encode([
         "message" => "No orders found",
-        "customer_id" => $customer_id,
-        "store_id" => $store_id,
+
+        "customer_id" =>
+            $customer_id,
+
+        "store_id" =>
+            $store_id,
+
+        "filters" => [
+
+            "payment_status" =>
+                $payment_status,
+
+            "payment_confirm_status" =>
+                $payment_confirm_status,
+
+            "delivery_status" =>
+                $delivery_status,
+
+            "refund_status" =>
+                $refund_status
+        ],
+
         "orders" => []
     ], JSON_UNESCAPED_UNICODE);
 
@@ -352,15 +362,21 @@ foreach ($orders as $order) {
     SELECT
         payment_id,
         payment_method,
+        amount,
         payment_status,
         payment_confirm_status,
         payment_note,
         payment_proof_image,
         paid_at,
-        confirmed_at
+        confirmed_at,
+        created_at,
+        updated_at
+
     FROM PAYMENT
+
     WHERE order_id = ?
     AND store_id = ?
+
     LIMIT 1
     ";
 
@@ -384,10 +400,12 @@ foreach ($orders as $order) {
         admin_reply,
         requested_at,
         processed_at
+
     FROM REFUND
+
     WHERE order_id = ?
     AND store_id = ?
-    ORDER BY requested_at DESC
+
     LIMIT 1
     ";
 
@@ -410,9 +428,12 @@ foreach ($orders as $order) {
         spec_name,
         quantity,
         price
+
     FROM ORDER_ITEM
+
     WHERE order_id = ?
     AND store_id = ?
+
     ORDER BY order_item_id ASC
     ";
 
@@ -425,6 +446,7 @@ foreach ($orders as $order) {
 
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // 商品資料型別轉換
     foreach ($items as &$item) {
 
         $item["order_item_id"] =
@@ -434,6 +456,7 @@ foreach ($orders as $order) {
             (int)$item["product_id"];
 
         if ($item["spec_id"] !== null) {
+
             $item["spec_id"] =
                 (int)$item["spec_id"];
         }
@@ -445,21 +468,30 @@ foreach ($orders as $order) {
             (float)$item["price"];
 
         $item["subtotal"] =
-            $item["quantity"] * $item["price"];
+            $item["quantity"] *
+            $item["price"];
     }
 
     unset($item);
 
+    // Payment 資料型別轉換
     if ($payment) {
+
         $payment["payment_id"] =
             (int)$payment["payment_id"];
+
+        $payment["amount"] =
+            (float)$payment["amount"];
     }
 
+    // Refund 資料型別轉換
     if ($refund) {
+
         $refund["refund_id"] =
             (int)$refund["refund_id"];
     }
 
+    // 建立訂單結果
     $result[] = [
 
         "order_id" =>
@@ -503,6 +535,9 @@ foreach ($orders as $order) {
 
         "delivery" => [
 
+            "delivery_method" =>
+                $order["delivery_method"],
+
             "delivery_status" =>
                 $order["delivery_status"],
 
@@ -527,10 +562,36 @@ foreach ($orders as $order) {
     ];
 }
 
+// 回傳
 echo json_encode([
-    "customer_id" => $customer_id,
-    "store_id" => $store_id,
-    "orders" => $result
+
+    "message" =>
+        "Orders retrieved successfully",
+
+    "customer_id" =>
+        $customer_id,
+
+    "store_id" =>
+        $store_id,
+
+    "filters" => [
+
+        "payment_status" =>
+            $payment_status,
+
+        "payment_confirm_status" =>
+            $payment_confirm_status,
+
+        "delivery_status" =>
+            $delivery_status,
+
+        "refund_status" =>
+            $refund_status
+    ],
+
+    "orders" =>
+        $result
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

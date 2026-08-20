@@ -57,17 +57,13 @@ if (!$store) {
 // 取得 Banner 標題
 $title = trim($_POST["title"] ?? "");
 
-// 標題不可為空
+// 空字串轉成 NULL
 if ($title === "") {
-    echo json_encode([
-        "error" => "Title is required"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
+    $title = null;
 }
 
-// 標題最多 20 字
-if (mb_strlen($title) > 20) {
+// 有標題時最多 20 字
+if ($title !== null && mb_strlen($title) > 20) {
     echo json_encode([
         "error" => "Title is too long"
     ], JSON_UNESCAPED_UNICODE);

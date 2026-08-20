@@ -41,7 +41,10 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
+
+$stmt->execute([
+    $customer_id
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -77,16 +80,22 @@ if (!isset($data["order_id"])) {
     exit;
 }
 
-$order_id = (int)$data["order_id"];
+$order_id = $data["order_id"];
 
 // 檢查 Order ID
-if ($order_id <= 0) {
+if (
+    !is_numeric($order_id) ||
+    floor((float)$order_id) != (float)$order_id ||
+    (int)$order_id <= 0
+) {
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
+
+$order_id = (int)$order_id;
 
 // 取得訂單
 $sql = "
@@ -183,6 +192,7 @@ SELECT
     order_id,
     store_id,
     payment_method,
+    amount,
     payment_status,
     payment_confirm_status
 
@@ -226,7 +236,10 @@ if (
 }
 
 // 已付款
-if ($payment["payment_status"] === "paid") {
+if (
+    $payment["payment_status"] === "paid" &&
+    $payment["payment_confirm_status"] === "confirmed"
+) {
     echo json_encode([
         "error" => "Order has already been paid"
     ], JSON_UNESCAPED_UNICODE);
@@ -235,7 +248,10 @@ if ($payment["payment_status"] === "paid") {
 }
 
 // 已經送出轉帳確認
-if ($payment["payment_status"] === "processing") {
+if (
+    $payment["payment_status"] === "processing" &&
+    $payment["payment_confirm_status"] === "waiting"
+) {
     echo json_encode([
         "error" => "Transfer is already waiting for store confirmation"
     ], JSON_UNESCAPED_UNICODE);
@@ -243,8 +259,11 @@ if ($payment["payment_status"] === "processing") {
     exit;
 }
 
-// 只有 pending 可以取得轉帳資訊
-if ($payment["payment_status"] !== "pending") {
+// 只有 pending + waiting 可以取得轉帳資訊
+if (
+    $payment["payment_status"] !== "pending" ||
+    $payment["payment_confirm_status"] !== "waiting"
+) {
     echo json_encode([
         "error" => "Payment is not available for transfer"
     ], JSON_UNESCAPED_UNICODE);
@@ -282,6 +301,7 @@ if (!$store_payment) {
     exit;
 }
 
+// 付款方式已停用
 if ($store_payment["status"] !== "active") {
     echo json_encode([
         "error" => "Selected payment method is currently unavailable"
@@ -290,7 +310,7 @@ if ($store_payment["status"] !== "active") {
     exit;
 }
 
-// 取得 Store 帳戶
+// 取得 Store 付款帳戶
 $sql = "
 SELECT
     account_id,
@@ -313,7 +333,7 @@ $stmt->execute([
 
 $account = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Store 帳戶不存在
+// Store 付款帳戶不存在
 if (!$account) {
     echo json_encode([
         "error" => "Store payment account not found"
@@ -339,8 +359,11 @@ if ($payment_method === "atm") {
     }
 
     $payment_account = [
-        "bank_name" => $account["bank_name"],
-        "bank_number" => $account["bank_number"]
+        "bank_name" =>
+            $account["bank_name"],
+
+        "bank_number" =>
+            $account["bank_number"]
     ];
 
 } elseif ($payment_method === "post_office") {
@@ -354,41 +377,79 @@ if ($payment_method === "atm") {
     }
 
     $payment_account = [
-        "post_office_number" => $account["post_office_number"]
+        "post_office_number" =>
+            $account["post_office_number"]
     ];
 }
 
 // 回傳轉帳資訊
 echo json_encode([
 
-    "message" => "Transfer information",
+    "message" =>
+        "Transfer information",
 
     "payment" => [
-        "payment_id" => (int)$payment["payment_id"],
-        "order_id" => (int)$payment["order_id"],
-        "store_id" => (int)$payment["store_id"],
-        "payment_method" => $payment_method,
-        "payment_status" => $payment["payment_status"],
-        "payment_confirm_status" => $payment["payment_confirm_status"]
+
+        "payment_id" =>
+            (int)$payment["payment_id"],
+
+        "order_id" =>
+            (int)$payment["order_id"],
+
+        "store_id" =>
+            (int)$payment["store_id"],
+
+        "payment_method" =>
+            $payment_method,
+
+        "amount" =>
+            (float)$payment["amount"],
+
+        "payment_status" =>
+            $payment["payment_status"],
+
+        "payment_confirm_status" =>
+            $payment["payment_confirm_status"]
     ],
 
     "order" => [
-        "order_id" => (int)$order["order_id"],
-        "customer_id" => (int)$order["customer_id"],
-        "store_id" => (int)$order["store_id"],
-        "product_amount" => (float)$order["product_amount"],
-        "shipping_fee" => (float)$order["shipping_fee"],
-        "total_amount" => (float)$order["total_amount"],
-        "delivery_method" => $order["delivery_method"],
-        "delivery_status" => $order["delivery_status"]
+
+        "order_id" =>
+            (int)$order["order_id"],
+
+        "customer_id" =>
+            (int)$order["customer_id"],
+
+        "store_id" =>
+            (int)$order["store_id"],
+
+        "product_amount" =>
+            (float)$order["product_amount"],
+
+        "shipping_fee" =>
+            (float)$order["shipping_fee"],
+
+        "total_amount" =>
+            (float)$order["total_amount"],
+
+        "delivery_method" =>
+            $order["delivery_method"],
+
+        "delivery_status" =>
+            $order["delivery_status"]
     ],
 
     "store" => [
-        "store_id" => $store_id,
-        "store_name" => $store_name
+
+        "store_id" =>
+            $store_id,
+
+        "store_name" =>
+            $store_name
     ],
 
-    "payment_account" => $payment_account
+    "payment_account" =>
+        $payment_account
 
 ], JSON_UNESCAPED_UNICODE);
 

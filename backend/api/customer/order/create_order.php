@@ -72,7 +72,8 @@ if (
     !isset($data["cart_item_ids"]) ||
     !isset($data["receiver_name"]) ||
     !isset($data["receiver_phone"]) ||
-    !isset($data["receiver_address"])
+    !isset($data["receiver_address"]) ||
+    !isset($data["delivery_method"])
 ) {
     echo json_encode([
         "error" => "Missing required fields"
@@ -82,9 +83,18 @@ if (
 }
 
 $cart_item_ids = $data["cart_item_ids"];
-$receiver_name = trim($data["receiver_name"]);
-$receiver_phone = trim($data["receiver_phone"]);
-$receiver_address = trim($data["receiver_address"]);
+
+$receiver_name =
+    trim($data["receiver_name"]);
+
+$receiver_phone =
+    trim($data["receiver_phone"]);
+
+$receiver_address =
+    trim($data["receiver_address"]);
+
+$delivery_method =
+    trim($data["delivery_method"]);
 
 // 檢查購物車商品
 if (
@@ -106,6 +116,15 @@ if (
 ) {
     echo json_encode([
         "error" => "Receiver information is required"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查配送方式
+if ($delivery_method === "") {
+    echo json_encode([
+        "error" => "Delivery method is required"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -140,7 +159,6 @@ $cart_item_ids = array_values(
 // 固定運費
 $shipping_fee = 60;
 
-// 建立 IN (?, ?, ?)
 $placeholders = implode(
     ",",
     array_fill(
@@ -150,14 +168,14 @@ $placeholders = implode(
     )
 );
 
-// 開始交易
 $pdo->beginTransaction();
 
 try {
 
-    // 檢查會員
+    // 再次檢查會員
     $sql = "
-    SELECT customer_id
+    SELECT
+        customer_id
     FROM CUSTOMER
     WHERE customer_id = ?
     ";
@@ -181,7 +199,7 @@ try {
     SELECT
         ci.cart_item_id,
         ci.cart_id,
-        c.store_id,
+        cart.store_id,
 
         ci.product_id,
         ci.spec_id,
@@ -193,6 +211,11 @@ try {
         p.stock AS product_stock,
         p.status AS product_status,
 
+        p.category_id,
+
+        c.category_name,
+        c.status AS category_status,
+
         ps.spec_name,
         ps.price AS spec_price,
         ps.stock AS spec_stock,
@@ -200,20 +223,23 @@ try {
 
     FROM CART_ITEM ci
 
-    INNER JOIN CART c
-        ON ci.cart_id = c.cart_id
-        AND ci.store_id = c.store_id
-        AND c.customer_id = ?
+    INNER JOIN CART cart
+        ON ci.cart_id = cart.cart_id
+        AND ci.store_id = cart.store_id
+        AND cart.customer_id = ?
 
     INNER JOIN PRODUCT p
         ON ci.product_id = p.product_id
         AND ci.store_id = p.store_id
 
+    LEFT JOIN CATEGORY c
+        ON p.category_id = c.category_id
+        AND p.store_id = c.store_id
+
     LEFT JOIN PRODUCT_SPEC ps
         ON ci.spec_id = ps.spec_id
         AND ci.product_id = ps.product_id
         AND ci.store_id = ps.store_id
-        AND ps.status = 'active'
 
     WHERE ci.cart_item_id IN ($placeholders)
     ";
@@ -288,28 +314,53 @@ try {
         );
     }
 
-    // 商店帳號停用
     if ($store["store_status"] !== "active") {
         throw new Exception(
             "Store is inactive"
         );
     }
 
-    // 商店暫停營業
     if ($store["business_status"] !== "open") {
         throw new Exception(
             "Store is currently closed"
         );
     }
 
-    // 展示模式不能購物
     if ($store["store_mode"] !== "shopping") {
         throw new Exception(
             "Store is currently in showcase mode"
         );
     }
 
-    // 檢查商品狀態、規格與庫存
+    // 驗證商店是否啟用此配送方式
+    $sql = "
+    SELECT
+        store_delivery_id,
+        delivery_method,
+        status
+    FROM STORE_DELIVERY_METHOD
+    WHERE store_id = ?
+    AND delivery_method = ?
+    AND status = 'active'
+    LIMIT 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $store_id,
+        $delivery_method
+    ]);
+
+    $delivery = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$delivery) {
+        throw new Exception(
+            "Selected delivery method is not available"
+        );
+    }
+
+    // 檢查商品、Category、規格與庫存
     $product_amount = 0;
 
     foreach ($items as $item) {
@@ -322,20 +373,44 @@ try {
             );
         }
 
-        // 商品必須是 active
         if ($item["product_status"] !== "active") {
             throw new Exception(
                 "Product is no longer available"
             );
         }
 
+        // 檢查 Category
+        if ($item["category_id"] !== null) {
+
+            if ($item["category_name"] === null) {
+                throw new Exception(
+                    "Product category not found"
+                );
+            }
+
+            if ($item["category_status"] !== "active") {
+                throw new Exception(
+                    "Product category is no longer available"
+                );
+            }
+        }
+
         // 有規格商品
         if ((int)$item["has_spec"] === 1) {
 
-            if (
-                $item["spec_id"] === null ||
-                $item["spec_status"] !== "active"
-            ) {
+            if ($item["spec_id"] === null) {
+                throw new Exception(
+                    "Product specification is no longer available"
+                );
+            }
+
+            if ($item["spec_name"] === null) {
+                throw new Exception(
+                    "Product specification is no longer available"
+                );
+            }
+
+            if ($item["spec_status"] !== "active") {
                 throw new Exception(
                     "Product specification is no longer available"
                 );
@@ -369,7 +444,6 @@ try {
             }
         }
 
-        // 計算商品金額
         $product_amount +=
             $price * $quantity;
     }
@@ -396,6 +470,7 @@ try {
         shipping_fee,
         total_amount,
 
+        delivery_method,
         delivery_status,
 
         estimated_ship_date,
@@ -416,6 +491,7 @@ try {
         ?,
         ?,
 
+        ?,
         'pending',
 
         DATE_ADD(CURDATE(), INTERVAL 3 DAY),
@@ -435,7 +511,9 @@ try {
 
         $product_amount,
         $shipping_fee,
-        $total_amount
+        $total_amount,
+
+        $delivery_method
     ]);
 
     $order_id = (int)$pdo->lastInsertId();
@@ -504,7 +582,6 @@ try {
 
         $quantity = (int)$item["quantity"];
 
-        // 有規格
         if ((int)$item["has_spec"] === 1) {
 
             $sql = "
@@ -539,7 +616,6 @@ try {
 
         } else {
 
-            // 無規格
             $sql = "
             UPDATE PRODUCT
             SET
@@ -591,7 +667,6 @@ try {
 
     $stmt->execute($params);
 
-    // 完成交易
     $pdo->commit();
 
     // 回傳
@@ -610,6 +685,8 @@ try {
 
         "total_amount" => $total_amount,
 
+        "delivery_method" => $delivery_method,
+
         "delivery_status" => "pending"
 
     ], JSON_UNESCAPED_UNICODE);
@@ -623,6 +700,8 @@ try {
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
+
+    exit;
 }
 
 ?>

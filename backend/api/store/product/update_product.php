@@ -155,7 +155,6 @@ $status =
     $_POST["status"] ?? $product["status"];
 
 // 規格類型名稱
-// 例如：尺寸、顏色
 $spec_name =
     trim($_POST["spec_name"] ?? "");
 
@@ -221,7 +220,6 @@ if (!in_array($status, $allowed_status, true)) {
 // 有規格
 if ($has_spec === 1) {
 
-    // 規格類型名稱必填
     if ($spec_name === "") {
         echo json_encode([
             "error" => "Specification name is required"
@@ -241,7 +239,6 @@ if ($has_spec === 1) {
 } else {
 
     // 沒有規格時
-    // PRODUCT.spec_name 設為 NULL
     $spec_name = null;
 }
 
@@ -302,6 +299,7 @@ if ($has_spec === 1) {
             $spec_id === ""
         ) {
             $spec_id = null;
+
         } else {
 
             if (
@@ -343,8 +341,7 @@ if ($has_spec === 1) {
                 $spec_id;
         }
 
-        // PRODUCT_SPEC.spec_name
-        // 例如 S、M、L
+        // 規格值
         $spec_value =
             trim($spec["spec_name"] ?? "");
 
@@ -440,15 +437,17 @@ if ($has_spec === 0) {
     $stock = 0;
 }
 
-// 初始化上傳圖片路徑
+// 初始化已上傳圖片
 $uploaded_file_paths = [];
+
+// 初始化新圖片 ID
+$new_image_ids = [];
 
 $pdo->beginTransaction();
 
 try {
 
     // 更新商品基本資料
-    // category_id 不修改
     $sql = "
     UPDATE PRODUCT
     SET
@@ -503,6 +502,7 @@ try {
         $existing_spec_ids = [];
 
         foreach ($existing_specs as $existing_spec) {
+
             $existing_spec_ids[] =
                 (int)$existing_spec["spec_id"];
         }
@@ -530,7 +530,6 @@ try {
                     $spec["spec_id"];
 
                 // 更新既有規格
-                // price 永遠使用 PRODUCT.price
                 $sql = "
                 UPDATE PRODUCT_SPEC
                 SET
@@ -586,7 +585,6 @@ try {
                 }
 
                 // 新增規格
-                // price 自動使用 PRODUCT.price
                 $sql = "
                 INSERT INTO PRODUCT_SPEC
                 (
@@ -677,6 +675,28 @@ try {
         ]);
     }
 
+    // 取得目前商品圖片最後排序
+    $sql = "
+    SELECT
+        COALESCE(MAX(sort_order), 0) AS max_sort_order
+    FROM PRODUCT_IMAGE
+    WHERE product_id = ?
+    AND store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $product_id,
+        $store_id
+    ]);
+
+    $image_sort_data =
+        $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $next_sort_order =
+        (int)$image_sort_data["max_sort_order"] + 1;
+
     // 新增商品圖片
     if (
         isset($_FILES["images"]) &&
@@ -730,17 +750,9 @@ try {
             $uploaded_file_paths[] =
                 $file_path;
 
-            // 新增圖片排序
+            // 新圖片自動排在最後
             $sort_order =
-                isset($_POST["image_sort_orders"][$i])
-                    ? (int)$_POST["image_sort_orders"][$i]
-                    : $i;
-
-            if ($sort_order < 0) {
-                throw new Exception(
-                    "Invalid image sort order"
-                );
-            }
+                $next_sort_order;
 
             $sql = "
             INSERT INTO PRODUCT_IMAGE
@@ -767,6 +779,14 @@ try {
                 $image_url,
                 $sort_order
             ]);
+
+            $new_image_id =
+                (int)$pdo->lastInsertId();
+
+            $new_image_ids[] =
+                $new_image_id;
+
+            $next_sort_order++;
         }
     }
 
@@ -807,7 +827,7 @@ try {
                 $sort_order === null ||
                 !is_numeric($sort_order) ||
                 floor((float)$sort_order) != (float)$sort_order ||
-                (int)$sort_order < 0
+                (int)$sort_order < 1
             ) {
                 throw new Exception(
                     "Invalid image sort order"
@@ -816,6 +836,17 @@ try {
 
             $image_id = (int)$image_id;
             $sort_order = (int)$sort_order;
+
+            // 新圖片不允許被重新指定排序
+            if (
+                in_array(
+                    $image_id,
+                    $new_image_ids,
+                    true
+                )
+            ) {
+                continue;
+            }
 
             // 確認圖片屬於目前商品
             $sql = "
@@ -860,6 +891,80 @@ try {
                 $store_id
             ]);
         }
+    }
+
+    // 重新整理所有圖片排序
+    // 確保最終一定是 1, 2, 3, 4...
+    // 新增圖片永遠排在最後
+    $sql = "
+    SELECT
+        image_id
+    FROM PRODUCT_IMAGE
+    WHERE product_id = ?
+    AND store_id = ?
+    ORDER BY
+        CASE
+            WHEN image_id IN (
+                SELECT image_id
+                FROM PRODUCT_IMAGE
+                WHERE product_id = ?
+                AND store_id = ?
+                AND image_id IN (
+                    " . (
+                        count($new_image_ids) > 0
+                            ? implode(",", array_fill(0, count($new_image_ids), "?"))
+                            : "0"
+                    ) . "
+                )
+            )
+            THEN 1
+            ELSE 0
+        END ASC,
+        sort_order ASC,
+        image_id ASC
+    ";
+
+    $params = [
+        $product_id,
+        $store_id,
+        $product_id,
+        $store_id
+    ];
+
+    if (count($new_image_ids) > 0) {
+        foreach ($new_image_ids as $new_image_id) {
+            $params[] = $new_image_id;
+        }
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+
+    $all_image_ids =
+        $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    // 重新設定 1, 2, 3...
+    $sql = "
+    UPDATE PRODUCT_IMAGE
+    SET
+        sort_order = ?
+    WHERE image_id = ?
+    AND product_id = ?
+    AND store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    foreach (
+        $all_image_ids as $index => $image_id
+    ) {
+
+        $stmt->execute([
+            $index + 1,
+            (int)$image_id,
+            $product_id,
+            $store_id
+        ]);
     }
 
     $pdo->commit();

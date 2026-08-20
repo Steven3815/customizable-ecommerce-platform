@@ -1,5 +1,7 @@
 <?php
 
+// Store 更新商家資料
+
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/database.php";
@@ -30,71 +32,7 @@ if ($store_id <= 0) {
     exit;
 }
 
-// 檢查 Store 是否存在
-$sql = "
-SELECT
-    store_id
-FROM STORE
-WHERE store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
-
-$store = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$store) {
-    echo json_encode([
-        "error" => "Store not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$data = json_decode(
-    file_get_contents("php://input"),
-    true
-);
-
-if (!is_array($data)) {
-    echo json_encode([
-        "error" => "Invalid JSON format"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-if (array_key_exists("email", $data)) {
-    echo json_encode([
-        "error" => "Email cannot be modified"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$allowed_fields = [
-    "store_name",
-    "owner_name",
-    "phone"
-];
-
-$has_update = false;
-
-foreach ($allowed_fields as $field) {
-    if (array_key_exists($field, $data)) {
-        $has_update = true;
-        break;
-    }
-}
-
-if (!$has_update) {
-    echo json_encode([
-        "error" => "No fields to update"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
+// 取得目前 Store 資料
 $sql = "
 SELECT
     store_id,
@@ -109,10 +47,14 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// 檢查 Store 是否存在
 if (!$store) {
     echo json_encode([
         "error" => "Store not found"
@@ -121,12 +63,73 @@ if (!$store) {
     exit;
 }
 
+// 取得 JSON 資料
+$data = json_decode(
+    file_get_contents("php://input"),
+    true
+);
+
+if (!is_array($data)) {
+    echo json_encode([
+        "error" => "Invalid JSON format"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// Email 不允許修改
+if (array_key_exists("email", $data)) {
+    echo json_encode([
+        "error" => "Email cannot be modified"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 允許修改的欄位
+$allowed_fields = [
+    "store_name",
+    "owner_name",
+    "phone"
+];
+
+// 檢查是否有要更新的欄位
+$has_update = false;
+
+foreach ($allowed_fields as $field) {
+
+    if (array_key_exists($field, $data)) {
+        $has_update = true;
+        break;
+    }
+}
+
+if (!$has_update) {
+    echo json_encode([
+        "error" => "No fields to update"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 使用原本資料
 $store_name = $store["store_name"];
 $owner_name = $store["owner_name"];
 $phone = $store["phone"];
 
+// 更新 Store Name
 if (array_key_exists("store_name", $data)) {
-    $store_name = trim($data["store_name"]);
+
+    if (!is_string($data["store_name"])) {
+        echo json_encode([
+            "error" => "Invalid store name"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    $store_name =
+        trim($data["store_name"]);
 
     if ($store_name === "") {
         echo json_encode([
@@ -145,8 +148,19 @@ if (array_key_exists("store_name", $data)) {
     }
 }
 
+// 更新 Owner Name
 if (array_key_exists("owner_name", $data)) {
-    $owner_name = trim($data["owner_name"]);
+
+    if (!is_string($data["owner_name"])) {
+        echo json_encode([
+            "error" => "Invalid owner name"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    $owner_name =
+        trim($data["owner_name"]);
 
     if ($owner_name === "") {
         echo json_encode([
@@ -165,8 +179,19 @@ if (array_key_exists("owner_name", $data)) {
     }
 }
 
+// 更新 Phone
 if (array_key_exists("phone", $data)) {
-    $phone = trim($data["phone"]);
+
+    if (!is_string($data["phone"])) {
+        echo json_encode([
+            "error" => "Invalid phone number"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    $phone =
+        trim($data["phone"]);
 
     if (mb_strlen($phone) > 30) {
         echo json_encode([
@@ -177,17 +202,18 @@ if (array_key_exists("phone", $data)) {
     }
 }
 
+// 更新 Store
 $sql = "
 UPDATE STORE
 SET
     store_name = ?,
     owner_name = ?,
-    phone = ?
+    phone = ?,
+    updated_at = NOW()
 WHERE store_id = ?
 ";
 
 try {
-    $pdo->beginTransaction();
 
     $stmt = $pdo->prepare($sql);
 
@@ -198,11 +224,7 @@ try {
         $store_id
     ]);
 
-    $pdo->commit();
 } catch (PDOException $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
 
     echo json_encode([
         "error" => "Profile update failed"
@@ -211,17 +233,34 @@ try {
     exit;
 }
 
+// 回傳更新後資料
 echo json_encode([
-    "message" => "Store profile updated successfully",
+    "message" =>
+        "Store profile updated successfully",
+
     "store" => [
-        "store_id" => $store_id,
-        "store_name" => $store_name,
-        "store_url" => $store["store_url"],
-        "owner_name" => $owner_name,
-        "email" => $store["email"],
-        "phone" => $phone,
-        "status" => $store["status"]
+        "store_id" =>
+            (int)$store["store_id"],
+
+        "store_name" =>
+            $store_name,
+
+        "store_url" =>
+            $store["store_url"],
+
+        "owner_name" =>
+            $owner_name,
+
+        "email" =>
+            $store["email"],
+
+        "phone" =>
+            $phone,
+
+        "status" =>
+            $store["status"]
     ]
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

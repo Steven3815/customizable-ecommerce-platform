@@ -67,6 +67,7 @@ if (!is_array($data)) {
 try {
     $pdo->beginTransaction();
 
+    // 更新 Store 狀態
     if (isset($data["store_status"])) {
 
         $store_status = $data["store_status"];
@@ -92,6 +93,7 @@ try {
         ]);
     }
 
+    // 更新 Store 模式
     if (isset($data["store_mode"])) {
 
         $store_mode = $data["store_mode"];
@@ -104,7 +106,8 @@ try {
         }
 
         $sql = "
-        SELECT store_mode
+        SELECT
+            store_mode
         FROM STORE_SETTING
         WHERE store_id = ?
         ";
@@ -115,13 +118,17 @@ try {
             $store_id
         ]);
 
-        $current_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+        $current_setting =
+            $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$current_setting) {
-            throw new Exception("Store setting not found");
+            throw new Exception(
+                "Store setting not found"
+            );
         }
 
-        $current_mode = $current_setting["store_mode"];
+        $current_mode =
+            $current_setting["store_mode"];
 
         if (
             $current_mode === "shopping" &&
@@ -146,10 +153,13 @@ try {
         ]);
     }
 
+    // 更新退款設定
     if (isset($data["refund"])) {
 
         if (!is_array($data["refund"])) {
-            throw new Exception("Invalid refund settings");
+            throw new Exception(
+                "Invalid refund settings"
+            );
         }
 
         if (isset($data["refund"]["enabled"])) {
@@ -208,6 +218,7 @@ try {
         }
     }
 
+    // 更新配送時間設定
     if (isset($data["shipping"])) {
 
         if (!is_array($data["shipping"])) {
@@ -216,7 +227,9 @@ try {
             );
         }
 
-        if (isset($data["shipping"]["shipping_days"])) {
+        if (
+            isset($data["shipping"]["shipping_days"])
+        ) {
 
             $shipping_days =
                 $data["shipping"]["shipping_days"];
@@ -246,7 +259,9 @@ try {
             ]);
         }
 
-        if (isset($data["shipping"]["delivery_days"])) {
+        if (
+            isset($data["shipping"]["delivery_days"])
+        ) {
 
             $delivery_days =
                 $data["shipping"]["delivery_days"];
@@ -277,6 +292,7 @@ try {
         }
     }
 
+    // 更新庫存預警設定
     if (isset($data["stock_alert"])) {
 
         if (!is_array($data["stock_alert"])) {
@@ -285,6 +301,7 @@ try {
             );
         }
 
+        // 是否啟用庫存預警
         if (isset($data["stock_alert"]["enabled"])) {
 
             $stock_alert_enable =
@@ -310,6 +327,7 @@ try {
             ]);
         }
 
+        // 一般商品庫存預警門檻
         if (
             isset($data["stock_alert"]["threshold"])
         ) {
@@ -346,8 +364,47 @@ try {
                 $store_id
             ]);
         }
+
+        // 商品規格庫存預警門檻
+        if (
+            isset($data["stock_alert"]["spec_threshold"])
+        ) {
+
+            $spec_threshold =
+                $data["stock_alert"]["spec_threshold"];
+
+            if (
+                $spec_threshold !== null &&
+                (
+                    !is_numeric($spec_threshold) ||
+                    floor((float)$spec_threshold)
+                        != (float)$spec_threshold ||
+                    (int)$spec_threshold < 0
+                )
+            ) {
+                throw new Exception(
+                    "Invalid spec stock alert threshold"
+                );
+            }
+
+            $sql = "
+            UPDATE STORE_SETTING
+            SET spec_stock_alert_threshold = ?
+            WHERE store_id = ?
+            ";
+
+            $stmt = $pdo->prepare($sql);
+
+            $stmt->execute([
+                $spec_threshold === null
+                    ? null
+                    : (int)$spec_threshold,
+                $store_id
+            ]);
+        }
     }
 
+    // 更新客服設定
     if (isset($data["customer_service"])) {
 
         if (!is_array($data["customer_service"])) {
@@ -386,6 +443,7 @@ try {
         }
     }
 
+    // 更新付款方式
     if (isset($data["payment_methods"])) {
 
         if (!is_array($data["payment_methods"])) {
@@ -501,185 +559,175 @@ try {
                 $store_payment_id
             ]);
 
-            if ($store_payment_id === 2) {
+        // ATM
+        if ($store_payment_id === 2 && $enabled) {
 
-                $has_bank_data =
-                    isset($payment["bank_name"]) ||
-                    isset($payment["bank_number"]);
+            $bank_name =
+                trim(
+                    $payment["bank_name"] ?? ""
+                );
 
-                if ($has_bank_data) {
+            $bank_number =
+                trim(
+                    $payment["bank_number"] ?? ""
+                );
 
-                    $bank_name =
-                        trim(
-                            $payment["bank_name"] ?? ""
-                        );
-
-                    $bank_number =
-                        trim(
-                            $payment["bank_number"] ?? ""
-                        );
-
-                    if (
-                        $bank_name === "" ||
-                        $bank_number === ""
-                    ) {
-                        throw new Exception(
-                            "Bank name and bank number are required"
-                        );
-                    }
-
-                    $sql = "
-                    SELECT account_id
-                    FROM STORE_PAYMENT_ACCOUNT
-                    WHERE store_id = ?
-                    AND store_payment_id = ?
-                    ";
-
-                    $stmt = $pdo->prepare($sql);
-
-                    $stmt->execute([
-                        $store_id,
-                        $store_payment_id
-                    ]);
-
-                    $account =
-                        $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    if ($account) {
-
-                        $sql = "
-                        UPDATE STORE_PAYMENT_ACCOUNT
-                        SET
-                            bank_name = ?,
-                            bank_number = ?
-                        WHERE account_id = ?
-                        AND store_id = ?
-                        ";
-
-                        $stmt = $pdo->prepare($sql);
-
-                        $stmt->execute([
-                            $bank_name,
-                            $bank_number,
-                            (int)$account["account_id"],
-                            $store_id
-                        ]);
-
-                    } else {
-
-                        $sql = "
-                        INSERT INTO STORE_PAYMENT_ACCOUNT
-                        (
-                            store_id,
-                            store_payment_id,
-                            bank_name,
-                            bank_number
-                        )
-                        VALUES
-                        (
-                            ?,
-                            ?,
-                            ?,
-                            ?
-                        )
-                        ";
-
-                        $stmt = $pdo->prepare($sql);
-
-                        $stmt->execute([
-                            $store_id,
-                            $store_payment_id,
-                            $bank_name,
-                            $bank_number
-                        ]);
-                    }
-                }
+            if (
+                $bank_name === "" ||
+                $bank_number === ""
+            ) {
+                throw new Exception(
+                    "Bank name and bank number are required"
+                );
             }
 
-            if ($store_payment_id === 3) {
+            $sql = "
+            SELECT
+                account_id
+            FROM STORE_PAYMENT_ACCOUNT
+            WHERE store_id = ?
+            AND store_payment_id = ?
+            ";
 
-                if (
-                    isset(
-                        $payment["post_office_number"]
-                    )
-                ) {
+            $stmt = $pdo->prepare($sql);
 
-                    $post_office_number =
-                        trim(
-                            $payment["post_office_number"]
-                        );
+            $stmt->execute([
+                $store_id,
+                $store_payment_id
+            ]);
 
-                    if ($post_office_number === "") {
-                        throw new Exception(
-                            "Post office number is required"
-                        );
-                    }
+            $account =
+                $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($account) {
+
+                $sql = "
+                UPDATE STORE_PAYMENT_ACCOUNT
+                SET
+                    bank_name = ?,
+                    bank_number = ?
+                WHERE account_id = ?
+                AND store_id = ?
+                ";
+
+                $stmt = $pdo->prepare($sql);
+
+                $stmt->execute([
+                    $bank_name,
+                    $bank_number,
+                    (int)$account["account_id"],
+                    $store_id
+                ]);
+
+            } else {
+
+                $sql = "
+                INSERT INTO STORE_PAYMENT_ACCOUNT
+                (
+                    store_id,
+                    store_payment_id,
+                    bank_name,
+                    bank_number
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )
+                ";
+
+                $stmt = $pdo->prepare($sql);
+
+                $stmt->execute([
+                    $store_id,
+                    $store_payment_id,
+                    $bank_name,
+                    $bank_number
+                ]);
+            }
+        }
+            // 郵局
+            if ($store_payment_id === 3 && $enabled) {
+
+                $post_office_number =
+                    trim(
+                        $payment["post_office_number"] ?? ""
+                    );
+
+                if ($post_office_number === "") {
+                    throw new Exception(
+                        "Post office number is required"
+                    );
+                }
+
+                $sql = "
+                SELECT
+                    account_id
+                FROM STORE_PAYMENT_ACCOUNT
+                WHERE store_id = ?
+                AND store_payment_id = ?
+                ";
+
+                $stmt = $pdo->prepare($sql);
+
+                $stmt->execute([
+                    $store_id,
+                    $store_payment_id
+                ]);
+
+                $account =
+                    $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($account) {
 
                     $sql = "
-                    SELECT account_id
-                    FROM STORE_PAYMENT_ACCOUNT
-                    WHERE store_id = ?
-                    AND store_payment_id = ?
+                    UPDATE STORE_PAYMENT_ACCOUNT
+                    SET
+                        post_office_number = ?
+                    WHERE account_id = ?
+                    AND store_id = ?
+                    ";
+
+                    $stmt = $pdo->prepare($sql);
+
+                    $stmt->execute([
+                        $post_office_number,
+                        (int)$account["account_id"],
+                        $store_id
+                    ]);
+
+                } else {
+
+                    $sql = "
+                    INSERT INTO STORE_PAYMENT_ACCOUNT
+                    (
+                        store_id,
+                        store_payment_id,
+                        post_office_number
+                    )
+                    VALUES
+                    (
+                        ?,
+                        ?,
+                        ?
+                    )
                     ";
 
                     $stmt = $pdo->prepare($sql);
 
                     $stmt->execute([
                         $store_id,
-                        $store_payment_id
+                        $store_payment_id,
+                        $post_office_number
                     ]);
-
-                    $account =
-                        $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    if ($account) {
-
-                        $sql = "
-                        UPDATE STORE_PAYMENT_ACCOUNT
-                        SET
-                            post_office_number = ?
-                        WHERE account_id = ?
-                        AND store_id = ?
-                        ";
-
-                        $stmt = $pdo->prepare($sql);
-
-                        $stmt->execute([
-                            $post_office_number,
-                            (int)$account["account_id"],
-                            $store_id
-                        ]);
-
-                    } else {
-
-                        $sql = "
-                        INSERT INTO STORE_PAYMENT_ACCOUNT
-                        (
-                            store_id,
-                            store_payment_id,
-                            post_office_number
-                        )
-                        VALUES
-                        (
-                            ?,
-                            ?,
-                            ?
-                        )
-                        ";
-
-                        $stmt = $pdo->prepare($sql);
-
-                        $stmt->execute([
-                            $store_id,
-                            $store_payment_id,
-                            $post_office_number
-                        ]);
-                    }
                 }
             }
         }
     }
 
+    // 更新配送方式
     if (isset($data["delivery_methods"])) {
 
         if (!is_array($data["delivery_methods"])) {

@@ -235,8 +235,6 @@ try {
             uploadImage(
                 $_FILES["image"],
                 "banners",
-                1920,
-                600
             );
 
         $new_image_url =
@@ -265,13 +263,16 @@ try {
         $title =
             trim($_POST["title"]);
 
+        // 空字串轉成 NULL
         if ($title === "") {
-            throw new Exception(
-                "Title cannot be empty"
-            );
+            $title = null;
         }
 
-        if (mb_strlen($title) > 20) {
+        // 有標題時最多 20 字
+        if (
+            $title !== null &&
+            mb_strlen($title) > 20
+        ) {
             throw new Exception(
                 "Title is too long"
             );
@@ -279,6 +280,7 @@ try {
 
     } else {
 
+        // 沒有傳 title → 保留原本的值
         $title =
             $banner["title"];
     }

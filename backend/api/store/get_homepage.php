@@ -74,7 +74,8 @@ SELECT
     store_status,
     store_mode,
     stock_alert_enable,
-    stock_alert_threshold
+    stock_alert_threshold,
+    spec_stock_alert_threshold
 FROM STORE_SETTING
 WHERE store_id = ?
 ";
@@ -118,7 +119,10 @@ SELECT COUNT(*)
 FROM ORDERS
 WHERE store_id = ?
 AND created_at >= CURDATE()
-AND created_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+AND created_at < DATE_ADD(
+    CURDATE(),
+    INTERVAL 1 DAY
+)
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -141,7 +145,10 @@ JOIN ORDERS o
 WHERE p.store_id = ?
 AND p.payment_status = 'paid'
 AND p.created_at >= CURDATE()
-AND p.created_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+AND p.created_at < DATE_ADD(
+    CURDATE(),
+    INTERVAL 1 DAY
+)
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -162,9 +169,15 @@ JOIN ORDERS o
     AND p.store_id = o.store_id
 WHERE p.store_id = ?
 AND p.payment_status = 'paid'
-AND p.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+AND p.created_at >= DATE_FORMAT(
+    CURDATE(),
+    '%Y-%m-01'
+)
 AND p.created_at < DATE_ADD(
-    DATE_FORMAT(CURDATE(), '%Y-%m-01'),
+    DATE_FORMAT(
+        CURDATE(),
+        '%Y-%m-01'
+    ),
     INTERVAL 1 MONTH
 )
 ";
@@ -229,7 +242,7 @@ $stmt->execute([
 $pending_refund =
     (int)$stmt->fetchColumn();
 
-// 庫存預警
+// 庫存預警設定
 $stock_alert_enable =
     (bool)$store_setting["stock_alert_enable"];
 
@@ -238,15 +251,23 @@ $stock_alert_threshold =
         ? (int)$store_setting["stock_alert_threshold"]
         : 0;
 
+$spec_stock_alert_threshold =
+    $store_setting["spec_stock_alert_threshold"] !== null
+        ? (int)$store_setting["spec_stock_alert_threshold"]
+        : 0;
+
 $stock_alert_count = 0;
 
+// 庫存預警
 if ($stock_alert_enable) {
 
+    // 無規格商品庫存預警
     $sql = "
     SELECT COUNT(*)
     FROM PRODUCT
     WHERE store_id = ?
     AND status = 'active'
+    AND has_spec = FALSE
     AND stock > 0
     AND stock <= ?
     ";
@@ -258,16 +279,55 @@ if ($stock_alert_enable) {
         $stock_alert_threshold
     ]);
 
-    $stock_alert_count =
+    $product_stock_alert_count =
         (int)$stmt->fetchColumn();
+
+    // 有規格商品庫存預警
+    // 一個商品只計算一次
+    $sql = "
+    SELECT COUNT(DISTINCT ps.product_id)
+    FROM PRODUCT_SPEC ps
+    JOIN PRODUCT p
+        ON ps.store_id = p.store_id
+        AND ps.product_id = p.product_id
+    WHERE ps.store_id = ?
+    AND p.status = 'active'
+    AND p.has_spec = TRUE
+    AND ps.status = 'active'
+    AND ps.stock > 0
+    AND ps.stock <= ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $store_id,
+        $spec_stock_alert_threshold
+    ]);
+
+    $spec_stock_alert_count =
+        (int)$stmt->fetchColumn();
+
+    // 一般商品 + 有規格商品
+    $stock_alert_count =
+        $product_stock_alert_count
+        + $spec_stock_alert_count;
 }
 
 // 庫存不足
+// 一個商品只計算一次
+
+$product_out_of_stock_count = 0;
+
+$spec_out_of_stock_count = 0;
+
+// 無規格商品庫存不足
 $sql = "
 SELECT COUNT(*)
 FROM PRODUCT
 WHERE store_id = ?
 AND status = 'active'
+AND has_spec = FALSE
 AND stock <= 0
 ";
 
@@ -277,10 +337,41 @@ $stmt->execute([
     $store_id
 ]);
 
-$out_of_stock_count =
+$product_out_of_stock_count =
     (int)$stmt->fetchColumn();
 
+// 有規格商品庫存不足
+// 只要任一規格庫存不足
+// 該商品就只計算一次
+$sql = "
+SELECT COUNT(DISTINCT ps.product_id)
+FROM PRODUCT_SPEC ps
+JOIN PRODUCT p
+    ON ps.store_id = p.store_id
+    AND ps.product_id = p.product_id
+WHERE ps.store_id = ?
+AND p.status = 'active'
+AND p.has_spec = TRUE
+AND ps.status = 'active'
+AND ps.stock <= 0
+";
+
+$stmt = $pdo->prepare($sql);
+
+$stmt->execute([
+    $store_id
+]);
+
+$spec_out_of_stock_count =
+    (int)$stmt->fetchColumn();
+
+// 一般商品 + 有規格商品
+$out_of_stock_count =
+    $product_out_of_stock_count
+    + $spec_out_of_stock_count;
+
 // 最近訂單
+// 最多顯示 10 筆
 $sql = "
 SELECT
     o.order_id,

@@ -41,7 +41,10 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$customer_id]);
+
+$stmt->execute([
+    $customer_id
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -86,10 +89,10 @@ $product_id = $data["product_id"];
 $spec_id = $data["spec_id"] ?? null;
 $quantity = $data["quantity"];
 
-// 檢查 store_id
+// 檢查 Store ID
 if (
     !is_numeric($store_id) ||
-    floor($store_id) != $store_id ||
+    floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
     echo json_encode([
@@ -101,10 +104,10 @@ if (
 
 $store_id = (int)$store_id;
 
-// 檢查 product_id
+// 檢查 Product ID
 if (
     !is_numeric($product_id) ||
-    floor($product_id) != $product_id ||
+    floor((float)$product_id) != (float)$product_id ||
     (int)$product_id <= 0
 ) {
     echo json_encode([
@@ -116,12 +119,12 @@ if (
 
 $product_id = (int)$product_id;
 
-// 檢查 spec_id
+// 檢查 Spec ID
 if ($spec_id !== null) {
 
     if (
         !is_numeric($spec_id) ||
-        floor($spec_id) != $spec_id ||
+        floor((float)$spec_id) != (float)$spec_id ||
         (int)$spec_id <= 0
     ) {
         echo json_encode([
@@ -137,7 +140,7 @@ if ($spec_id !== null) {
 // 檢查數量
 if (
     !is_numeric($quantity) ||
-    floor($quantity) != $quantity ||
+    floor((float)$quantity) != (float)$quantity ||
     (int)$quantity <= 0
 ) {
     echo json_encode([
@@ -148,29 +151,6 @@ if (
 }
 
 $quantity = (int)$quantity;
-
-// 檢查會員
-$sql = "
-SELECT customer_id
-FROM CUSTOMER
-WHERE customer_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $customer_id
-]);
-
-$customer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$customer) {
-    echo json_encode([
-        "error" => "Customer not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
 
 // 檢查 Store
 $sql = "
@@ -197,6 +177,7 @@ if (!$store) {
     exit;
 }
 
+// Store 必須 active
 if ($store["status"] !== "active") {
     echo json_encode([
         "error" => "Store is inactive"
@@ -239,18 +220,24 @@ if ($store_setting["store_mode"] !== "shopping") {
 }
 
 // 查詢商品
-// 必須同時符合 store_id + product_id
+// 必須同時符合：
+// Store + Category active + Product active
 $sql = "
 SELECT
-    product_id,
-    store_id,
-    has_spec,
-    stock,
-    status
-FROM PRODUCT
-WHERE product_id = ?
-AND store_id = ?
-AND status = 'active'
+    p.product_id,
+    p.store_id,
+    p.category_id,
+    p.has_spec,
+    p.stock,
+    p.status
+FROM PRODUCT p
+INNER JOIN CATEGORY c
+    ON p.category_id = c.category_id
+    AND c.store_id = p.store_id
+    AND c.status = 'active'
+WHERE p.product_id = ?
+AND p.store_id = ?
+AND p.status = 'active'
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -264,7 +251,7 @@ $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
     echo json_encode([
-        "error" => "Product does not belong to this store or product not found"
+        "error" => "Product, category or store data is inactive or not found"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -273,7 +260,7 @@ if (!$product) {
 // 有規格商品
 if ((int)$product["has_spec"] === 1) {
 
-    // 有規格商品必須傳 spec_id
+    // 有規格商品必須傳 Spec ID
     if ($spec_id === null) {
         echo json_encode([
             "error" => "Spec ID is required"
@@ -282,8 +269,9 @@ if ((int)$product["has_spec"] === 1) {
         exit;
     }
 
-    // 檢查規格是否同時屬於
-    // Store + Product
+    // 檢查規格
+    // 必須同時屬於：
+    // Store + Product + active
     $sql = "
     SELECT
         spec_id,
@@ -307,7 +295,7 @@ if ((int)$product["has_spec"] === 1) {
 
     if (!$spec) {
         echo json_encode([
-            "error" => "Invalid specification"
+            "error" => "Invalid or inactive specification"
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -324,7 +312,7 @@ if ((int)$product["has_spec"] === 1) {
 
 } else {
 
-    // 無規格商品不可傳 spec_id
+    // 無規格商品不可傳 Spec ID
     if ($spec_id !== null) {
         echo json_encode([
             "error" => "This product does not have specifications"
@@ -343,9 +331,10 @@ if ((int)$product["has_spec"] === 1) {
     }
 }
 
-// 找會員該 Store 的購物車
+// 找 Customer 該 Store 的購物車
 $sql = "
-SELECT cart_id
+SELECT
+    cart_id
 FROM CART
 WHERE customer_id = ?
 AND store_id = ?
@@ -391,6 +380,7 @@ if (!$cart) {
 }
 
 // 檢查購物車是否已有相同商品
+// 相同商品 + 相同規格才視為同一項目
 $sql = "
 SELECT
     cart_item_id,
@@ -423,12 +413,19 @@ if ($cart_item) {
     $new_quantity =
         (int)$cart_item["quantity"] + $quantity;
 
+    // 取得目前可用庫存
     if ((int)$product["has_spec"] === 1) {
-        $available_stock = (int)$spec["stock"];
+
+        $available_stock =
+            (int)$spec["stock"];
+
     } else {
-        $available_stock = (int)$product["stock"];
+
+        $available_stock =
+            (int)$product["stock"];
     }
 
+    // 檢查累加後是否超過庫存
     if ($new_quantity > $available_stock) {
         echo json_encode([
             "error" => "Insufficient stock"
@@ -437,9 +434,11 @@ if ($cart_item) {
         exit;
     }
 
+    // 更新購物車數量
     $sql = "
     UPDATE CART_ITEM
-    SET quantity = ?
+    SET
+        quantity = ?
     WHERE cart_item_id = ?
     AND cart_id = ?
     AND store_id = ?

@@ -98,7 +98,10 @@ try {
 
     $pdo->beginTransaction();
 
+    // =========================
     // 取得目前 Slider Image
+    // =========================
+
     $sql = "
         SELECT
             image_id,
@@ -130,12 +133,24 @@ try {
 
     $old_image_url = $slider["image_url"];
 
+    // =========================
     // 更新標題
+    // =========================
+
     if (isset($_POST["title"])) {
 
         $title = trim($_POST["title"]);
 
-        if (mb_strlen($title) > 200) {
+        // 空字串轉成 NULL
+        if ($title === "") {
+            $title = null;
+        }
+
+        // 有標題時最多 200 字
+        if (
+            $title !== null &&
+            mb_strlen($title) > 200
+        ) {
             throw new Exception(
                 "Title is too long"
             );
@@ -148,8 +163,16 @@ try {
         $title = $slider["title"];
     }
 
+    // =========================
     // 更新圖片
-    if (isset($_FILES["image"])) {
+    // =========================
+
+    if (
+        isset($_FILES["image"]) &&
+        is_array($_FILES["image"]) &&
+        isset($_FILES["image"]["error"]) &&
+        $_FILES["image"]["error"] !== UPLOAD_ERR_NO_FILE
+    ) {
 
         $new_image_url = uploadImage(
             $_FILES["image"],
@@ -165,7 +188,10 @@ try {
         $image_url = $old_image_url;
     }
 
+    // =========================
     // 更新 Slider Image
+    // =========================
+
     $sql = "
         UPDATE SLIDER_IMAGE
         SET
@@ -186,10 +212,16 @@ try {
         $store_id
     ]);
 
+    // =========================
     // Commit
+    // =========================
+
     $pdo->commit();
 
+    // =========================
     // DB 成功後再刪除舊圖片
+    // =========================
+
     if (
         $new_image_url !== null &&
         $old_image_url !== null &&
@@ -198,12 +230,16 @@ try {
         deleteImage($old_image_url);
     }
 
+    // =========================
     // 回傳更新後資料
+    // =========================
+
     echo json_encode([
         "message" =>
             "Slider image updated successfully",
 
         "slider_image" => [
+
             "image_id" =>
                 $image_id,
 

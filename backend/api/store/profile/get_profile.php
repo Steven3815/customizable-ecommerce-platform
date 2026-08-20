@@ -32,28 +32,7 @@ if ($store_id <= 0) {
     exit;
 }
 
-// 檢查 Store 是否存在
-$sql = "
-SELECT
-    store_id
-FROM STORE
-WHERE store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
-
-$store = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$store) {
-    echo json_encode([
-        "error" => "Store not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 查詢商家資料
+// 取得商家資料
 $sql = "
 SELECT
     store_id,
@@ -70,7 +49,10 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
+
+$stmt->execute([
+    $store_id
+]);
 
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -84,7 +66,8 @@ if (!$store) {
 }
 
 // 資料型態整理
-$store["store_id"] = (int)$store["store_id"];
+$store["store_id"] =
+    (int)$store["store_id"];
 
 // 回傳商家資料
 echo json_encode([
