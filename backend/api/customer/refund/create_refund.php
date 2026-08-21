@@ -114,6 +114,7 @@ if ($refund_description === "") {
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.customer_id,
     o.store_id,
     o.delivery_status,
@@ -403,7 +404,7 @@ echo json_encode([
 
     "refund" => [
         "refund_id" => $refund_id,
-        "order_id" => $order_id,
+        "order_number" => $order["order_number"],
         "store_id" => $store_id,
         "refund_reason" => $refund_reason,
         "refund_description" => $refund_description,

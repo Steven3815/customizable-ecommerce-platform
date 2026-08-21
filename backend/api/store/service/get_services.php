@@ -126,6 +126,7 @@ SELECT
     cs.customer_id,
     cs.store_id,
     cs.order_id,
+    o.order_number,
     cs.problem_type,
     cs.status,
     cs.created_at,
@@ -136,6 +137,10 @@ FROM CUSTOMER_SERVICE cs
 
 JOIN CUSTOMER c
     ON cs.customer_id = c.customer_id
+
+LEFT JOIN ORDERS o
+    ON cs.order_id = o.order_id
+    AND cs.store_id = o.store_id
 
 WHERE cs.store_id = ?
 ";
@@ -180,7 +185,8 @@ foreach ($services as $service) {
         "order_id" => $service["order_id"] !== null
             ? (int)$service["order_id"]
             : null,
-
+        "order_number" => $service["order_number"],
+        
         "problem_type" => $service["problem_type"],
 
         "status" => $service["status"],

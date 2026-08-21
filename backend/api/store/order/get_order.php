@@ -100,6 +100,7 @@ $order_id = (int)$order_id;
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.store_id,
     o.created_at,
     o.customer_id,
@@ -313,6 +314,9 @@ echo json_encode([
 
         "order_id" =>
             $order["order_id"],
+
+        "order_number" =>
+            $order["order_number"],
 
         "store_id" =>
             $order["store_id"],

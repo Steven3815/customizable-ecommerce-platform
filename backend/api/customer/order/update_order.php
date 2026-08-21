@@ -97,6 +97,7 @@ $order_id = (int)$order_id;
 $sql = "
 SELECT
     order_id,
+    order_number,
     store_id,
     delivery_status
 FROM ORDERS
@@ -300,7 +301,7 @@ $stmt->execute([
 echo json_encode([
     "message" => "Order updated successfully",
 
-    "order_id" => $order_id,
+    "order_number" => $order["order_number"],
 
     "store_id" => (int)$order["store_id"],
 

@@ -115,6 +115,7 @@ $sql = "
 SELECT
     p.payment_id,
     p.order_id,
+    o.order_number,
     p.store_id,
     p.payment_method,
     p.payment_status,
@@ -283,6 +284,9 @@ echo json_encode([
         "order_id" =>
             (int)$payment["order_id"],
 
+        "order_number" =>
+            $payment["order_number"],
+
         "store_id" =>
             $store_id,
 
@@ -306,6 +310,8 @@ echo json_encode([
 
         "order_id" =>
             (int)$payment["order_id"],
+
+        "order_number" => $payment["order_number"],
 
         "store_id" =>
             $store_id,

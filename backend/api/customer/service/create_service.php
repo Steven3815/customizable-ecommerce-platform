@@ -249,11 +249,14 @@ if ($existing_service) {
     exit;
 }
 
+$order_number = null;
+
 // 如果有 Order ID，確認訂單屬於 Customer + Store
 if ($order_id !== null) {
     $sql = "
     SELECT
         order_id,
+        order_number,
         customer_id,
         store_id
     FROM ORDERS
@@ -279,6 +282,7 @@ if ($order_id !== null) {
 
         exit;
     }
+    $order_number = $order["order_number"];
 }
 
 // 檢查客服圖片
@@ -400,7 +404,7 @@ echo json_encode([
         "service_id" => $service_id,
         "customer_id" => $customer_id,
         "store_id" => $store_id,
-        "order_id" => $order_id,
+        "order_number" => $order_number,
         "problem_type" => $problem_type,
         "description" => $description,
         "image_url" => $image_url,

@@ -197,6 +197,7 @@ $total_pages = $total_orders > 0
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.created_at,
     o.total_amount,
     o.delivery_status,
@@ -257,6 +258,9 @@ foreach ($orders as $order) {
 
         "order_id" =>
             (int)$order["order_id"],
+
+        "order_number" =>
+            $order["order_number"],
 
         "created_at" =>
             $order["created_at"],

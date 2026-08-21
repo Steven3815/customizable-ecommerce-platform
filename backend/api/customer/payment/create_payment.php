@@ -143,6 +143,7 @@ if (
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.customer_id,
     o.store_id,
 
@@ -569,8 +570,8 @@ echo json_encode([
         "payment_id" =>
             $payment_id,
 
-        "order_id" =>
-            $order_id,
+        "order_number" => $order["order_number"],
+
 
         "store_id" =>
             $store_id,
@@ -592,9 +593,8 @@ echo json_encode([
     ],
 
     "order" => [
-
-        "order_id" =>
-            $order_id,
+        
+        "order_number" => $order["order_number"],
 
         "customer_id" =>
             (int)$order["customer_id"],

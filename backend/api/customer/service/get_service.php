@@ -202,6 +202,7 @@ SELECT
 
     s.store_name,
 
+    o.order_number,
     o.total_amount,
     o.delivery_method,
     o.delivery_status,
@@ -251,8 +252,7 @@ $result = [
 
     "order" => $service["order_id"] !== null
         ? [
-            "order_id" => (int)$service["order_id"],
-
+            "order_number" => $service["order_number"],
             "total_amount" =>
                 $service["total_amount"] !== null
                     ? (float)$service["total_amount"]

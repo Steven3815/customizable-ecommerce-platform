@@ -518,6 +518,35 @@ try {
 
     $order_id = (int)$pdo->lastInsertId();
 
+
+    // 建立訂單編號
+    $order_number =
+        "ORD"
+        . date("Ymd")
+        . str_pad(
+            $order_id,
+            4,
+            "0",
+            STR_PAD_LEFT
+        );
+
+    // 更新訂單編號
+    $sql = "
+    UPDATE ORDERS
+    SET
+        order_number = ?
+    WHERE order_id = ?
+    AND store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $order_number,
+        $order_id,
+        $store_id
+    ]);
+
     // 建立 ORDER_ITEM
     $sql = "
     INSERT INTO ORDER_ITEM
@@ -673,7 +702,7 @@ try {
     echo json_encode([
         "message" => "Order created successfully",
 
-        "order_id" => $order_id,
+        "order_number" => $order_number,
 
         "customer_id" => $customer_id,
 

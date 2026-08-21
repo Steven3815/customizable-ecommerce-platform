@@ -99,40 +99,25 @@ $params = [
 // 搜尋
 if ($search !== "") {
 
-    if (ctype_digit($search)) {
+    $where .= "
+        AND (
+            o.order_number LIKE ?
+            OR c.name LIKE ?
+            OR c.phone = ?
+        )
+    ";
 
-        $where .= "
-            AND (
-                o.order_id = ?
-                OR c.name LIKE ?
-                OR c.phone = ?
-            )
-        ";
+    $search_value =
+        "%" . $search . "%";
 
-        $params[] =
-            (int)$search;
+    $params[] =
+        $search_value;
 
-        $params[] =
-            "%" . $search . "%";
+    $params[] =
+        $search_value;
 
-        $params[] =
-            $search;
-
-    } else {
-
-        $where .= "
-            AND (
-                c.name LIKE ?
-                OR c.phone = ?
-            )
-        ";
-
-        $params[] =
-            "%" . $search . "%";
-
-        $params[] =
-            $search;
-    }
+    $params[] =
+        $search;
 }
 
 // 配送狀態篩選
@@ -306,6 +291,7 @@ $total_pages =
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.store_id,
     o.created_at,
     o.customer_id,
@@ -432,6 +418,9 @@ foreach ($orders as $order) {
 
         "order_id" =>
             $order_id,
+
+        "order_number" =>
+            $order["order_number"],
 
         "store_id" =>
             (int)$order["store_id"],

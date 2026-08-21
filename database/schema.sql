@@ -161,6 +161,7 @@ CREATE TABLE CART_ITEM (
 
 CREATE TABLE ORDERS (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_number VARCHAR(30) UNIQUE NOT NULL,
 
     customer_id INT NOT NULL,
     store_id INT NOT NULL,

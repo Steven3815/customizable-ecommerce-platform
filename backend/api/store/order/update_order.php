@@ -122,6 +122,7 @@ if (
 $sql = "
 SELECT
     order_id,
+    order_number,
     store_id,
     delivery_status
 FROM ORDERS
@@ -198,6 +199,7 @@ if ($stmt->rowCount() !== 1) {
 echo json_encode([
     "message" => "Order updated successfully",
     "order_id" => $order_id,
+    "order_number" => $order["order_number"],
     "store_id" => $store_id,
     "delivery_status" => $delivery_status
 ], JSON_UNESCAPED_UNICODE);

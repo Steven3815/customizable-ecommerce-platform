@@ -374,7 +374,7 @@ $out_of_stock_count =
 // 最多顯示 10 筆
 $sql = "
 SELECT
-    o.order_id,
+    o.order_number,
     o.created_at,
     c.name AS customer_name,
     o.total_amount,
@@ -400,9 +400,6 @@ $recent_orders =
 
 // 整理最近訂單資料
 foreach ($recent_orders as &$order) {
-
-    $order["order_id"] =
-        (int)$order["order_id"];
 
     $order["total_amount"] =
         (float)$order["total_amount"];

@@ -281,6 +281,7 @@ if ($refund_status !== "all") {
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.store_id,
     s.store_name,
     o.order_date,
@@ -494,8 +495,8 @@ foreach ($orders as $order) {
     // 建立訂單結果
     $result[] = [
 
-        "order_id" =>
-            $order_id,
+        "order_number" => 
+            $order["order_number"],
 
         "store_id" =>
             (int)$order["store_id"],

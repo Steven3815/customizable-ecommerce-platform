@@ -137,6 +137,7 @@ $sql = "
 SELECT
     r.refund_id,
     r.order_id,
+    o.order_number,
     r.store_id,
     r.refund_reason,
     r.refund_description,
@@ -296,6 +297,9 @@ foreach ($refunds as $refund) {
 
         "order_id" =>
             $refund["order_id"],
+
+        "order_number" =>
+            $refund["order_number"],
 
         "store_id" =>
             $refund["store_id"],

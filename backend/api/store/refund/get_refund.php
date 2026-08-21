@@ -98,7 +98,7 @@ SELECT
     r.admin_reply,
     r.requested_at,
     r.processed_at,
-
+    o.order_number,
     o.customer_id,
     o.total_amount,
 
@@ -236,6 +236,8 @@ echo json_encode([
 
         "order_id" =>
             $refund["order_id"],
+
+        "order_number" => $refund["order_number"],
 
         "store_id" =>
             $refund["store_id"],

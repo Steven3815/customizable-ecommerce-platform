@@ -101,6 +101,7 @@ $order_id = (int)$order_id;
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.customer_id,
     o.store_id,
     o.product_amount,
@@ -316,9 +317,6 @@ echo json_encode([
         "payment_id" =>
             (int)$updated_payment["payment_id"],
 
-        "order_id" =>
-            (int)$updated_payment["order_id"],
-
         "store_id" =>
             (int)$updated_payment["store_id"],
 
@@ -348,8 +346,9 @@ echo json_encode([
     ],
 
     "order" => [
-        "order_id" =>
-            (int)$payment["order_id"],
+
+        "order_number" =>
+            $payment["order_number"],
 
         "customer_id" =>
             (int)$payment["customer_id"],

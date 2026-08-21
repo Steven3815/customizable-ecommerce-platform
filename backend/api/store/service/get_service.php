@@ -96,7 +96,7 @@ SELECT
 
     c.name AS customer_name,
     c.email AS customer_email,
-
+    o.order_number,
     o.total_amount,
     o.delivery_method,
     o.delivery_status
@@ -144,6 +144,7 @@ $result = [
     "order" => $service["order_id"] !== null
         ? [
             "order_id" => (int)$service["order_id"],
+            "order_number" => $service["order_number"],
             "total_amount" => $service["total_amount"] !== null
                 ? (float)$service["total_amount"]
                 : null,

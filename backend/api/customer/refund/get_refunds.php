@@ -159,7 +159,7 @@ SELECT
     r.admin_reply,
     r.requested_at,
     r.processed_at,
-
+    o.order_number,
     o.total_amount,
 
     p.paid_at
@@ -297,8 +297,7 @@ foreach ($refunds as $refund) {
         ],
 
         "order" => [
-            "order_id" =>
-                $order_id,
+        "order_number" => $refund["order_number"],
 
             "total_amount" =>
                 $total_amount

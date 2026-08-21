@@ -97,6 +97,7 @@ if ($store_id <= 0) {
 $sql = "
 SELECT
     o.order_id,
+    o.order_number,
     o.customer_id,
     o.store_id,
 
@@ -234,7 +235,6 @@ if ($payment) {
 
     $payment_data = [
         "payment_id" => (int)$payment["payment_id"],
-        "order_id" => (int)$payment["order_id"],
         "store_id" => (int)$payment["store_id"],
 
         "payment_method" => $payment["payment_method"],
@@ -413,8 +413,7 @@ echo json_encode([
 
     "order" => [
 
-        "order_id" =>
-            (int)$order["order_id"],
+        "order_number" => $order["order_number"],
 
         "customer_id" =>
             (int)$order["customer_id"],
