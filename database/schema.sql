@@ -18,7 +18,7 @@ CREATE TABLE CUSTOMER (
 CREATE TABLE STORE (
     store_id INT AUTO_INCREMENT PRIMARY KEY,
     store_name VARCHAR(100) NOT NULL,
-    store_url VARCHAR(255),
+    store_url VARCHAR(255) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     owner_name VARCHAR(100),
@@ -65,6 +65,8 @@ CREATE TABLE PRODUCT (
 
     has_spec BOOLEAN DEFAULT FALSE,
     spec_name VARCHAR(100),
+
+    sort_order INT NULL DEFAULT 1,
 
     status ENUM('active','inactive','deleted')
     DEFAULT 'active',
@@ -148,6 +150,8 @@ CREATE TABLE CART_ITEM (
     spec_id INT NULL,
 
     quantity INT NOT NULL,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY(cart_id)
     REFERENCES CART(cart_id),
@@ -334,6 +338,8 @@ CREATE TABLE STORE_SETTING (
 
     stock_alert_threshold INT,
 
+    spec_stock_alert_threshold INT DEFAULT 3,
+
     customer_service_enable BOOLEAN DEFAULT FALSE,
 
 
@@ -425,7 +431,7 @@ CREATE TABLE HOMEPAGE_PRODUCT_SETTING (
 
     store_id INT UNIQUE NOT NULL,
 
-    display_limit INT DEFAULT 6,
+    display_limit INT NOT NULL DEFAULT 4,
 
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -433,6 +439,7 @@ CREATE TABLE HOMEPAGE_PRODUCT_SETTING (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP,
 
+    CHECK (display_limit IN (4, 5, 6)),
 
     FOREIGN KEY(store_id)
     REFERENCES STORE(store_id)
@@ -451,6 +458,13 @@ CREATE TABLE FOOTER_SETTING (
 
     service_phone VARCHAR(30),
 
+    contact_phone_enable BOOLEAN DEFAULT FALSE,
+
+    address_enable BOOLEAN DEFAULT FALSE,
+
+    email_enable BOOLEAN DEFAULT FALSE,
+
+    service_phone_enable BOOLEAN DEFAULT FALSE,
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
@@ -485,6 +499,9 @@ CREATE TABLE PROMOTION_BANNER (
 
     description TEXT,
 
+    status ENUM('active', 'deleted') NOT NULL DEFAULT 'active',
+
+    sort_order INT NULL DEFAULT 1,
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
@@ -507,8 +524,12 @@ CREATE TABLE SLIDER_IMAGE (
 
     image_url VARCHAR(500),
 
-    sort_order INT DEFAULT 1,
+    title VARCHAR(200) NULL,
 
+    status ENUM('active', 'deleted')
+    NOT NULL DEFAULT 'active',
+
+    sort_order INT DEFAULT 1,
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
@@ -552,44 +573,3 @@ CREATE TABLE CUSTOMER_SERVICE (
     FOREIGN KEY(order_id, store_id)
         REFERENCES ORDERS(order_id, store_id)
 );
-
-ALTER TABLE STORE
-ADD UNIQUE (store_url);
-
-
-ALTER TABLE FOOTER_SETTING
-ADD COLUMN contact_phone_enable BOOLEAN DEFAULT FALSE,
-ADD COLUMN address_enable BOOLEAN DEFAULT FALSE,
-ADD COLUMN email_enable BOOLEAN DEFAULT FALSE,
-ADD COLUMN service_phone_enable BOOLEAN DEFAULT FALSE;
-
-ALTER TABLE HOMEPAGE_PRODUCT_SETTING
-MODIFY COLUMN display_limit INT NOT NULL DEFAULT 4;
-
-ALTER TABLE HOMEPAGE_PRODUCT_SETTING
-ADD CONSTRAINT chk_display_limit
-CHECK (display_limit IN (4, 5, 6));
-
-ALTER TABLE PRODUCT
-ADD COLUMN sort_order INT NULL DEFAULT 1;
-
-ALTER TABLE PROMOTION_BANNER
-ADD COLUMN sort_order INT NULL DEFAULT 1;
-
-ALTER TABLE PROMOTION_BANNER
-ADD COLUMN status ENUM('active', 'deleted')
-NOT NULL DEFAULT 'active';
-
-ALTER TABLE SLIDER_IMAGE
-ADD COLUMN title VARCHAR(200) NULL AFTER image_url;
-
-ALTER TABLE SLIDER_IMAGE
-ADD COLUMN status ENUM('active', 'deleted')
-NOT NULL DEFAULT 'active';
-
-ALTER TABLE STORE_SETTING
-ADD COLUMN spec_stock_alert_threshold INT DEFAULT 3
-AFTER stock_alert_threshold;
-
-ALTER TABLE CART_ITEM
-ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP;
