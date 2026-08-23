@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -54,7 +53,6 @@ if (!$store) {
 }
 
 // 取得 JSON
-
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -69,7 +67,6 @@ if (!is_array($data)) {
 }
 
 // 檢查 category_ids
-
 if (
     !isset($data["category_ids"]) ||
     !is_array($data["category_ids"])
@@ -92,7 +89,6 @@ if (count($category_ids) < 1) {
 }
 
 // 驗證 Category ID
-
 $validated_category_ids = [];
 
 foreach ($category_ids as $category_id) {
@@ -139,8 +135,6 @@ $pdo->beginTransaction();
 
 try {
 
-    // 取得目前 Store 所有未刪除 Category
-
     $sql = "
         SELECT
             category_id
@@ -151,10 +145,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
+    $stmt->execute([$store_id]);
 
     $existing_category_ids = [];
 
@@ -165,34 +156,24 @@ try {
     }
 
     // 確認傳入的 Category 數量正確
-
     if (
-        count($validated_category_ids)
-        !== count($existing_category_ids)
+        count($validated_category_ids) !== count($existing_category_ids)
     ) {
-        throw new Exception(
-            "Category list is incomplete"
-        );
+        throw new Exception("Category list is incomplete");
     }
 
     // 確認傳入的 Category 全部屬於目前 Store
-
-    $existing_lookup = array_flip(
-        $existing_category_ids
-    );
+    $existing_lookup = array_flip($existing_category_ids);
 
     foreach ($validated_category_ids as $category_id) {
 
         if (!isset($existing_lookup[$category_id])) {
 
-            throw new Exception(
-                "Category not found"
-            );
+            throw new Exception("Category not found");
         }
     }
 
     // 先使用暫時排序
-
     $temporary_offset = 1000000;
 
     $sql = "
@@ -204,14 +185,12 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $temporary_offset,
         $store_id
     ]);
 
-    // 按照 category_ids 順序重新設定 sort_order
-
+    // 重新設定 sort_order
     $sql = "
         UPDATE CATEGORY
         SET
@@ -241,7 +220,6 @@ try {
     $pdo->commit();
 
     // 回傳新的排序
-
     $sql = "
         SELECT
             category_id,
@@ -254,19 +232,12 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
-    $categories =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([$store_id]);
+    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
-        "message" =>
-            "Categories reordered successfully",
-        "categories" =>
-            $categories
+        "message" => "Categories reordered successfully",
+        "categories" => $categories
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

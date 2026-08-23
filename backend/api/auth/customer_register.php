@@ -36,7 +36,6 @@ if (
 }
 
 $store_id = (int)$data["store_id"];
-
 $name = trim($data["name"]);
 $email = trim($data["email"]);
 $password = $data["password"];
@@ -201,9 +200,7 @@ VALUES
 ";
 
 try {
-
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $name,
         $email,
@@ -211,12 +208,9 @@ try {
     ]);
 
     $customer_id = (int)$pdo->lastInsertId();
-
 } catch (PDOException $e) {
-
     // 處理 Email UNIQUE 衝突
     if ($e->getCode() === "23000") {
-
         echo json_encode([
             "error" => "Email already registered",
             "action" => "login"
@@ -224,7 +218,6 @@ try {
 
         exit;
     }
-
     echo json_encode([
         "error" => "Registration failed"
     ], JSON_UNESCAPED_UNICODE);

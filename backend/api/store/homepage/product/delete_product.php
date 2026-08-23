@@ -54,7 +54,6 @@ if (!$store) {
 }
 
 // 取得 JSON
-
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -69,7 +68,6 @@ if (!is_array($data)) {
 }
 
 // 取得 product_id
-
 if (
     !isset($data["product_id"]) ||
     $data["product_id"] === ""
@@ -84,7 +82,6 @@ if (
 $product_id = $data["product_id"];
 
 // 驗證 product_id
-
 if (
     !is_numeric($product_id) ||
     floor((float)$product_id)
@@ -109,13 +106,7 @@ if ($product_id <= 0) {
 
 try {
 
-    // 開始 Transaction
-
     $pdo->beginTransaction();
-
-    // 確認商品存在
-    // 而且屬於目前 Store
-    // 而且目前為 active
 
     $sql = "
         SELECT
@@ -133,14 +124,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
-    $product =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$product) {
 
@@ -153,11 +141,9 @@ try {
         exit;
     }
 
-    $category_id =
-        (int)$product["category_id"];
+    $category_id = (int)$product["category_id"];
 
     // Soft Delete
-
     $sql = "
         UPDATE PRODUCT
         SET
@@ -169,15 +155,12 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
 
-    // 取得該 Category 剩餘的 active 商品
-    // 依照原本排序重新排列
-
+    // 取得該 Category 剩餘的 active 商品 依照原本排序重新排列
     $sql = "
         SELECT
             product_id
@@ -191,17 +174,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id
     ]);
-
-    $remaining_products =
-        $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $remaining_products = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     // 重新設定 sort_order
-
     $sql = "
         UPDATE PRODUCT
         SET
@@ -230,51 +209,32 @@ try {
         ]);
     }
 
-    // Transaction 完成
-
     $pdo->commit();
 
     // 回傳結果
-
     echo json_encode([
-        "message" =>
-            "Product deleted successfully",
-
+        "message" => "Product deleted successfully",
         "product" => [
-            "product_id" =>
-                (int)$product["product_id"],
-
-            "store_id" =>
-                $store_id,
-
-            "category_id" =>
-                $category_id,
-
-            "product_name" =>
-                $product["product_name"],
-
-            "sort_order" =>
-                $product["sort_order"] !== null
-                    ? (int)$product["sort_order"]
-                    : null,
-
-            "status" =>
-                "deleted"
+            "product_id" => (int)$product["product_id"],
+            "store_id" => $store_id,
+            "category_id" => $category_id,
+            "product_name" => $product["product_name"],
+            "sort_order" => $product["sort_order"] !== null
+                ? (int)$product["sort_order"]
+                : null,
+            "status" => "deleted"
         ]
-
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
     // 發生錯誤時 Rollback
-
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

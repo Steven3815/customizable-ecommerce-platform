@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -76,16 +75,11 @@ try {
         !isset($data["intro_section_enable"]) ||
         !isset($data["banner_section_enable"])
     ) {
-        throw new Exception(
-            "Website setting is required"
-        );
+        throw new Exception("Website setting is required");
     }
 
-    $intro_section_enable =
-        (int)$data["intro_section_enable"];
-
-    $banner_section_enable =
-        (int)$data["banner_section_enable"];
+    $intro_section_enable = (int)$data["intro_section_enable"];
+    $banner_section_enable = (int)$data["banner_section_enable"];
 
     if (
         !in_array(
@@ -99,9 +93,7 @@ try {
             true
         )
     ) {
-        throw new Exception(
-            "Invalid website setting"
-        );
+        throw new Exception("Invalid website setting");
     }
 
     $sql = "
@@ -113,7 +105,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $intro_section_enable,
         $banner_section_enable,
@@ -128,26 +119,19 @@ try {
             WHERE store_id = ?
         ");
 
-        $check->execute([
-            $store_id
-        ]);
+        $check->execute([$store_id]);
 
         if (!$check->fetch()) {
-            throw new Exception(
-                "Website setting not found"
-            );
+            throw new Exception("Website setting not found");
         }
     }
 
     // 更新首頁商品排列設定
     if (!isset($data["display_limit"])) {
-        throw new Exception(
-            "Display limit is required"
-        );
+        throw new Exception("Display limit is required");
     }
 
-    $display_limit =
-        (int)$data["display_limit"];
+    $display_limit = (int)$data["display_limit"];
 
     if (
         !in_array(
@@ -156,9 +140,7 @@ try {
             true
         )
     ) {
-        throw new Exception(
-            "Display limit must be 4, 5, or 6"
-        );
+        throw new Exception("Display limit must be 4, 5, or 6");
     }
 
     $sql = "
@@ -169,7 +151,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $display_limit,
         $store_id
@@ -183,14 +164,10 @@ try {
             WHERE store_id = ?
         ");
 
-        $check->execute([
-            $store_id
-        ]);
+        $check->execute([$store_id]);
 
         if (!$check->fetch()) {
-            throw new Exception(
-                "Homepage product setting not found"
-            );
+            throw new Exception("Homepage product setting not found");
         }
     }
 
@@ -198,9 +175,7 @@ try {
     if (isset($data["categories"])) {
 
         if (!is_array($data["categories"])) {
-            throw new Exception(
-                "Invalid categories"
-            );
+            throw new Exception("Invalid categories");
         }
 
         // 防止同一次 Request 出現重複名稱
@@ -209,34 +184,25 @@ try {
         foreach ($data["categories"] as $category) {
 
             if (!is_array($category)) {
-                throw new Exception(
-                    "Invalid category data"
-                );
+                throw new Exception("Invalid category data");
             }
 
             if (!isset($category["category_name"])) {
-                throw new Exception(
-                    "Category name is required"
-                );
+                throw new Exception("Category name is required");
             }
 
             $category_name =
                 trim($category["category_name"]);
 
             if ($category_name === "") {
-                throw new Exception(
-                    "Category name cannot be empty"
-                );
+                throw new Exception("Category name cannot be empty");
             }
 
             if (mb_strlen($category_name) > 255) {
-                throw new Exception(
-                    "Category name is too long"
-                );
+                throw new Exception("Category name is too long");
             }
 
-            $name_key =
-                mb_strtolower($category_name);
+            $name_key = mb_strtolower($category_name);
 
             if (
                 in_array(
@@ -245,13 +211,10 @@ try {
                     true
                 )
             ) {
-                throw new Exception(
-                    "Category name duplicated in request"
-                );
+                throw new Exception("Category name duplicated in request");
             }
 
-            $submitted_category_names[] =
-                $name_key;
+            $submitted_category_names[] = $name_key;
 
             // 修改既有 Category
             if (isset($category["category_id"])) {
@@ -269,13 +232,10 @@ try {
                     );
                 }
 
-                $category_id =
-                    (int)$category_id;
+                $category_id = (int)$category_id;
 
                 if ($category_id <= 0) {
-                    throw new Exception(
-                        "Invalid category ID"
-                    );
+                    throw new Exception("Invalid category ID");
                 }
 
                 // 確認 Category 屬於目前 Store
@@ -289,16 +249,13 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $category_id,
                     $store_id
                 ]);
 
                 if (!$stmt->fetch()) {
-                    throw new Exception(
-                        "Category not found"
-                    );
+                    throw new Exception("Category not found");
                 }
 
                 // 檢查修改後的名稱是否與其他 Category 重複
@@ -322,13 +279,10 @@ try {
                 ]);
 
                 if ($stmt->fetch()) {
-                    throw new Exception(
-                        "Category name already exists"
-                    );
+                    throw new Exception("Category name already exists");
                 }
 
-                // 更新 Category
-                // 不修改 sort_order
+                // 更新 Category 不修改 sort_order
                 $sql = "
                     UPDATE CATEGORY
                     SET
@@ -340,7 +294,6 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $category_name,
                     $category_id,
@@ -349,9 +302,7 @@ try {
 
             } else {
 
-                // 新增 Category
-
-                // 檢查資料庫是否已有相同名稱
+                // 新增 Category 檢查資料庫是否已有相同名稱
                 $sql = "
                     SELECT
                         category_id
@@ -363,16 +314,13 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $store_id,
                     $category_name
                 ]);
 
                 if ($stmt->fetch()) {
-                    throw new Exception(
-                        "Category name already exists"
-                    );
+                    throw new Exception("Category name already exists");
                 }
 
                 // 取得下一個 sort_order
@@ -388,13 +336,9 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
+                $stmt->execute([$store_id]);
 
-                $stmt->execute([
-                    $store_id
-                ]);
-
-                $sort_order =
-                    (int)$stmt->fetchColumn();
+                $sort_order = (int)$stmt->fetchColumn();
 
                 // 新增 Category
                 $sql = "
@@ -415,7 +359,6 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $store_id,
                     $category_name,
@@ -427,15 +370,11 @@ try {
 
     // 更新 Footer 設定
     if (!isset($data["footer"])) {
-        throw new Exception(
-            "Footer setting is required"
-        );
+        throw new Exception("Footer setting is required");
     }
 
     if (!is_array($data["footer"])) {
-        throw new Exception(
-            "Invalid footer setting"
-        );
+        throw new Exception("Invalid footer setting");
     }
 
     $footer_fields = [
@@ -448,13 +387,10 @@ try {
     foreach ($footer_fields as $field) {
 
         if (!isset($data["footer"][$field])) {
-            throw new Exception(
-                "$field is required"
-            );
+            throw new Exception("$field is required");
         }
 
-        $value =
-            (int)$data["footer"][$field];
+        $value = (int)$data["footer"][$field];
 
         if (
             !in_array(
@@ -463,23 +399,14 @@ try {
                 true
             )
         ) {
-            throw new Exception(
-                "Invalid footer setting"
-            );
+            throw new Exception("Invalid footer setting");
         }
     }
 
-    $contact_phone_enable =
-        (int)$data["footer"]["contact_phone_enable"];
-
-    $address_enable =
-        (int)$data["footer"]["address_enable"];
-
-    $email_enable =
-        (int)$data["footer"]["email_enable"];
-
-    $service_phone_enable =
-        (int)$data["footer"]["service_phone_enable"];
+    $contact_phone_enable = (int)$data["footer"]["contact_phone_enable"];
+    $address_enable = (int)$data["footer"]["address_enable"];
+    $email_enable = (int)$data["footer"]["email_enable"];
+    $service_phone_enable = (int)$data["footer"]["service_phone_enable"];
 
     $sql = "
         UPDATE FOOTER_SETTING
@@ -509,14 +436,10 @@ try {
             WHERE store_id = ?
         ");
 
-        $check->execute([
-            $store_id
-        ]);
+        $check->execute([$store_id]);
 
         if (!$check->fetch()) {
-            throw new Exception(
-                "Footer setting not found"
-            );
+            throw new Exception("Footer setting not found");
         }
     }
 
@@ -524,8 +447,7 @@ try {
     $pdo->commit();
 
     echo json_encode([
-        "message" =>
-            "Homepage settings updated successfully"
+        "message" => "Homepage settings updated successfully"
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

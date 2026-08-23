@@ -42,7 +42,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -115,11 +114,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -149,11 +144,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
@@ -224,13 +215,11 @@ AND cs.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $service_id,
     $customer_id,
     $store_id
 ]);
-
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$service) {
@@ -241,62 +230,30 @@ if (!$service) {
     exit;
 }
 
-// 整理資料
-$result = [
+// 回傳
+echo json_encode([
     "service_id" => (int)$service["service_id"],
-
     "store" => [
         "store_id" => (int)$service["store_id"],
         "store_name" => $service["store_name"]
     ],
-
     "order" => $service["order_id"] !== null
         ? [
             "order_number" => $service["order_number"],
-            "total_amount" =>
-                $service["total_amount"] !== null
-                    ? (float)$service["total_amount"]
-                    : null,
-
-            "delivery_method" =>
-                $service["delivery_method"],
-
-            "delivery_status" =>
-                $service["delivery_status"],
-
-            "estimated_ship_date" =>
-                $service["estimated_ship_date"],
-
-            "estimated_arrival_date" =>
-                $service["estimated_arrival_date"]
+            "total_amount" => $service["total_amount"] !== null ? (float)$service["total_amount"] : null,
+            "delivery_method" => $service["delivery_method"],
+            "delivery_status" => $service["delivery_status"],
+            "estimated_ship_date" => $service["estimated_ship_date"],
+            "estimated_arrival_date" => $service["estimated_arrival_date"]
         ]
         : null,
-
-    "problem_type" =>
-        $service["problem_type"],
-
-    "description" =>
-        $service["description"],
-
-    "image_url" =>
-        $service["image_url"],
-
-    "status" =>
-        $service["status"],
-
-    "admin_reply" =>
-        $service["admin_reply"],
-
-    "created_at" =>
-        $service["created_at"],
-
-    "updated_at" =>
-        $service["updated_at"]
-];
-
-// 回傳
-echo json_encode([
-    "service" => $result
+    "problem_type" => $service["problem_type"],
+    "description" => $service["description"],
+    "image_url" => $service["image_url"],
+    "status" => $service["status"],
+    "admin_reply" => $service["admin_reply"],
+    "created_at" => $service["created_at"],
+    "updated_at" => $service["updated_at"]
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

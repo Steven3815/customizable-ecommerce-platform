@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -115,12 +114,10 @@ AND cs.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $service_id,
     $store_id
 ]);
-
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 客服案件不存在
@@ -154,17 +151,11 @@ $result = [
         : null,
 
     "problem_type" => $service["problem_type"],
-
     "description" => $service["description"],
-
     "image_url" => $service["image_url"],
-
     "status" => $service["status"],
-
     "admin_reply" => $service["admin_reply"],
-
     "created_at" => $service["created_at"],
-
     "updated_at" => $service["updated_at"]
 ];
 

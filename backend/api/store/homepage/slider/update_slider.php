@@ -43,7 +43,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -98,10 +97,7 @@ try {
 
     $pdo->beginTransaction();
 
-    // =========================
     // 取得目前 Slider Image
-    // =========================
-
     $sql = "
         SELECT
             image_id,
@@ -117,12 +113,10 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $image_id,
         $store_id
     ]);
-
     $slider = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$slider) {
@@ -133,10 +127,7 @@ try {
 
     $old_image_url = $slider["image_url"];
 
-    // =========================
     // 更新標題
-    // =========================
-
     if (isset($_POST["title"])) {
 
         $title = trim($_POST["title"]);
@@ -151,22 +142,16 @@ try {
             $title !== null &&
             mb_strlen($title) > 200
         ) {
-            throw new Exception(
-                "Title is too long"
-            );
+            throw new Exception("Title is too long");
         }
 
     } else {
 
-        // 沒有傳 title
-        // 保留原本標題
+        // 沒有傳 title保留原本標題
         $title = $slider["title"];
     }
 
-    // =========================
     // 更新圖片
-    // =========================
-
     if (
         isset($_FILES["image"]) &&
         is_array($_FILES["image"]) &&
@@ -185,15 +170,11 @@ try {
 
     } else {
 
-        // 沒有新圖片
-        // 保留原本圖片
+        // 沒有新圖片 保留原本圖片
         $image_url = $old_image_url;
     }
 
-    // =========================
     // 更新 Slider Image
-    // =========================
-
     $sql = "
         UPDATE SLIDER_IMAGE
         SET
@@ -206,7 +187,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $image_url,
         $title,
@@ -214,16 +194,9 @@ try {
         $store_id
     ]);
 
-    // =========================
-    // Commit
-    // =========================
-
     $pdo->commit();
 
-    // =========================
     // DB 成功後再刪除舊圖片
-    // =========================
-
     if (
         $new_image_url !== null &&
         $old_image_url !== null &&
@@ -232,35 +205,16 @@ try {
         deleteImage($old_image_url);
     }
 
-    // =========================
-    // 回傳更新後資料
-    // =========================
-
+    // 回傳
     echo json_encode([
-        "message" =>
-            "Slider image updated successfully",
-
+        "message" => "Slider image updated successfully",
         "slider_image" => [
-
-            "image_id" =>
-                $image_id,
-
-            "store_id" =>
-                $store_id,
-
-            "image_url" =>
-                $image_url,
-
-            "title" =>
-                $title,
-
-            "sort_order" =>
-                $slider["sort_order"] !== null
-                    ? (int)$slider["sort_order"]
-                    : null,
-
-            "status" =>
-                $slider["status"]
+            "image_id" => $image_id,
+            "store_id" => $store_id,
+            "image_url" => $image_url,
+            "title" => $title,
+            "sort_order" => $slider["sort_order"] !== null ? (int)$slider["sort_order"] : null,
+            "status" => $slider["status"]
         ]
     ], JSON_UNESCAPED_UNICODE);
 
@@ -270,15 +224,13 @@ try {
         $pdo->rollBack();
     }
 
-    // DB 更新失敗
-    // 刪除剛上傳的新圖片
+    // DB 更新失敗, 刪除剛上傳的新圖片
     if ($new_image_url !== null) {
         deleteImage($new_image_url);
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

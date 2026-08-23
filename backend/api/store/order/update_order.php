@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -131,12 +130,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $store_id
 ]);
-
 $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到訂單或訂單不屬於這間 Store

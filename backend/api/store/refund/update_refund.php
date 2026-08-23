@@ -41,11 +41,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -150,12 +146,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $refund_id,
     $store_id
 ]);
-
 $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$refund) {
@@ -200,9 +194,7 @@ try {
     ]);
 
     if ($stmt->rowCount() !== 1) {
-        throw new Exception(
-            "Failed to update refund"
-        );
+        throw new Exception("Failed to update refund");
     }
 
     $pdo->commit();

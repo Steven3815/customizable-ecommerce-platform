@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -70,15 +69,10 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $footer_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到設定
-
 if (!$footer_setting) {
     echo json_encode([
         "error" => "Footer setting not found"
@@ -88,7 +82,6 @@ if (!$footer_setting) {
 }
 
 // 整理資料
-
 $footer_setting["contact_phone_enable"] =
     (bool)$footer_setting["contact_phone_enable"];
 

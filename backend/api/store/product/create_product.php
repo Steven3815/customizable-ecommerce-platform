@@ -42,11 +42,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -58,20 +54,11 @@ if (!$store) {
 }
 
 // 取得商品基本資料
-$category_id =
-    $_POST["category_id"] ?? null;
-
-$product_name =
-    trim($_POST["product_name"] ?? "");
-
-$description =
-    trim($_POST["description"] ?? "");
-
-$price =
-    $_POST["price"] ?? null;
-
-$stock =
-    $_POST["stock"] ?? null;
+$category_id = $_POST["category_id"] ?? null;
+$product_name = trim($_POST["product_name"] ?? "");
+$description = trim($_POST["description"] ?? "");
+$price = $_POST["price"] ?? null;
+$stock = $_POST["stock"] ?? null;
 
 // 是否開啟規格
 $has_spec = isset($_POST["has_spec"])
@@ -82,8 +69,7 @@ $has_spec = isset($_POST["has_spec"])
 $status = "active";
 
 // 規格類型名稱
-$spec_name =
-    trim($_POST["spec_name"] ?? "");
+$spec_name = trim($_POST["spec_name"] ?? "");
 
 // 檢查必要欄位
 if (
@@ -211,12 +197,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $category_id,
     $store_id
 ]);
-
 $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$category) {
@@ -276,11 +260,9 @@ if ($has_spec === 1) {
             exit;
         }
 
-        $spec_value =
-            trim($spec["spec_name"] ?? "");
+        $spec_value = trim($spec["spec_name"] ?? "");
 
-        $spec_stock =
-            $spec["stock"] ?? null;
+        $spec_stock = $spec["stock"] ?? null;
 
         // 檢查規格值
         if ($spec_value === "") {
@@ -343,14 +325,12 @@ if ($has_spec === 1) {
             exit;
         }
 
-        $spec_names[] =
-            $spec["spec_name"];
+        $spec_names[] = $spec["spec_name"];
     }
 
     $specs = $validated_specs;
 
-    // 有規格時
-    // PRODUCT.stock 不直接代表實際庫存
+    // 有規格時 PRODUCT.stock 不直接代表實際庫存
     $stock = 0;
 
 } else {
@@ -372,8 +352,7 @@ if (
     exit;
 }
 
-$file_count =
-    count($_FILES["images"]["name"]);
+$file_count = count($_FILES["images"]["name"]);
 
 $valid_image_count = 0;
 
@@ -431,7 +410,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id,
@@ -443,9 +421,7 @@ try {
         $spec_name,
         $status
     ]);
-
-    $product_id =
-        (int)$pdo->lastInsertId();
+    $product_id = (int)$pdo->lastInsertId();
 
     // 建立商品規格
     if ($has_spec === 1) {
@@ -509,20 +485,11 @@ try {
         }
 
         $file = [
-            "name" =>
-                $_FILES["images"]["name"][$i],
-
-            "type" =>
-                $_FILES["images"]["type"][$i],
-
-            "tmp_name" =>
-                $_FILES["images"]["tmp_name"][$i],
-
-            "error" =>
-                $_FILES["images"]["error"][$i],
-
-            "size" =>
-                $_FILES["images"]["size"][$i]
+            "name" => $_FILES["images"]["name"][$i],
+            "type" => $_FILES["images"]["type"][$i],
+            "tmp_name" => $_FILES["images"]["tmp_name"][$i],
+            "error" => $_FILES["images"]["error"][$i],
+            "size" => $_FILES["images"]["size"][$i]
         ];
 
         $image_url =
@@ -559,16 +526,13 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $product_id,
             $store_id,
             $image_url,
             $sort_order
         ]);
-
-        $image_id =
-            (int)$pdo->lastInsertId();
+        $image_id = (int)$pdo->lastInsertId();
 
         $uploaded_images[
             count($uploaded_images) - 1
@@ -579,52 +543,24 @@ try {
 
     // 完成交易
     $pdo->commit();
-
     echo json_encode([
-        "message" =>
-            "Product created successfully",
-
-        "store_id" =>
-            $store_id,
+        "message" => "Product created successfully",
+        "store_id" => $store_id,
 
         "product" => [
-            "product_id" =>
-                $product_id,
-
-            "store_id" =>
-                $store_id,
-
-            "category_id" =>
-                $category_id,
-
-            "product_name" =>
-                $product_name,
-
-            "description" =>
-                $description,
-
-            "price" =>
-                $price,
-
-            "stock" =>
-                $stock,
-
-            "has_spec" =>
-                (bool)$has_spec,
-
-            "spec_name" =>
-                $spec_name,
-
-            "specs" =>
-                $specs,
-
-            "images" =>
-                $uploaded_images,
-
-            "status" =>
-                $status
+            "product_id" => $product_id,
+            "store_id" => $store_id,
+            "category_id" => $category_id,
+            "product_name" => $product_name,
+            "description" => $description,
+            "price" => $price,
+            "stock" => $stock,
+            "has_spec" => (bool)$has_spec,
+            "spec_name" => $spec_name,
+            "specs" => $specs,
+            "images" => $uploaded_images,
+            "status" => $status
         ]
-
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -641,9 +577,7 @@ try {
             $image["image_url"] !== null
         ) {
             try {
-                deleteImage(
-                    $image["image_url"]
-                );
+                deleteImage($image["image_url"]);
             } catch (Exception $deleteException) {
                 // 忽略圖片刪除錯誤
             }
@@ -651,8 +585,7 @@ try {
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

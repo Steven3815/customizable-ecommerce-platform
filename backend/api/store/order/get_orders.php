@@ -41,11 +41,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -83,18 +79,14 @@ if ($page < 1) {
 
 $limit = 50;
 
-$offset =
-    ($page - 1) * $limit;
+$offset = ($page - 1) * $limit;
 
 // 建立 WHERE
-// 直接使用 ORDERS.store_id 判斷目前 Store
 $where = "
 WHERE o.store_id = ?
 ";
 
-$params = [
-    $store_id
-];
+$params = [$store_id];
 
 // 搜尋
 if ($search !== "") {
@@ -107,17 +99,10 @@ if ($search !== "") {
         )
     ";
 
-    $search_value =
-        "%" . $search . "%";
-
-    $params[] =
-        $search_value;
-
-    $params[] =
-        $search_value;
-
-    $params[] =
-        $search;
+    $search_value = "%" . $search . "%";
+    $params[] = $search_value;
+    $params[] = $search_value;
+    $params[] = $search;
 }
 
 // 配送狀態篩選
@@ -274,13 +259,8 @@ $where
 ";
 
 $countStmt = $pdo->prepare($countSql);
-
-$countStmt->execute(
-    $params
-);
-
-$total =
-    (int)$countStmt->fetchColumn();
+$countStmt->execute($params);
+$total = (int)$countStmt->fetchColumn();
 
 $total_pages =
     $total > 0
@@ -353,8 +333,7 @@ $stmt->bindValue(
 
 $stmt->execute();
 
-$orders =
-    $stmt->fetchAll(PDO::FETCH_ASSOC);
+$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 沒有訂單
 if (!$orders) {
@@ -378,8 +357,7 @@ $result = [];
 
 foreach ($orders as $order) {
 
-    $order_id =
-        (int)$order["order_id"];
+    $order_id = (int)$order["order_id"];
 
     // 取得最新退款狀態
     $sql = "
@@ -393,90 +371,47 @@ foreach ($orders as $order) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $order_id,
         $store_id
     ]);
-
-    $refund =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$refund) {
 
-        $current_refund_status =
-            "none";
-
+        $current_refund_status = "none";
     } else {
 
-        $current_refund_status =
-            $refund["refund_status"];
+        $current_refund_status = $refund["refund_status"];
     }
 
     // 整理回傳資料
     $result[] = [
+    "order_id" => $order_id,
+    "order_number" => $order["order_number"],
+    "store_id" => (int)$order["store_id"],
+    "created_at" => $order["created_at"],
 
-        "order_id" =>
-            $order_id,
+    "customer" => [
+        "customer_id" => (int)$order["customer_id"],
+        "name" => $order["customer_name"],
+        "phone" => $order["phone"]
+    ],
 
-        "order_number" =>
-            $order["order_number"],
-
-        "store_id" =>
-            (int)$order["store_id"],
-
-        "created_at" =>
-            $order["created_at"],
-
-        "customer" => [
-
-            "customer_id" =>
-                (int)$order["customer_id"],
-
-            "name" =>
-                $order["customer_name"],
-
-            "phone" =>
-                $order["phone"]
-        ],
-
-        "total_amount" =>
-            (float)$order["total_amount"],
-
-        "delivery_status" =>
-            $order["delivery_status"],
-
-        "payment_confirm_status" =>
-            $order["payment_confirm_status"],
-
-        "refund_status" =>
-            $current_refund_status
+    "total_amount" => (float)$order["total_amount"],
+    "delivery_status" => $order["delivery_status"],
+    "payment_confirm_status" => $order["payment_confirm_status"],
+    "refund_status" => $current_refund_status
     ];
 }
-
 echo json_encode([
-
-    "store_id" =>
-        $store_id,
-
-    "store_name" =>
-        $store["store_name"],
-
-    "page" =>
-        $page,
-
-    "limit" =>
-        $limit,
-
-    "total" =>
-        $total,
-
-    "total_pages" =>
-        $total_pages,
-
-    "orders" =>
-        $result
-
+    "store_id" => $store_id,
+    "store_name" => $store["store_name"],
+    "page" => $page,
+    "limit" => $limit,
+    "total" => $total,
+    "total_pages" => $total_pages,
+    "orders" => $result
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

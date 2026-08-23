@@ -40,7 +40,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -86,7 +85,6 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $store_status,
             $store_id
@@ -113,30 +111,20 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $store_id
-        ]);
-
-        $current_setting =
-            $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([$store_id]);
+        $current_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$current_setting) {
-            throw new Exception(
-                "Store setting not found"
-            );
+            throw new Exception("Store setting not found");
         }
 
-        $current_mode =
-            $current_setting["store_mode"];
+        $current_mode = $current_setting["store_mode"];
 
         if (
             $current_mode === "shopping" &&
             $store_mode === "showcase"
         ) {
-            throw new Exception(
-                "Shopping mode cannot be changed to showcase mode"
-            );
+            throw new Exception("Shopping mode cannot be changed to showcase mode");
         }
 
         $sql = "
@@ -146,7 +134,6 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $store_mode,
             $store_id
@@ -157,20 +144,15 @@ try {
     if (isset($data["refund"])) {
 
         if (!is_array($data["refund"])) {
-            throw new Exception(
-                "Invalid refund settings"
-            );
+            throw new Exception("Invalid refund settings");
         }
 
         if (isset($data["refund"]["enabled"])) {
 
-            $refund_enable =
-                $data["refund"]["enabled"];
+            $refund_enable = $data["refund"]["enabled"];
 
             if (!is_bool($refund_enable)) {
-                throw new Exception(
-                    "Invalid refund enabled"
-                );
+                throw new Exception("Invalid refund enabled");
             }
 
             $sql = "
@@ -180,7 +162,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $refund_enable ? 1 : 0,
                 $store_id
@@ -189,8 +170,7 @@ try {
 
         if (isset($data["refund"]["days_limit"])) {
 
-            $days_limit =
-                $data["refund"]["days_limit"];
+            $days_limit = $data["refund"]["days_limit"];
 
             if (
                 !is_numeric($days_limit) ||
@@ -198,9 +178,7 @@ try {
                     != (float)$days_limit ||
                 (int)$days_limit < 0
             ) {
-                throw new Exception(
-                    "Invalid refund days limit"
-                );
+                throw new Exception("Invalid refund days limit");
             }
 
             $sql = "
@@ -210,7 +188,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 (int)$days_limit,
                 $store_id
@@ -222,17 +199,14 @@ try {
     if (isset($data["shipping"])) {
 
         if (!is_array($data["shipping"])) {
-            throw new Exception(
-                "Invalid shipping settings"
-            );
+            throw new Exception("Invalid shipping settings");
         }
 
         if (
             isset($data["shipping"]["shipping_days"])
         ) {
 
-            $shipping_days =
-                $data["shipping"]["shipping_days"];
+            $shipping_days = $data["shipping"]["shipping_days"];
 
             if (
                 !is_numeric($shipping_days) ||
@@ -240,9 +214,7 @@ try {
                     != (float)$shipping_days ||
                 (int)$shipping_days < 0
             ) {
-                throw new Exception(
-                    "Invalid shipping days"
-                );
+                throw new Exception("Invalid shipping days");
             }
 
             $sql = "
@@ -252,7 +224,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 (int)$shipping_days,
                 $store_id
@@ -263,8 +234,7 @@ try {
             isset($data["shipping"]["delivery_days"])
         ) {
 
-            $delivery_days =
-                $data["shipping"]["delivery_days"];
+            $delivery_days = $data["shipping"]["delivery_days"];
 
             if (
                 !is_numeric($delivery_days) ||
@@ -272,9 +242,7 @@ try {
                     != (float)$delivery_days ||
                 (int)$delivery_days < 0
             ) {
-                throw new Exception(
-                    "Invalid delivery days"
-                );
+                throw new Exception("Invalid delivery days");
             }
 
             $sql = "
@@ -284,7 +252,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 (int)$delivery_days,
                 $store_id
@@ -296,9 +263,7 @@ try {
     if (isset($data["stock_alert"])) {
 
         if (!is_array($data["stock_alert"])) {
-            throw new Exception(
-                "Invalid stock alert settings"
-            );
+            throw new Exception("Invalid stock alert settings");
         }
 
         // 是否啟用庫存預警
@@ -308,9 +273,7 @@ try {
                 $data["stock_alert"]["enabled"];
 
             if (!is_bool($stock_alert_enable)) {
-                throw new Exception(
-                    "Invalid stock alert enabled"
-                );
+                throw new Exception("Invalid stock alert enabled");
             }
 
             $sql = "
@@ -320,7 +283,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $stock_alert_enable ? 1 : 0,
                 $store_id
@@ -332,8 +294,7 @@ try {
             isset($data["stock_alert"]["threshold"])
         ) {
 
-            $threshold =
-                $data["stock_alert"]["threshold"];
+            $threshold = $data["stock_alert"]["threshold"];
 
             if (
                 $threshold !== null &&
@@ -344,9 +305,7 @@ try {
                     (int)$threshold < 0
                 )
             ) {
-                throw new Exception(
-                    "Invalid stock alert threshold"
-                );
+                throw new Exception("Invalid stock alert threshold");
             }
 
             $sql = "
@@ -356,7 +315,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $threshold === null
                     ? null
@@ -370,8 +328,7 @@ try {
             isset($data["stock_alert"]["spec_threshold"])
         ) {
 
-            $spec_threshold =
-                $data["stock_alert"]["spec_threshold"];
+            $spec_threshold = $data["stock_alert"]["spec_threshold"];
 
             if (
                 $spec_threshold !== null &&
@@ -382,9 +339,7 @@ try {
                     (int)$spec_threshold < 0
                 )
             ) {
-                throw new Exception(
-                    "Invalid spec stock alert threshold"
-                );
+                throw new Exception("Invalid spec stock alert threshold");
             }
 
             $sql = "
@@ -394,7 +349,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $spec_threshold === null
                     ? null
@@ -408,24 +362,15 @@ try {
     if (isset($data["customer_service"])) {
 
         if (!is_array($data["customer_service"])) {
-            throw new Exception(
-                "Invalid customer service settings"
-            );
+            throw new Exception("Invalid customer service settings");
         }
 
-        if (
-            isset(
-                $data["customer_service"]["enabled"]
-            )
-        ) {
+        if (isset($data["customer_service"]["enabled"])) {
 
-            $customer_service_enable =
-                $data["customer_service"]["enabled"];
+            $customer_service_enable = $data["customer_service"]["enabled"];
 
             if (!is_bool($customer_service_enable)) {
-                throw new Exception(
-                    "Invalid customer service enabled"
-                );
+                throw new Exception("Invalid customer service enabled");
             }
 
             $sql = "
@@ -435,7 +380,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $customer_service_enable ? 1 : 0,
                 $store_id
@@ -447,33 +391,24 @@ try {
     if (isset($data["payment_methods"])) {
 
         if (!is_array($data["payment_methods"])) {
-            throw new Exception(
-                "Invalid payment methods"
-            );
+            throw new Exception("Invalid payment methods");
         }
 
         foreach ($data["payment_methods"] as $payment) {
 
             if (!is_array($payment)) {
-                throw new Exception(
-                    "Invalid payment method data"
-                );
+                throw new Exception("Invalid payment method data");
             }
 
             if (
                 !isset($payment["store_payment_id"]) ||
                 !isset($payment["enabled"])
             ) {
-                throw new Exception(
-                    "Payment method ID and enabled are required"
-                );
+                throw new Exception("Payment method ID and enabled are required");
             }
 
-            $store_payment_id =
-                $payment["store_payment_id"];
-
-            $enabled =
-                $payment["enabled"];
+            $store_payment_id = $payment["store_payment_id"];
+            $enabled = $payment["enabled"];
 
             if (
                 !is_numeric($store_payment_id) ||
@@ -482,18 +417,13 @@ try {
                 (int)$store_payment_id < 1 ||
                 (int)$store_payment_id > 5
             ) {
-                throw new Exception(
-                    "Invalid payment method ID"
-                );
+                throw new Exception("Invalid payment method ID");
             }
 
-            $store_payment_id =
-                (int)$store_payment_id;
+            $store_payment_id = (int)$store_payment_id;
 
             if (!is_bool($enabled)) {
-                throw new Exception(
-                    "Invalid payment method enabled"
-                );
+                throw new Exception("Invalid payment method enabled");
             }
 
             $payment_map = [
@@ -504,8 +434,7 @@ try {
                 5 => "in_store"
             ];
 
-            $expected_payment_method =
-                $payment_map[$store_payment_id];
+            $expected_payment_method = $payment_map[$store_payment_id];
 
             $sql = "
             SELECT
@@ -518,28 +447,21 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $store_id,
                 $store_payment_id
             ]);
-
-            $payment_method =
-                $stmt->fetch(PDO::FETCH_ASSOC);
+            $payment_method = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$payment_method) {
-                throw new Exception(
-                    "Payment method not found"
-                );
+                throw new Exception("Payment method not found");
             }
 
             if (
                 $payment_method["payment_method"]
                 !== $expected_payment_method
             ) {
-                throw new Exception(
-                    "Payment method configuration is invalid"
-                );
+                throw new Exception("Payment method configuration is invalid");
             }
 
             $sql = "
@@ -550,7 +472,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $enabled
                     ? "active"
@@ -562,23 +483,14 @@ try {
         // ATM
         if ($store_payment_id === 2 && $enabled) {
 
-            $bank_name =
-                trim(
-                    $payment["bank_name"] ?? ""
-                );
-
-            $bank_number =
-                trim(
-                    $payment["bank_number"] ?? ""
-                );
+            $bank_name = trim($payment["bank_name"] ?? "");
+            $bank_number = trim($payment["bank_number"] ?? "");
 
             if (
                 $bank_name === "" ||
                 $bank_number === ""
             ) {
-                throw new Exception(
-                    "Bank name and bank number are required"
-                );
+                throw new Exception("Bank name and bank number are required");
             }
 
             $sql = "
@@ -590,14 +502,11 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $store_id,
                 $store_payment_id
             ]);
-
-            $account =
-                $stmt->fetch(PDO::FETCH_ASSOC);
+            $account = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($account) {
 
@@ -611,7 +520,6 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $bank_name,
                     $bank_number,
@@ -639,7 +547,6 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $store_id,
                     $store_payment_id,
@@ -651,15 +558,10 @@ try {
             // 郵局
             if ($store_payment_id === 3 && $enabled) {
 
-                $post_office_number =
-                    trim(
-                        $payment["post_office_number"] ?? ""
-                    );
+                $post_office_number = trim($payment["post_office_number"] ?? "");
 
                 if ($post_office_number === "") {
-                    throw new Exception(
-                        "Post office number is required"
-                    );
+                    throw new Exception("Post office number is required");
                 }
 
                 $sql = "
@@ -671,14 +573,11 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $store_id,
                     $store_payment_id
                 ]);
-
-                $account =
-                    $stmt->fetch(PDO::FETCH_ASSOC);
+                $account = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($account) {
 
@@ -691,7 +590,6 @@ try {
                     ";
 
                     $stmt = $pdo->prepare($sql);
-
                     $stmt->execute([
                         $post_office_number,
                         (int)$account["account_id"],
@@ -716,7 +614,6 @@ try {
                     ";
 
                     $stmt = $pdo->prepare($sql);
-
                     $stmt->execute([
                         $store_id,
                         $store_payment_id,
@@ -731,9 +628,7 @@ try {
     if (isset($data["delivery_methods"])) {
 
         if (!is_array($data["delivery_methods"])) {
-            throw new Exception(
-                "Invalid delivery methods"
-            );
+            throw new Exception("Invalid delivery methods");
         }
 
         $delivery_map = [
@@ -743,30 +638,22 @@ try {
         ];
 
         foreach (
-            $data["delivery_methods"]
-            as $delivery
+            $data["delivery_methods"] as $delivery
         ) {
 
             if (!is_array($delivery)) {
-                throw new Exception(
-                    "Invalid delivery method data"
-                );
+                throw new Exception("Invalid delivery method data");
             }
 
             if (
                 !isset($delivery["store_delivery_id"]) ||
                 !isset($delivery["enabled"])
             ) {
-                throw new Exception(
-                    "Delivery method ID and enabled are required"
-                );
+                throw new Exception("Delivery method ID and enabled are required");
             }
 
-            $store_delivery_id =
-                $delivery["store_delivery_id"];
-
-            $enabled =
-                $delivery["enabled"];
+            $store_delivery_id = $delivery["store_delivery_id"];
+            $enabled = $delivery["enabled"];
 
             if (
                 !is_numeric($store_delivery_id) ||
@@ -775,18 +662,13 @@ try {
                 (int)$store_delivery_id < 1 ||
                 (int)$store_delivery_id > 3
             ) {
-                throw new Exception(
-                    "Invalid delivery method ID"
-                );
+                throw new Exception("Invalid delivery method ID");
             }
 
-            $store_delivery_id =
-                (int)$store_delivery_id;
+            $store_delivery_id = (int)$store_delivery_id;
 
             if (!is_bool($enabled)) {
-                throw new Exception(
-                    "Invalid delivery method enabled"
-                );
+                throw new Exception("Invalid delivery method enabled");
             }
 
             $expected_delivery_method =
@@ -803,28 +685,22 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $store_id,
                 $store_delivery_id
             ]);
 
-            $delivery_method =
-                $stmt->fetch(PDO::FETCH_ASSOC);
+            $delivery_method = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$delivery_method) {
-                throw new Exception(
-                    "Delivery method not found"
-                );
+                throw new Exception("Delivery method not found");
             }
 
             if (
                 $delivery_method["delivery_method"]
                 !== $expected_delivery_method
             ) {
-                throw new Exception(
-                    "Delivery method configuration is invalid"
-                );
+                throw new Exception("Delivery method configuration is invalid");
             }
 
             $sql = "
@@ -836,7 +712,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $enabled
                     ? "active"
@@ -850,8 +725,7 @@ try {
     $pdo->commit();
 
     echo json_encode([
-        "message" =>
-            "Store settings updated successfully"
+        "message" => "Store settings updated successfully"
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

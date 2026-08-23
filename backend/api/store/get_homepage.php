@@ -44,11 +44,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -81,11 +77,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
@@ -105,13 +97,8 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$member_count =
-    (int)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$member_count = (int)$stmt->fetchColumn();
 
 // 今日訂單數
 $sql = "
@@ -126,13 +113,8 @@ AND created_at < DATE_ADD(
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$today_orders =
-    (int)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$today_orders = (int)$stmt->fetchColumn();
 
 // 今日營收
 // 只計算已付款訂單
@@ -152,13 +134,8 @@ AND p.created_at < DATE_ADD(
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$today_revenue =
-    (float)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$today_revenue = (float)$stmt->fetchColumn();
 
 // 本月營收
 $sql = "
@@ -183,13 +160,8 @@ AND p.created_at < DATE_ADD(
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$monthly_revenue =
-    (float)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$monthly_revenue = (float)$stmt->fetchColumn();
 
 // 待確認收款
 $sql = "
@@ -200,13 +172,8 @@ AND payment_confirm_status = 'waiting'
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$pending_payment_confirm =
-    (int)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$pending_payment_confirm = (int)$stmt->fetchColumn();
 
 // 待出貨
 $sql = "
@@ -217,13 +184,8 @@ AND delivery_status = 'pending'
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$pending_shipment =
-    (int)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$pending_shipment = (int)$stmt->fetchColumn();
 
 // 待處理退款
 $sql = "
@@ -234,17 +196,11 @@ AND refund_status = 'pending'
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$pending_refund =
-    (int)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$pending_refund = (int)$stmt->fetchColumn();
 
 // 庫存預警設定
-$stock_alert_enable =
-    (bool)$store_setting["stock_alert_enable"];
+$stock_alert_enable = (bool)$store_setting["stock_alert_enable"];
 
 $stock_alert_threshold =
     $store_setting["stock_alert_threshold"] !== null
@@ -273,17 +229,13 @@ if ($stock_alert_enable) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $stock_alert_threshold
     ]);
+    $product_stock_alert_count = (int)$stmt->fetchColumn();
 
-    $product_stock_alert_count =
-        (int)$stmt->fetchColumn();
-
-    // 有規格商品庫存預警
-    // 一個商品只計算一次
+    // 有規格商品庫存預警 一個商品只計算一次
     $sql = "
     SELECT COUNT(DISTINCT ps.product_id)
     FROM PRODUCT_SPEC ps
@@ -299,26 +251,18 @@ if ($stock_alert_enable) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $spec_stock_alert_threshold
     ]);
-
-    $spec_stock_alert_count =
-        (int)$stmt->fetchColumn();
+    $spec_stock_alert_count = (int)$stmt->fetchColumn();
 
     // 一般商品 + 有規格商品
-    $stock_alert_count =
-        $product_stock_alert_count
-        + $spec_stock_alert_count;
+    $stock_alert_count = $product_stock_alert_count + $spec_stock_alert_count;
 }
 
 // 庫存不足
-// 一個商品只計算一次
-
 $product_out_of_stock_count = 0;
-
 $spec_out_of_stock_count = 0;
 
 // 無規格商品庫存不足
@@ -332,13 +276,8 @@ AND stock <= 0
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$product_out_of_stock_count =
-    (int)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$product_out_of_stock_count = (int)$stmt->fetchColumn();
 
 // 有規格商品庫存不足
 // 只要任一規格庫存不足
@@ -357,18 +296,11 @@ AND ps.stock <= 0
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$spec_out_of_stock_count =
-    (int)$stmt->fetchColumn();
+$stmt->execute([$store_id]);
+$spec_out_of_stock_count = (int)$stmt->fetchColumn();
 
 // 一般商品 + 有規格商品
-$out_of_stock_count =
-    $product_out_of_stock_count
-    + $spec_out_of_stock_count;
+$out_of_stock_count = $product_out_of_stock_count + $spec_out_of_stock_count;
 
 // 最近訂單
 // 最多顯示 10 筆
@@ -390,72 +322,38 @@ LIMIT 10
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
-$recent_orders =
-    $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt->execute([$store_id]);
+$recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理最近訂單資料
 foreach ($recent_orders as &$order) {
-
-    $order["total_amount"] =
-        (float)$order["total_amount"];
+    $order["total_amount"] = (float)$order["total_amount"];
 }
 
 unset($order);
 
-// 回傳 Dashboard
 echo json_encode([
-
     "store" => [
-
-        "store_id" =>
-            (int)$store["store_id"],
-
-        "store_name" =>
-            $store["store_name"],
-
-        "store_url" =>
-            $store["store_url"]
+        "store_id" => (int)$store["store_id"],
+        "store_name" => $store["store_name"],
+        "store_url" => $store["store_url"]
     ],
 
     "summary" => [
-
-        "member_count" =>
-            $member_count,
-
-        "today_orders" =>
-            $today_orders,
-
-        "today_revenue" =>
-            $today_revenue,
-
-        "monthly_revenue" =>
-            $monthly_revenue
+        "member_count" => $member_count,
+        "today_orders" => $today_orders,
+        "today_revenue" => $today_revenue,
+        "monthly_revenue" => $monthly_revenue
     ],
 
-    "recent_orders" =>
-        $recent_orders,
+    "recent_orders" => $recent_orders,
 
     "notifications" => [
-
-        "pending_payment_confirm" =>
-            $pending_payment_confirm,
-
-        "pending_shipment" =>
-            $pending_shipment,
-
-        "pending_refund" =>
-            $pending_refund,
-
-        "stock_alert" =>
-            $stock_alert_count,
-
-        "out_of_stock" =>
-            $out_of_stock_count
+        "pending_payment_confirm" => $pending_payment_confirm,
+        "pending_shipment" => $pending_shipment,
+        "pending_refund" => $pending_refund,
+        "stock_alert" => $stock_alert_count,
+        "out_of_stock" => $out_of_stock_count
     ]
 
 ], JSON_UNESCAPED_UNICODE);

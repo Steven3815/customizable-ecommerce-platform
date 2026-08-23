@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -91,9 +90,7 @@ if ($category_id <= 0) {
 }
 
 // 取得商品名稱
-$product_name = trim(
-    $_POST["product_name"] ?? ""
-);
+$product_name = trim($_POST["product_name"] ?? "");
 
 if ($product_name === "") {
     echo json_encode([
@@ -113,7 +110,6 @@ if (mb_strlen($product_name) > 200) {
 
 try {
 
-    // 確認 Category 存在、屬於目前 Store 且為 active
     $sql = "
         SELECT
             category_id,
@@ -126,14 +122,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $category_id,
         $store_id
     ]);
-
-    $category =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
         echo json_encode([
@@ -143,8 +136,7 @@ try {
         exit;
     }
 
-    $category_name =
-        $category["category_name"];
+    $category_name = $category["category_name"];
 
     // 取得該 Category 最後一個 sort_order
     $sql = "
@@ -158,17 +150,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id
     ]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $result =
-        $stmt->fetch(PDO::FETCH_ASSOC);
-
-    $sort_order =
-        (int)$result["next_sort_order"];
+    $sort_order = (int)$result["next_sort_order"];
 
     // 新增商品
     $sql = "
@@ -189,51 +177,31 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id,
         $product_name,
         $sort_order
     ]);
-
-    $product_id =
-        (int)$pdo->lastInsertId();
+    $product_id = (int)$pdo->lastInsertId();
 
     echo json_encode([
-        "message" =>
-            "Product added successfully",
-
+        "message" => "Product added successfully",
         "product" => [
-            "product_id" =>
-                $product_id,
-
-            "store_id" =>
-                $store_id,
-
-            "category_id" =>
-                $category_id,
-
-            "category_name" =>
-                $category_name,
-
-            "product_name" =>
-                $product_name,
-
-            "sort_order" =>
-                $sort_order,
-
-            "status" =>
-                "active"
+            "product_id" => $product_id,
+            "store_id" => $store_id,
+            "category_id" => $category_id,
+            "category_name" => $category_name,
+            "product_name" => $product_name,
+            "sort_order" => $sort_order,
+            "status" => "active"
         ]
-
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

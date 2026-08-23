@@ -41,10 +41,7 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $customer_id
-]);
+$stmt->execute([$customer_id]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -162,11 +159,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -195,11 +188,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
@@ -241,7 +230,6 @@ AND p.status = 'active'
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $product_id,
     $store_id
@@ -284,13 +272,11 @@ if ((int)$product["has_spec"] === 1) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $spec_id,
         $product_id,
         $store_id
     ]);
-
     $spec = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$spec) {
@@ -309,9 +295,7 @@ if ((int)$product["has_spec"] === 1) {
 
         exit;
     }
-
 } else {
-
     // 無規格商品不可傳 Spec ID
     if ($spec_id !== null) {
         echo json_encode([
@@ -341,16 +325,13 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $customer_id,
     $store_id
 ]);
-
 $cart = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$cart) {
-
     // 沒有購物車 → 建立購物車
     $sql = "
     INSERT INTO CART
@@ -366,16 +347,13 @@ if (!$cart) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $customer_id,
         $store_id
     ]);
 
     $cart_id = (int)$pdo->lastInsertId();
-
 } else {
-
     $cart_id = (int)$cart["cart_id"];
 }
 
@@ -396,7 +374,6 @@ AND (
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $cart_id,
     $store_id,
@@ -404,7 +381,6 @@ $stmt->execute([
     $spec_id,
     $spec_id
 ]);
-
 $cart_item = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 已存在 → 增加數量
@@ -446,7 +422,6 @@ if ($cart_item) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $new_quantity,
         $cart_item["cart_item_id"],
@@ -482,7 +457,6 @@ if ($cart_item) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $cart_id,
         $store_id,

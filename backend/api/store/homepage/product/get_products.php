@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -90,9 +89,7 @@ if ($has_category_id) {
 
 try {
 
-    // 沒有指定 category_id
-    // → 使用第一個 active 類別
-
+    // 沒有指定 category_id → 使用第一個 active 類別
     if ($category_id === null) {
 
         $sql = "
@@ -108,13 +105,8 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $store_id
-        ]);
-
-        $default_category =
-            $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([$store_id]);
+        $default_category = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$default_category) {
 
@@ -127,12 +119,10 @@ try {
             exit;
         }
 
-        $category_id =
-            (int)$default_category["category_id"];
+        $category_id = (int)$default_category["category_id"];
     }
 
     // 取得類別
-
     $sql = "
         SELECT
             category_id,
@@ -148,14 +138,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $category_id,
         $store_id
     ]);
-
-    $category =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
 
@@ -166,19 +153,14 @@ try {
         exit;
     }
 
-    $category["category_id"] =
-        (int)$category["category_id"];
-
-    $category["store_id"] =
-        (int)$category["store_id"];
-
+    $category["category_id"] = (int)$category["category_id"];
+    $category["store_id"] = (int)$category["store_id"];
     $category["sort_order"] =
         $category["sort_order"] !== null
             ? (int)$category["sort_order"]
             : null;
 
     // 取得商品
-
     $sql = "
         SELECT
             product_id,
@@ -197,26 +179,16 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id
     ]);
-
-    $products =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($products as &$product) {
-
-        $product["product_id"] =
-            (int)$product["product_id"];
-
-        $product["store_id"] =
-            (int)$product["store_id"];
-
-        $product["category_id"] =
-            (int)$product["category_id"];
-
+        $product["product_id"] = (int)$product["product_id"];
+        $product["store_id"] = (int)$product["store_id"];
+        $product["category_id"] = (int)$product["category_id"];
         $product["sort_order"] =
             $product["sort_order"] !== null
                 ? (int)$product["sort_order"]
@@ -225,26 +197,18 @@ try {
 
     unset($product);
 
-    $category["products"] =
-        $products;
+    $category["products"] = $products;
 
     echo json_encode([
-        "message" =>
-            "Product management data retrieved successfully",
-
-        "store_id" =>
-            $store_id,
-
-        "category" =>
-            $category
-
+        "message" => "Product management data retrieved successfully",
+        "store_id" => $store_id,
+        "category" => $category
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

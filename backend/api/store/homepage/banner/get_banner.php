@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -79,21 +78,15 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
+    $stmt->execute([$store_id]);
     $banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // 整理目前 Banner
     if ($banner) {
 
-        $banner["banner_id"] =
-            (int)$banner["banner_id"];
+        $banner["banner_id"] = (int)$banner["banner_id"];
 
-        $banner["store_id"] =
-            (int)$banner["store_id"];
+        $banner["store_id"] = (int)$banner["store_id"];
 
         $banner["default_banner_id"] =
             $banner["default_banner_id"] !== null
@@ -109,20 +102,12 @@ try {
         if (
             $banner["default_banner_id"] !== null
         ) {
-
-            $banner["image_source"] =
-                "default";
-
-            $banner["image_url"] =
-                $banner["default_image_url"];
+            $banner["image_source"] = "default";
+            $banner["image_url"] = $banner["default_image_url"];
 
         } else {
-
-            $banner["image_source"] =
-                "upload";
-
-            $banner["image_url"] =
-                $banner["upload_image_url"];
+            $banner["image_source"] = "upload";
+            $banner["image_url"] = $banner["upload_image_url"];
         }
 
         unset(
@@ -147,11 +132,8 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute();
-
-    $default_banners =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $default_banners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 整理預設 Banner
     foreach (
@@ -159,33 +141,23 @@ try {
         as &$default_banner
     ) {
 
-        $default_banner["default_banner_id"] =
-            (int)$default_banner["default_banner_id"];
+        $default_banner["default_banner_id"] = (int)$default_banner["default_banner_id"];
     }
 
     unset($default_banner);
 
     // 回傳
     echo json_encode([
-        "message" =>
-            "Banner management data retrieved successfully",
-
-        "store_id" =>
-            $store_id,
-
-        "banner" =>
-            $banner,
-
-        "default_banners" =>
-            $default_banners
-
+        "message" => "Banner management data retrieved successfully",
+        "store_id" => $store_id,
+        "banner" => $banner,
+        "default_banners" => $default_banners
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

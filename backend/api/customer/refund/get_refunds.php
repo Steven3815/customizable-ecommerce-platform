@@ -42,7 +42,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -89,11 +88,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -122,11 +117,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
@@ -181,12 +172,10 @@ ORDER BY r.requested_at DESC
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $customer_id,
     $store_id
 ]);
-
 $refunds = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!$refunds) {
@@ -234,122 +223,66 @@ foreach ($refunds as $refund) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $order_id,
         $refund_store_id
     ]);
-
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 整理商品資料
     foreach ($items as &$item) {
-
-        $item["order_item_id"] =
-            (int)$item["order_item_id"];
-
-        $item["product_id"] =
-            (int)$item["product_id"];
-
+        $item["order_item_id"] = (int)$item["order_item_id"];
+        $item["product_id"] = (int)$item["product_id"];
         if ($item["spec_id"] !== null) {
-            $item["spec_id"] =
-                (int)$item["spec_id"];
+            $item["spec_id"] = (int)$item["spec_id"];
         }
-
-        $item["quantity"] =
-            (int)$item["quantity"];
-
-        $item["price"] =
-            (float)$item["price"];
-
-        $item["subtotal"] =
-            $item["quantity"] *
-            $item["price"];
+        $item["quantity"] = (int)$item["quantity"];
+        $item["price"] = (float)$item["price"];
+        $item["subtotal"] = $item["quantity"] * $item["price"];
     }
 
     unset($item);
 
     // 整理退款資料
-    $refund_id =
-        (int)$refund["refund_id"];
-
-    $order_id =
-        (int)$refund["order_id"];
-
-    $refund_store_id =
-        (int)$refund["store_id"];
-
-    $total_amount =
-        (float)$refund["total_amount"];
+    $refund_id = (int)$refund["refund_id"];
+    $order_id = (int)$refund["order_id"];
+    $refund_store_id = (int)$refund["store_id"];
+    $total_amount = (float)$refund["total_amount"];
 
     // 整理回傳格式
-    $result[] = [
-
-        "refund_id" =>
-            $refund_id,
-
-        "store" => [
-            "store_id" =>
-                $refund_store_id,
-
-            "store_name" =>
-                $store["store_name"]
-        ],
-
-        "order" => [
+$result[] = [
+    "refund_id" => $refund_id,
+    "store" => [
+        "store_id" => $refund_store_id,
+        "store_name" => $store["store_name"]
+    ],
+    "order" => [
         "order_number" => $refund["order_number"],
-
-            "total_amount" =>
-                $total_amount
-        ],
-
-        "payment" => [
-            "paid_at" =>
-                $refund["paid_at"]
-        ],
-
-        "items" =>
-            $items,
-
-        "refund_reason" =>
-            $refund["refund_reason"],
-
-        "refund_description" =>
-            $refund["refund_description"],
-
-        "refund_image_url" =>
-            $refund["refund_image_url"],
-
-        "refund_status" =>
-            $refund["refund_status"],
-
-        "admin_reply" =>
-            $refund["admin_reply"],
-
-        "requested_at" =>
-            $refund["requested_at"],
-
-        "processed_at" =>
-            $refund["processed_at"]
-    ];
+        "total_amount" => $total_amount
+    ],
+    "payment" => [
+        "paid_at" => $refund["paid_at"]
+    ],
+    "items" => $items,
+    "refund_reason" => $refund["refund_reason"],
+    "refund_description" => $refund["refund_description"],
+    "refund_image_url" => $refund["refund_image_url"],
+    "refund_status" => $refund["refund_status"],
+    "admin_reply" => $refund["admin_reply"],
+    "requested_at" => $refund["requested_at"],
+    "processed_at" => $refund["processed_at"]
+];
 }
 
 // 回傳
 echo json_encode([
     "store" => [
-        "store_id" =>
-            (int)$store["store_id"],
-
-        "store_name" =>
-            $store["store_name"]
+        "store_id" => (int)$store["store_id"],
+        "store_name" => $store["store_name"]
     ],
-
-    "count" =>
-        count($result),
-
-    "refunds" =>
-        $result
-
+    "count" => count($result),
+    "refunds" => $result
+    
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

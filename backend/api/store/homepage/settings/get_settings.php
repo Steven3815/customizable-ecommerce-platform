@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -63,11 +62,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $website_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$website_setting) {
@@ -78,7 +73,6 @@ if (!$website_setting) {
     exit;
 }
 
-// 整理 Website 設定資料型態
 $website_setting["intro_section_enable"] =
     (int)$website_setting["intro_section_enable"];
 
@@ -94,11 +88,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $product_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product_setting) {
@@ -109,7 +99,6 @@ if (!$product_setting) {
     exit;
 }
 
-// 整理 Product 設定資料型態
 $product_setting["display_limit"] =
     (int)$product_setting["display_limit"];
 
@@ -126,21 +115,12 @@ ORDER BY sort_order ASC, category_id ASC
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 整理 Category 資料型態
 foreach ($categories as &$category) {
-
-    $category["category_id"] =
-        (int)$category["category_id"];
-
-    $category["sort_order"] =
-        (int)$category["sort_order"];
+    $category["category_id"] = (int)$category["category_id"];
+    $category["sort_order"] = (int)$category["sort_order"];
 }
 
 unset($category);
@@ -157,11 +137,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $footer_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$footer_setting) {
@@ -172,7 +148,6 @@ if (!$footer_setting) {
     exit;
 }
 
-// 整理 Footer 設定資料型態
 $footer_setting["contact_phone_enable"] =
     (int)$footer_setting["contact_phone_enable"];
 
@@ -187,24 +162,12 @@ $footer_setting["service_phone_enable"] =
 
 // 回傳首頁管理資料
 echo json_encode([
-    "message" =>
-        "Homepage settings retrieved successfully",
-
-    "store_id" =>
-        $store_id,
-
-    "website" =>
-        $website_setting,
-
-    "product" =>
-        $product_setting,
-
-    "categories" =>
-        $categories,
-
-    "footer" =>
-        $footer_setting
-
+    "message" => "Homepage settings retrieved successfully",
+    "store_id" => $store_id,
+    "website" => $website_setting,
+    "product" => $product_setting,
+    "categories" => $categories,
+    "footer" => $footer_setting
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

@@ -42,7 +42,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -95,11 +94,7 @@ WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -181,9 +176,7 @@ ORDER BY created_at DESC
 
 // 執行
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute($params);
-
 $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理資料
@@ -192,40 +185,22 @@ $result = [];
 foreach ($services as $service) {
 
     $result[] = [
-        "service_id" =>
-            (int)$service["service_id"],
-
-        "problem_type" =>
-            $service["problem_type"],
-
-        "created_at" =>
-            $service["created_at"],
-
-        "status" =>
-            $service["status"]
+        "service_id" => (int)$service["service_id"],
+        "problem_type" => $service["problem_type"],
+        "created_at" => $service["created_at"],
+        "status" => $service["status"]
     ];
 }
 
 // 回傳
 echo json_encode([
-
     "store" => [
-        "store_id" =>
-            (int)$store["store_id"],
-
-        "store_name" =>
-            $store["store_name"]
+        "store_id" => (int)$store["store_id"],
+        "store_name" => $store["store_name"]
     ],
-
-    "status_filter" =>
-        $status,
-
-    "count" =>
-        count($result),
-
-    "services" =>
-        $result
-
+    "status_filter" => $status,
+    "count" => count($result),
+    "services" => $result
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

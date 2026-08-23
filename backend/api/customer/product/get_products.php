@@ -41,11 +41,7 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $customer_id
-]);
-
+$stmt->execute([$customer_id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -57,18 +53,10 @@ if (!$customer) {
 }
 
 // 取得搜尋條件
-
-$category_id =
-    $_GET["category_id"] ?? null;
-
-$store_id =
-    $_GET["store_id"] ?? null;
-
-$sort =
-    $_GET["sort"] ?? "asc";
-
-$keyword =
-    trim($_GET["keyword"] ?? "");
+$category_id = $_GET["category_id"] ?? null;
+$store_id = $_GET["store_id"] ?? null;
+$sort = $_GET["sort"] ?? "asc";
+$keyword = trim($_GET["keyword"] ?? "");
 
 // 檢查 Store ID
 if (
@@ -107,11 +95,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -136,7 +120,6 @@ if (
     $category_id !== null &&
     $category_id !== ""
 ) {
-
     if (
         !is_numeric($category_id) ||
         floor((float)$category_id)
@@ -152,8 +135,6 @@ if (
 
     $category_id = (int)$category_id;
 
-    // 確認 Category 屬於目前 Store
-    // 並且必須是 active
     $sql = "
     SELECT
         category_id,
@@ -165,14 +146,11 @@ if (
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $category_id,
         $store_id
     ]);
-
-    $category =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
         echo json_encode([
@@ -200,20 +178,12 @@ if (
 
 // 建立 WHERE 條件
 $where = [
-
-    // 商品必須屬於目前 Store
     "p.store_id = ?",
-
-    // 商品必須是 active
     "p.status = 'active'",
-
-    // Category 必須是 active
     "c.status = 'active'"
 ];
 
-$params = [
-    $store_id
-];
+$params = [$store_id];
 
 // 關鍵字搜尋
 if ($keyword !== "") {
@@ -224,15 +194,9 @@ if ($keyword !== "") {
             OR p.description LIKE ?
         )
     ";
-
-    $search_keyword =
-        "%" . $keyword . "%";
-
-    $params[] =
-        $search_keyword;
-
-    $params[] =
-        $search_keyword;
+    $search_keyword = "%" . $keyword . "%";
+    $params[] = $search_keyword;
+    $params[] = $search_keyword;
 }
 
 // Category 篩選
@@ -240,12 +204,8 @@ if (
     $category_id !== null &&
     $category_id !== ""
 ) {
-
-    $where[] =
-        "p.category_id = ?";
-
-    $params[] =
-        $category_id;
+    $where[] = "p.category_id = ?";
+    $params[] = $category_id;
 }
 
 $where_sql =
@@ -260,18 +220,9 @@ $order =
         : "DESC";
 
 // 取得商品
-//
 // 一個 PRODUCT 只顯示一筆
-//
-// 有規格：
-// 使用 active PRODUCT_SPEC 的最低價格
-//
-// 無規格：
-// 使用 PRODUCT.price
-//
-// inactive Category：
-// 不顯示
-//
+// 有規格：使用 active PRODUCT_SPEC 的最低價格
+// 無規格：使用 PRODUCT.price
 $sql = "
 SELECT
     p.product_id,
@@ -338,26 +289,15 @@ ORDER BY
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute(
-    $params
-);
-
-$products =
-    $stmt->fetchAll(
-        PDO::FETCH_ASSOC
-    );
+$stmt->execute($params);
+$products =$stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理商品資料
 foreach (
     $products as &$product
 ) {
-
-    $product["product_id"] =
-        (int)$product["product_id"];
-
-    $product["store_id"] =
-        (int)$product["store_id"];
+    $product["product_id"] = (int)$product["product_id"];
+    $product["store_id"] = (int)$product["store_id"];
 
     $product["category_id"] =
         $product["category_id"] !== null
@@ -369,8 +309,7 @@ foreach (
             ? (float)$product["price"]
             : null;
 
-    $product["has_spec"] =
-        (bool)$product["has_spec"];
+    $product["has_spec"] = (bool)$product["has_spec"];
 
     $product["min_spec_price"] =
         $product["min_spec_price"] !== null
@@ -378,12 +317,8 @@ foreach (
             : null;
 
     // 顯示價格
-    //
-    // 有規格：
-    // 使用最低 active 規格價格
-    //
-    // 無規格：
-    // 使用 PRODUCT.price
+    // 有規格：使用最低 active 規格價格
+    // 無規格：使用 PRODUCT.price
 
     $product["display_price"] =
         $product["has_spec"]
@@ -395,28 +330,13 @@ unset($product);
 
 // 回傳
 echo json_encode([
-
-    "message" =>
-        "Products retrieved successfully",
-
-    "store_id" =>
-        $store_id,
-
-    "store_name" =>
-        $store["store_name"],
-
-    "keyword" =>
-        $keyword,
-
-    "category_id" =>
-        $category_id,
-
-    "sort" =>
-        $sort,
-
-    "products" =>
-        $products
-
+    "message" => "Products retrieved successfully",
+    "store_id" => $store_id,
+    "store_name" => $store["store_name"],
+    "keyword" => $keyword,
+    "category_id" => $category_id,
+    "sort" => $sort,
+    "products" => $products
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

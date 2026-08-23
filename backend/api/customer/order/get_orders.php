@@ -175,11 +175,7 @@ WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -314,9 +310,7 @@ ORDER BY o.order_date DESC
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute($params);
-
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 沒有訂單
@@ -324,28 +318,6 @@ if (!$orders) {
 
     echo json_encode([
         "message" => "No orders found",
-
-        "customer_id" =>
-            $customer_id,
-
-        "store_id" =>
-            $store_id,
-
-        "filters" => [
-
-            "payment_status" =>
-                $payment_status,
-
-            "payment_confirm_status" =>
-                $payment_confirm_status,
-
-            "delivery_status" =>
-                $delivery_status,
-
-            "refund_status" =>
-                $refund_status
-        ],
-
         "orders" => []
     ], JSON_UNESCAPED_UNICODE);
 
@@ -382,12 +354,10 @@ foreach ($orders as $order) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $order_id,
         $store_id
     ]);
-
     $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Refund
@@ -411,12 +381,10 @@ foreach ($orders as $order) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $order_id,
         $store_id
     ]);
-
     $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Order Item
@@ -439,160 +407,84 @@ foreach ($orders as $order) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $order_id,
         $store_id
     ]);
-
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 商品資料型別轉換
     foreach ($items as &$item) {
-
-        $item["order_item_id"] =
-            (int)$item["order_item_id"];
-
-        $item["product_id"] =
-            (int)$item["product_id"];
-
+        $item["order_item_id"] = (int)$item["order_item_id"];
+        $item["product_id"] = (int)$item["product_id"];
         if ($item["spec_id"] !== null) {
-
-            $item["spec_id"] =
-                (int)$item["spec_id"];
+            $item["spec_id"] = (int)$item["spec_id"];
         }
-
-        $item["quantity"] =
-            (int)$item["quantity"];
-
-        $item["price"] =
-            (float)$item["price"];
-
-        $item["subtotal"] =
-            $item["quantity"] *
-            $item["price"];
+        $item["quantity"] = (int)$item["quantity"];
+        $item["price"] = (float)$item["price"];
+        $item["subtotal"] = $item["quantity"] * $item["price"];
     }
 
     unset($item);
 
     // Payment 資料型別轉換
     if ($payment) {
-
-        $payment["payment_id"] =
-            (int)$payment["payment_id"];
-
-        $payment["amount"] =
-            (float)$payment["amount"];
+        $payment["payment_id"] = (int)$payment["payment_id"];
+        $payment["amount"] = (float)$payment["amount"];
     }
 
     // Refund 資料型別轉換
     if ($refund) {
-
-        $refund["refund_id"] =
-            (int)$refund["refund_id"];
+        $refund["refund_id"] = (int)$refund["refund_id"];
     }
 
     // 建立訂單結果
     $result[] = [
-
-        "order_number" => 
-            $order["order_number"],
-
-        "store_id" =>
-            (int)$order["store_id"],
-
-        "store_name" =>
-            $order["store_name"],
-
-        "order_date" =>
-            $order["order_date"],
-
+        "order_number" =>  $order["order_number"],
+        "store_id" => (int)$order["store_id"],
+        "store_name" => $order["store_name"],
+        "order_date" => $order["order_date"],
         "receiver" => [
-
-            "name" =>
-                $order["receiver_name"],
-
-            "phone" =>
-                $order["receiver_phone"],
-
-            "address" =>
-                $order["receiver_address"]
+            "name" => $order["receiver_name"],
+            "phone" => $order["receiver_phone"],
+            "address" => $order["receiver_address"]
         ],
 
         "amount" => [
-
-            "product_amount" =>
-                (float)$order["product_amount"],
-
-            "shipping_fee" =>
-                (float)$order["shipping_fee"],
-
-            "total_amount" =>
-                (float)$order["total_amount"]
+            "product_amount" => (float)$order["product_amount"],
+            "shipping_fee" => (float)$order["shipping_fee"],
+            "total_amount" => (float)$order["total_amount"]
         ],
 
         "payment" =>
             $payment ?: null,
 
         "delivery" => [
-
-            "delivery_method" =>
-                $order["delivery_method"],
-
-            "delivery_status" =>
-                $order["delivery_status"],
-
-            "estimated_ship_date" =>
-                $order["estimated_ship_date"],
-
-            "estimated_arrival_date" =>
-                $order["estimated_arrival_date"]
+            "delivery_method" => $order["delivery_method"],
+            "delivery_status" => $order["delivery_status"],
+            "estimated_ship_date" => $order["estimated_ship_date"],
+            "estimated_arrival_date" => $order["estimated_arrival_date"]
         ],
 
-        "refund" =>
-            $refund ?: null,
-
-        "items" =>
-            $items,
-
-        "created_at" =>
-            $order["created_at"],
-
-        "updated_at" =>
-            $order["updated_at"]
+        "refund" => $refund ?: null,
+        "items" => $items,
+        "created_at" => $order["created_at"],
+        "updated_at" => $order["updated_at"]
     ];
 }
 
 // 回傳
 echo json_encode([
-
-    "message" =>
-        "Orders retrieved successfully",
-
-    "customer_id" =>
-        $customer_id,
-
-    "store_id" =>
-        $store_id,
-
+    "message" => "Orders retrieved successfully",
+    "customer_id" => $customer_id,
+    "store_id" => $store_id,
     "filters" => [
-
-        "payment_status" =>
-            $payment_status,
-
-        "payment_confirm_status" =>
-            $payment_confirm_status,
-
-        "delivery_status" =>
-            $delivery_status,
-
-        "refund_status" =>
-            $refund_status
+        "payment_status" => $payment_status,
+        "payment_confirm_status" => $payment_confirm_status,
+        "delivery_status" => $delivery_status,
+        "refund_status" => $refund_status
     ],
-
-    "orders" =>
-        $result
-
+    "orders" => $result
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

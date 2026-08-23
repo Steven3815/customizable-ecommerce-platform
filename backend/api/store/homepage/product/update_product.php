@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -54,7 +53,6 @@ if (!$store) {
 }
 
 // 取得 JSON
-
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -69,7 +67,6 @@ if (!is_array($data)) {
 }
 
 // 取得 product_id
-
 if (
     !isset($data["product_id"]) ||
     $data["product_id"] === ""
@@ -106,7 +103,6 @@ if ($product_id <= 0) {
 }
 
 // 取得商品名稱
-
 if (
     !isset($data["product_name"])
 ) {
@@ -117,9 +113,7 @@ if (
     exit;
 }
 
-$product_name = trim(
-    $data["product_name"]
-);
+$product_name = trim($data["product_name"]);
 
 if ($product_name === "") {
     echo json_encode([
@@ -130,7 +124,6 @@ if ($product_name === "") {
 }
 
 // 商品名稱最多 200 字
-
 if (mb_strlen($product_name) > 200) {
     echo json_encode([
         "error" => "Product name is too long"
@@ -140,10 +133,6 @@ if (mb_strlen($product_name) > 200) {
 }
 
 try {
-
-    // 確認商品存在
-    // 而且屬於目前 Store
-    // 而且狀態必須為 active
 
     $sql = "
         SELECT
@@ -161,14 +150,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
-    $product =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$product) {
 
@@ -180,7 +166,6 @@ try {
     }
 
     // 更新商品名稱
-
     $sql = "
         UPDATE PRODUCT
         SET
@@ -192,7 +177,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_name,
         $product_id,
@@ -200,7 +184,6 @@ try {
     ]);
 
     // 取得更新後商品
-
     $sql = "
         SELECT
             product_id,
@@ -218,47 +201,31 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
-    $updated_product =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $updated_product = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // 整理資料
-
-    $updated_product["product_id"] =
-        (int)$updated_product["product_id"];
-
-    $updated_product["store_id"] =
-        (int)$updated_product["store_id"];
-
-    $updated_product["category_id"] =
-        (int)$updated_product["category_id"];
-
+    $updated_product["product_id"] = (int)$updated_product["product_id"];
+    $updated_product["store_id"] = (int)$updated_product["store_id"];
+    $updated_product["category_id"] = (int)$updated_product["category_id"];
     $updated_product["sort_order"] =
         $updated_product["sort_order"] !== null
             ? (int)$updated_product["sort_order"]
             : null;
 
     // 回傳
-
     echo json_encode([
-        "message" =>
-            "Product updated successfully",
-
-        "product" =>
-            $updated_product
-
+        "message" => "Product updated successfully",
+        "product" => $updated_product
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

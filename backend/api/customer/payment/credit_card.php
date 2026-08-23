@@ -41,11 +41,7 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $customer_id
-]);
-
+$stmt->execute([$customer_id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -468,51 +464,23 @@ $paid_info = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 回傳
 echo json_encode([
-
     "message" => "Payment successful",
-
     "payment" => [
-
-        "payment_id" =>
-            (int)$order["payment_id"],
-
-        "order_number" =>
-            $order["order_number"],
-
-        "store_id" =>
-            $store_id,
-
-        "payment_method" =>
-            "credit_card",
-
-        "transaction_amount" =>
-            $transaction_amount,
-
-        "payment_status" =>
-            "paid",
-
-        "payment_confirm_status" =>
-            "confirmed",
-
-        "paid_at" =>
-            $paid_info["paid_at"],
-
-        "confirmed_at" =>
-            $paid_info["confirmed_at"]
+        "payment_id" => (int)$order["payment_id"],
+        "order_number" => $order["order_number"],
+        "store_id" => $store_id,
+        "payment_method" => "credit_card",
+        "transaction_amount" => $transaction_amount,
+        "payment_status" => "paid",
+        "payment_confirm_status" => "confirmed",
+        "paid_at" => $paid_info["paid_at"],
+        "confirmed_at" => $paid_info["confirmed_at"]
     ],
-
     "order" => [
-
-        "customer_id" =>
-            (int)$order["customer_id"],
-
-        "store_id" =>
-            $store_id,
-
-        "total_amount" =>
-            $order_total
+        "customer_id" => (int)$order["customer_id"],
+        "store_id" => $store_id,
+        "total_amount" => $order_total
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

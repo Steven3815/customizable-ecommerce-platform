@@ -47,11 +47,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 檢查 Store 是否存在
@@ -128,8 +124,7 @@ if (array_key_exists("store_name", $data)) {
         exit;
     }
 
-    $store_name =
-        trim($data["store_name"]);
+    $store_name = trim($data["store_name"]);
 
     if ($store_name === "") {
         echo json_encode([
@@ -159,8 +154,7 @@ if (array_key_exists("owner_name", $data)) {
         exit;
     }
 
-    $owner_name =
-        trim($data["owner_name"]);
+    $owner_name = trim($data["owner_name"]);
 
     if ($owner_name === "") {
         echo json_encode([
@@ -190,8 +184,7 @@ if (array_key_exists("phone", $data)) {
         exit;
     }
 
-    $phone =
-        trim($data["phone"]);
+    $phone = trim($data["phone"]);
 
     if (mb_strlen($phone) > 30) {
         echo json_encode([
@@ -216,7 +209,6 @@ WHERE store_id = ?
 try {
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_name,
         $owner_name,
@@ -235,32 +227,16 @@ try {
 
 // 回傳更新後資料
 echo json_encode([
-    "message" =>
-        "Store profile updated successfully",
-
+    "message" => "Store profile updated successfully",
     "store" => [
-        "store_id" =>
-            (int)$store["store_id"],
-
-        "store_name" =>
-            $store_name,
-
-        "store_url" =>
-            $store["store_url"],
-
-        "owner_name" =>
-            $owner_name,
-
-        "email" =>
-            $store["email"],
-
-        "phone" =>
-            $phone,
-
-        "status" =>
-            $store["status"]
+        "store_id" => (int)$store["store_id"],
+        "store_name" => $store_name,
+        "store_url" => $store["store_url"],
+        "owner_name" => $owner_name,
+        "email" => $store["email"],
+        "phone" => $phone,
+        "status" => $store["status"]
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

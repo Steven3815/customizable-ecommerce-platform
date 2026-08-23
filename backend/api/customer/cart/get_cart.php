@@ -154,7 +154,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -216,7 +215,6 @@ $stmt->execute([
     $customer_id,
     $store_id
 ]);
-
 $cart = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$cart) {
@@ -308,12 +306,10 @@ ORDER BY
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $cart_id,
     $store_id
 ]);
-
 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 計算總金額
@@ -321,14 +317,11 @@ $total_amount = 0;
 
 foreach ($items as &$item) {
 
-    $item["cart_item_id"] =
-        (int)$item["cart_item_id"];
+    $item["cart_item_id"] = (int)$item["cart_item_id"];
 
-    $item["product_id"] =
-        (int)$item["product_id"];
+    $item["product_id"] = (int)$item["product_id"];
 
-    $item["quantity"] =
-        (int)$item["quantity"];
+    $item["quantity"] = (int)$item["quantity"];
 
     $item["spec_id"] =
         $item["spec_id"] !== null
@@ -355,28 +348,13 @@ unset($item);
 // 回傳
 echo json_encode([
     "message" => "Cart retrieved successfully",
-
-    "customer_id" =>
-        $customer_id,
-
-    "cart_id" =>
-        $cart_id,
-
-    "store_id" =>
-        $store_id,
-
-    "sort_by" =>
-        $sort_by,
-
-    "sort_order" =>
-        $sort_order,
-
-    "items" =>
-        $items,
-
-    "total_amount" =>
-        $total_amount
-
+    "customer_id" => $customer_id,
+    "cart_id" => $cart_id,
+    "store_id" => $store_id,
+    "sort_by" => $sort_by,
+    "sort_order" => $sort_order,
+    "items" => $items,
+    "total_amount" => $total_amount
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

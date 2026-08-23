@@ -40,7 +40,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -101,26 +100,15 @@ if (!in_array($sort, $allowed_sort, true)) {
 }
 
 $limit = 30;
-
 $offset = ($page - 1) * $limit;
-
 $order_by = match ($sort) {
-
-    "created_at_asc"
-        => "o.created_at ASC, o.order_id ASC",
-
-    "created_at_desc"
-        => "o.created_at DESC, o.order_id DESC",
-
-    "amount_asc"
-        => "o.total_amount ASC, o.order_id ASC",
-
-    "amount_desc"
-        => "o.total_amount DESC, o.order_id DESC"
+    "created_at_asc" => "o.created_at ASC, o.order_id ASC",
+    "created_at_desc"  => "o.created_at DESC, o.order_id DESC",
+    "amount_asc" => "o.total_amount ASC, o.order_id ASC",
+    "amount_desc" => "o.total_amount DESC, o.order_id DESC"
 };
 
-/* 取得客戶基本資料 */
-
+// 取得客戶基本資料
 $sql = "
 SELECT
     c.customer_id,
@@ -153,12 +141,10 @@ GROUP BY
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $store_id,
     $customer_id
 ]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -168,8 +154,7 @@ if (!$customer) {
     exit;
 }
 
-/* 計算購買記錄總筆數 */
-
+//計算購買記錄總筆數 
 $count_sql = "
 SELECT COUNT(*)
 
@@ -180,20 +165,17 @@ AND store_id = ?
 ";
 
 $count_stmt = $pdo->prepare($count_sql);
-
 $count_stmt->execute([
     $customer_id,
     $store_id
 ]);
-
 $total_orders = (int)$count_stmt->fetchColumn();
 
 $total_pages = $total_orders > 0
     ? (int)ceil($total_orders / $limit)
     : 0;
 
-/* 取得購買記錄 */
-
+///取得購買記錄 
 $sql = "
 SELECT
     o.order_id,
@@ -245,9 +227,7 @@ $stmt->bindValue(
     $offset,
     PDO::PARAM_INT
 );
-
 $stmt->execute();
-
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $purchase_records = [];
@@ -255,76 +235,34 @@ $purchase_records = [];
 foreach ($orders as $order) {
 
     $purchase_records[] = [
-
-        "order_id" =>
-            (int)$order["order_id"],
-
-        "order_number" =>
-            $order["order_number"],
-
-        "created_at" =>
-            $order["created_at"],
-
-        "total_amount" =>
-            (float)$order["total_amount"],
-
-        "delivery_status" =>
-            $order["delivery_status"],
-
-        "refund_status" =>
-            $order["refund_status"]
+        "order_id" => (int)$order["order_id"],
+        "order_number" => $order["order_number"],
+        "created_at" => $order["created_at"],
+        "total_amount" => (float)$order["total_amount"],
+        "delivery_status" => $order["delivery_status"],
+        "refund_status" => $order["refund_status"]
     ];
 }
 
-/* 回傳 */
-
+//回傳
 echo json_encode([
-
     "customer" => [
-
-        "customer_id" =>
-            (int)$customer["customer_id"],
-
-        "name" =>
-            $customer["name"],
-
-        "phone" =>
-            $customer["phone"],
-
-        "email" =>
-            $customer["email"],
-
-        "order_count" =>
-            (int)$customer["order_count"],
-
-        "total_spending" =>
-            (float)$customer["total_spending"],
-
-        "created_at" =>
-            $customer["created_at"]
+        "customer_id" => (int)$customer["customer_id"],
+        "name" => $customer["name"],
+        "phone" => $customer["phone"],
+        "email" => $customer["email"],
+        "order_count" => (int)$customer["order_count"],
+        "total_spending" => (float)$customer["total_spending"],
+        "created_at" => $customer["created_at"]
     ],
-
     "purchase_records" => [
-
-        "page" =>
-            $page,
-
-        "limit" =>
-            $limit,
-
-        "total_orders" =>
-            $total_orders,
-
-        "total_pages" =>
-            $total_pages,
-
-        "sort" =>
-            $sort,
-
-        "orders" =>
-            $purchase_records
+        "page" => $page,
+        "limit" => $limit,
+        "total_orders" => $total_orders,
+        "total_pages" => $total_pages,
+        "sort" => $sort,
+        "orders" => $purchase_records
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

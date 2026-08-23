@@ -35,10 +35,7 @@ if (
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        $customer_id
-    ]);
-
+    $stmt->execute([$customer_id]);
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$customer) {
@@ -80,10 +77,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -111,10 +105,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
@@ -134,10 +125,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $website_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$website_setting) {
@@ -165,10 +153,7 @@ ORDER BY
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $banners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($banners as &$banner) {
@@ -200,10 +185,7 @@ ORDER BY
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $sliders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($sliders as &$slider) {
@@ -223,10 +205,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $homepage_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$homepage_setting) {
@@ -257,10 +236,7 @@ ORDER BY
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $homepage_products = [];
@@ -313,7 +289,6 @@ foreach ($categories as $category) {
         $store_id,
         $category_id
     ]);
-
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($products as &$product) {
@@ -366,10 +341,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $footer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$footer) {
@@ -381,52 +353,33 @@ if (!$footer) {
 
 // 整理 Footer 資料
 $footer["footer_id"] = (int)$footer["footer_id"];
+$footer["contact_phone_enable"] = (bool)$footer["contact_phone_enable"];
+$footer["address_enable"] = (bool)$footer["address_enable"];
+$footer["email_enable"] = (bool)$footer["email_enable"];
+$footer["service_phone_enable"] = (bool)$footer["service_phone_enable"];
 
-$footer["contact_phone_enable"] =
-    (bool)$footer["contact_phone_enable"];
-
-$footer["address_enable"] =
-    (bool)$footer["address_enable"];
-
-$footer["email_enable"] =
-    (bool)$footer["email_enable"];
-
-$footer["service_phone_enable"] =
-    (bool)$footer["service_phone_enable"];
-
-// 回傳首頁資料
+// 回傳
 echo json_encode([
     "customer_id" => $customer_id,
-
     "store" => [
         "store_id" => (int)$store["store_id"],
         "store_name" => $store["store_name"],
         "store_url" => $store["store_url"]
     ],
-
     "store_setting" => [
         "store_status" => $store_setting["store_status"],
         "store_mode" => $store_setting["store_mode"]
     ],
-
     "website_setting" => [
-        "intro_section_enable" =>
-            (bool)$website_setting["intro_section_enable"],
-
-        "banner_section_enable" =>
-            (bool)$website_setting["banner_section_enable"]
+        "intro_section_enable" => (bool)$website_setting["intro_section_enable"],
+        "banner_section_enable" => (bool)$website_setting["banner_section_enable"]
     ],
-
     "banners" => $banners,
-
     "sliders" => $sliders,
-
     "homepage_product_setting" => [
-        "display_limit" => $display_limit
+        "display_limit" => (int)$display_limit
     ],
-
     "categories" => $homepage_products,
-
     "footer" => $footer
 ], JSON_UNESCAPED_UNICODE);
 

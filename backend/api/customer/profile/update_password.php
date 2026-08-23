@@ -121,7 +121,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到會員

@@ -122,11 +122,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Store Setting 不存在
@@ -165,14 +161,12 @@ AND c.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $cart_item_id,
     $store_id,
     $customer_id,
     $store_id
 ]);
-
 $item = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到商品
@@ -195,7 +189,6 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $cart_item_id,
     $cart_id,

@@ -43,11 +43,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -126,12 +122,10 @@ AND o.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $store_id
 ]);
-
 $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 如果訂單不存在，或不屬於目前 Store
@@ -162,12 +156,10 @@ LIMIT 1
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $store_id
 ]);
-
 $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 取得 Refund
@@ -190,12 +182,10 @@ LIMIT 1
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $store_id
 ]);
-
 $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 取得商品明細
@@ -216,184 +206,98 @@ ORDER BY oi.order_item_id ASC
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $store_id
 ]);
-
 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理商品資料
 foreach ($items as &$item) {
-
-    $item["order_item_id"] =
-        (int)$item["order_item_id"];
-
-    $item["store_id"] =
-        (int)$item["store_id"];
-
-    $item["product_id"] =
-        (int)$item["product_id"];
+    $item["order_item_id"] = (int)$item["order_item_id"];
+    $item["store_id"] = (int)$item["store_id"];
+    $item["product_id"] = (int)$item["product_id"];
 
     if ($item["spec_id"] !== null) {
-
-        $item["spec_id"] =
-            (int)$item["spec_id"];
+        $item["spec_id"] = (int)$item["spec_id"];
     }
 
-    $item["quantity"] =
-        (int)$item["quantity"];
-
-    $item["price"] =
-        (float)$item["price"];
-
+    $item["quantity"] = (int)$item["quantity"];
+    $item["price"] = (float)$item["price"];
     $item["subtotal"] =
-        $item["quantity"] *
-        $item["price"];
+        $item["quantity"] * $item["price"];
 }
 
 unset($item);
 
 // 整理 Payment
 if ($payment) {
-
-    $payment["payment_id"] =
-        (int)$payment["payment_id"];
-
-    $payment["store_id"] =
-        (int)$payment["store_id"];
+    $payment["payment_id"] = (int)$payment["payment_id"];
+    $payment["store_id"] = (int)$payment["store_id"];
 }
 
 // 整理 Refund
 if ($refund) {
-
-    $refund["refund_id"] =
-        (int)$refund["refund_id"];
-
-    $refund["store_id"] =
-        (int)$refund["store_id"];
+    $refund["refund_id"] = (int)$refund["refund_id"];
+    $refund["store_id"] = (int)$refund["store_id"];
 }
 
 // 整理訂單資料
-$order["order_id"] =
-    (int)$order["order_id"];
-
-$order["store_id"] =
-    (int)$order["store_id"];
-
-$order["customer_id"] =
-    (int)$order["customer_id"];
-
-$order["product_amount"] =
-    (float)$order["product_amount"];
-
-$order["shipping_fee"] =
-    (float)$order["shipping_fee"];
-
-$order["total_amount"] =
-    (float)$order["total_amount"];
+$order["order_id"] = (int)$order["order_id"];
+$order["store_id"] = (int)$order["store_id"];
+$order["customer_id"] = (int)$order["customer_id"];
+$order["product_amount"] = (float)$order["product_amount"];
+$order["shipping_fee"] = (float)$order["shipping_fee"];
+$order["total_amount"] = (float)$order["total_amount"];
 
 // 取得付款確認狀態
-$payment_confirm_status =
-    $payment["payment_confirm_status"] ?? null;
-
+$payment_confirm_status = $payment["payment_confirm_status"] ?? null;
 // 回傳
 echo json_encode([
-
     "store" => [
-
-        "store_id" =>
-            (int)$store["store_id"],
-
-        "store_name" =>
-            $store["store_name"]
+        "store_id" => (int)$store["store_id"],
+        "store_name" => $store["store_name"]
     ],
 
     "order" => [
-
-        "order_id" =>
-            $order["order_id"],
-
-        "order_number" =>
-            $order["order_number"],
-
-        "store_id" =>
-            $order["store_id"],
-
-        "order_date" =>
-            $order["order_date"],
-
-        "created_at" =>
-            $order["created_at"],
-
-        "updated_at" =>
-            $order["updated_at"],
+        "order_id" => $order["order_id"],
+        "order_number" => $order["order_number"],
+        "store_id" => $order["store_id"],
+        "order_date" => $order["order_date"],
+        "created_at" => $order["created_at"],
+        "updated_at" => $order["updated_at"],
 
         "customer" => [
-
-            "customer_id" =>
-                $order["customer_id"],
-
-            "name" =>
-                $order["customer_name"],
-
-            "phone" =>
-                $order["customer_phone"]
+            "customer_id" => $order["customer_id"],
+            "name" => $order["customer_name"],
+            "phone" => $order["customer_phone"]
         ],
 
         "receiver" => [
-
-            "name" =>
-                $order["receiver_name"],
-
-            "phone" =>
-                $order["receiver_phone"],
-
-            "address" =>
-                $order["receiver_address"]
+            "name" => $order["receiver_name"],
+            "phone" => $order["receiver_phone"],
+            "address" => $order["receiver_address"]
         ],
 
         "amount" => [
-
-            "product_amount" =>
-                $order["product_amount"],
-
-            "shipping_fee" =>
-                $order["shipping_fee"],
-
-            "total_amount" =>
-                $order["total_amount"]
+            "product_amount" => $order["product_amount"],
+            "shipping_fee" => $order["shipping_fee"],
+            "total_amount" => $order["total_amount"]
         ],
 
-        "payment" =>
-            $payment ?: null,
-
-        "payment_confirm_status" =>
-            $payment_confirm_status,
+        "payment" => $payment ?: null,
+        "payment_confirm_status" => $payment_confirm_status,
 
         "delivery" => [
-
-            "delivery_method" =>
-                $order["delivery_method"],
-
-            "delivery_status" =>
-                $order["delivery_status"],
-
-            "estimated_ship_date" =>
-                $order["estimated_ship_date"],
-
-            "estimated_arrival_date" =>
-                $order["estimated_arrival_date"]
+            "delivery_method" => $order["delivery_method"],
+            "delivery_status" => $order["delivery_status"],
+            "estimated_ship_date" => $order["estimated_ship_date"],
+            "estimated_arrival_date" => $order["estimated_arrival_date"]
         ],
 
-        "refund" =>
-            $refund ?: null,
-
-        "items" =>
-            $items
+        "refund" => $refund ?: null,
+        "items" => $items
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

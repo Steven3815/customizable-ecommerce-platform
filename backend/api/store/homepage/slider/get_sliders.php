@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -73,22 +72,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
+    $stmt->execute([$store_id]);
     $slider_images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 整理資料
     foreach ($slider_images as &$image) {
-
-        $image["image_id"] =
-            (int)$image["image_id"];
-
-        $image["store_id"] =
-            (int)$image["store_id"];
-
+        $image["image_id"] = (int)$image["image_id"];
+        $image["store_id"] = (int)$image["store_id"];
         $image["sort_order"] =
             $image["sort_order"] !== null
                 ? (int)$image["sort_order"]
@@ -99,20 +89,11 @@ try {
 
     // 回傳
     echo json_encode([
-        "message" =>
-            "Slider images retrieved successfully",
-
-        "store_id" =>
-            $store_id,
-
-        "count" =>
-            count($slider_images),
-
-        "max_count" =>
-            5,
-
-        "slider_images" =>
-            $slider_images
+        "message" => "Slider images retrieved successfully",
+        "store_id" => $store_id,
+        "count" => count($slider_images),
+        "max_count" => 5,
+        "slider_images" => $slider_images
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

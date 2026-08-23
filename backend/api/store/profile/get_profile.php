@@ -49,11 +49,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到商家
@@ -66,8 +62,7 @@ if (!$store) {
 }
 
 // 資料型態整理
-$store["store_id"] =
-    (int)$store["store_id"];
+$store["store_id"] = (int)$store["store_id"];
 
 // 回傳商家資料
 echo json_encode([

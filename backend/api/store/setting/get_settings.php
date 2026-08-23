@@ -41,11 +41,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -77,11 +73,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
+    $stmt->execute([$store_id]);
     $store_settings = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store_settings) {
@@ -93,36 +85,22 @@ try {
     }
 
     // 資料型別整理
-    $store_settings["store_id"] =
-        (int)$store_settings["store_id"];
-
-    $store_settings["refund_enable"] =
-        (bool)$store_settings["refund_enable"];
-
-    $store_settings["refund_days_limit"] =
-        (int)$store_settings["refund_days_limit"];
-
-    $store_settings["shipping_days"] =
-        (int)$store_settings["shipping_days"];
-
-    $store_settings["delivery_days"] =
-        (int)$store_settings["delivery_days"];
-
-    $store_settings["stock_alert_enable"] =
-        (bool)$store_settings["stock_alert_enable"];
+    $store_settings["store_id"] = (int)$store_settings["store_id"];
+    $store_settings["refund_enable"] = (bool)$store_settings["refund_enable"];
+    $store_settings["refund_days_limit"] = (int)$store_settings["refund_days_limit"];
+    $store_settings["shipping_days"] = (int)$store_settings["shipping_days"];
+    $store_settings["delivery_days"] = (int)$store_settings["delivery_days"];
+    $store_settings["stock_alert_enable"] = (bool)$store_settings["stock_alert_enable"];
 
     if ($store_settings["stock_alert_threshold"] !== null) {
-        $store_settings["stock_alert_threshold"] =
-            (int)$store_settings["stock_alert_threshold"];
+        $store_settings["stock_alert_threshold"] = (int)$store_settings["stock_alert_threshold"];
     }
 
     if ($store_settings["spec_stock_alert_threshold"] !== null) {
-        $store_settings["spec_stock_alert_threshold"] =
-            (int)$store_settings["spec_stock_alert_threshold"];
+        $store_settings["spec_stock_alert_threshold"] = (int)$store_settings["spec_stock_alert_threshold"];
     }
 
-    $store_settings["customer_service_enable"] =
-        (bool)$store_settings["customer_service_enable"];
+    $store_settings["customer_service_enable"] = (bool)$store_settings["customer_service_enable"];
 
     // 取得付款方式
     $sql = "
@@ -148,70 +126,43 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
+    $stmt->execute([$store_id]);
     $payment_rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $payment_methods = [];
 
     foreach ($payment_rows as $payment) {
-
-        $store_payment_id =
-            (int)$payment["store_payment_id"];
-
-        $payment_method =
-            $payment["payment_method"];
+        $store_payment_id = (int)$payment["store_payment_id"];
+        $payment_method = $payment["payment_method"];
 
         $item = [
-
-            "store_payment_id" =>
-                $store_payment_id,
-
-            "payment_method" =>
-                $payment_method,
-
-            "enabled" =>
-                $payment["status"] === "active"
+            "store_payment_id" => $store_payment_id,
+            "payment_method" => $payment_method,
+            "enabled" => $payment["status"] === "active"
         ];
 
         // ATM
         if ($payment_method === "atm") {
-
             $item["account"] = [
-
-                "account_id" =>
-                    $payment["account_id"] !== null
-                        ? (int)$payment["account_id"]
-                        : null,
-
-                "bank_name" =>
-                    $payment["bank_name"],
-
-                "bank_number" =>
-                    $payment["bank_number"]
+                "account_id" => $payment["account_id"] !== null
+                    ? (int)$payment["account_id"]
+                    : null,
+                "bank_name" => $payment["bank_name"],
+                "bank_number" => $payment["bank_number"]
             ];
         }
 
         // 郵局轉帳
         if ($payment_method === "post_office") {
-
             $item["account"] = [
-
-                "account_id" =>
-                    $payment["account_id"] !== null
-                        ? (int)$payment["account_id"]
-                        : null,
-
-                "post_office_number" =>
-                    $payment["post_office_number"]
+                "account_id" => $payment["account_id"] !== null
+                    ? (int)$payment["account_id"]
+                    : null,
+                "post_office_number" => $payment["post_office_number"]
             ];
         }
 
-        $payment_methods[] =
-            $item;
+        $payment_methods[] = $item;
     }
 
     // 取得配送方式
@@ -229,43 +180,26 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
+    $stmt->execute([$store_id]);
 
-    $stmt->execute([
-        $store_id
-    ]);
-
-    $delivery_rows =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $delivery_rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $delivery_methods = [];
 
     foreach ($delivery_rows as $delivery) {
 
         $delivery_methods[] = [
-
-            "store_delivery_id" =>
-                (int)$delivery["store_delivery_id"],
-
-            "delivery_method" =>
-                $delivery["delivery_method"],
-
-            "enabled" =>
-                $delivery["status"] === "active"
+            "store_delivery_id" => (int)$delivery["store_delivery_id"],
+            "delivery_method" => $delivery["delivery_method"],
+            "enabled" => $delivery["status"] === "active"
         ];
     }
 
     // 回傳
     echo json_encode([
-
-        "store_settings" =>
-            $store_settings,
-
-        "payment_methods" =>
-            $payment_methods,
-
-        "delivery_methods" =>
-            $delivery_methods
-
+        "store_settings" => $store_settings,
+        "payment_methods" => $payment_methods,
+        "delivery_methods" => $delivery_methods
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (PDOException $e) {

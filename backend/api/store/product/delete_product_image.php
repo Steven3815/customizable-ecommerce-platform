@@ -41,11 +41,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -104,12 +100,10 @@ AND pi.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $image_id,
     $store_id
 ]);
-
 $image = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$image) {
@@ -139,12 +133,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $image["product_id"],
     $store_id
 ]);
-
 $image_count = (int)$stmt->fetchColumn();
 
 if ($image_count <= 1) {
@@ -170,22 +162,18 @@ if (
 }
 
 // 建立實體圖片路徑
-$image_path =
-    dirname(__DIR__, 3) . $image_url;
+$image_path = dirname(__DIR__, 3) . $image_url;
 
 // 儲存商品資訊
-$product_id =
-    (int)$image["product_id"];
-
-$product_name =
-    $image["product_name"];
+$product_id = (int)$image["product_id"];
+$product_name = $image["product_name"];
 
 // 開始交易
 $pdo->beginTransaction();
 
 try {
 
-    // 1. 刪除圖片資料庫紀錄
+    // 刪除圖片資料庫紀錄
     $sql = "
     DELETE FROM PRODUCT_IMAGE
     WHERE image_id = ?
@@ -194,7 +182,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $image_id,
         $product_id,
@@ -207,7 +194,7 @@ try {
         );
     }
 
-    // 2. 取得刪除後剩餘圖片
+    // 取得刪除後剩餘圖片
     $sql = "
     SELECT
         image_id
@@ -218,7 +205,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
@@ -227,8 +213,7 @@ try {
     $remaining_images =
         $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 3. 重新整理圖片排序
-    // 從 1 開始
+    // 重新整理圖片排序
     $sort_order = 1;
 
     foreach ($remaining_images as $remaining_image) {
@@ -246,7 +231,6 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $sort_order,
             $remaining_image_id,
@@ -257,7 +241,7 @@ try {
         $sort_order++;
     }
 
-    // 4. 完成交易
+    // 完成交易
     $pdo->commit();
 
 } catch (Exception $e) {
@@ -273,18 +257,17 @@ try {
     exit;
 }
 
-// 5. 刪除實體圖片
+// 刪除實體圖片
 $deleted_physical_image = false;
 
 if (
     file_exists($image_path) &&
     is_file($image_path)
 ) {
-    $deleted_physical_image =
-        unlink($image_path);
+    $deleted_physical_image = unlink($image_path);
 }
 
-// 6. 重新取得剩餘圖片
+// 重新取得剩餘圖片
 $sql = "
 SELECT
     image_id,
@@ -297,56 +280,32 @@ ORDER BY sort_order ASC, image_id ASC
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $product_id,
     $store_id
 ]);
-
-$remaining_images =
-    $stmt->fetchAll(PDO::FETCH_ASSOC);
+$remaining_images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理資料型別
 foreach ($remaining_images as &$remaining_image) {
 
-    $remaining_image["image_id"] =
-        (int)$remaining_image["image_id"];
-
-    $remaining_image["sort_order"] =
-        (int)$remaining_image["sort_order"];
+    $remaining_image["image_id"] = (int)$remaining_image["image_id"];
+    $remaining_image["sort_order"] = (int)$remaining_image["sort_order"];
 }
 
 unset($remaining_image);
 
-// 7. 回傳
+// 回傳
 echo json_encode([
-    "message" =>
-        "Product image deleted successfully",
-
-    "store_id" =>
-        $store_id,
-
-    "product_id" =>
-        $product_id,
-
-    "product_name" =>
-        $product_name,
-
-    "image_id" =>
-        $image_id,
-
-    "image_url" =>
-        $image_url,
-
-    "deleted_physical_image" =>
-        $deleted_physical_image,
-
-    "remaining_image_count" =>
-        count($remaining_images),
-
-    "images" =>
-        $remaining_images
-
+    "message" => "Product image deleted successfully",
+    "store_id" => $store_id,
+    "product_id" => $product_id,
+    "product_name" => $product_name,
+    "image_id" => $image_id,
+    "image_url" => $image_url,
+    "deleted_physical_image" => $deleted_physical_image,
+    "remaining_image_count" => count($remaining_images),
+    "images" => $remaining_images
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

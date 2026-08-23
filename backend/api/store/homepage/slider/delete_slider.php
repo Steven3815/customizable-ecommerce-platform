@@ -43,7 +43,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -142,13 +141,10 @@ try {
             $image_id,
             $store_id
         ]);
-
         $image = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$image) {
-            throw new Exception(
-                "Slider image not found"
-            );
+            throw new Exception("Slider image not found");
         }
 
         $deleted_image_urls[] = $image["image_url"];
@@ -187,13 +183,8 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
-    $remaining_image_ids =
-        $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $stmt->execute([$store_id]);
+    $remaining_image_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     // 重新整理 sort_order
     $sql = "
@@ -242,23 +233,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
-    $slider_images =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([$store_id]);
+    $slider_images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 整理資料
     foreach ($slider_images as &$image) {
-
-        $image["image_id"] =
-            (int)$image["image_id"];
-
-        $image["store_id"] =
-            (int)$image["store_id"];
-
+        $image["image_id"] = (int)$image["image_id"];
+        $image["store_id"] = (int)$image["store_id"];
         $image["sort_order"] =
             $image["sort_order"] !== null
                 ? (int)$image["sort_order"]
@@ -268,11 +249,8 @@ try {
     unset($image);
 
     echo json_encode([
-        "message" =>
-            "Slider images deleted successfully",
-
-        "slider_images" =>
-            $slider_images
+        "message" => "Slider images deleted successfully",
+        "slider_images" => $slider_images
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -282,8 +260,7 @@ try {
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -54,7 +53,6 @@ if (!$store) {
 }
 
 // 取得 JSON
-
 $data = json_decode(
     file_get_contents("php://input"),
     true
@@ -69,7 +67,6 @@ if (!is_array($data)) {
 }
 
 // 取得 category_id
-
 if (
     !isset($data["category_id"]) ||
     $data["category_id"] === ""
@@ -105,7 +102,6 @@ if ($category_id <= 0) {
 }
 
 // 取得商品 ID
-
 if (
     !isset($data["product_ids"]) ||
     !is_array($data["product_ids"])
@@ -124,7 +120,6 @@ try {
     $pdo->beginTransaction();
 
     // 確認 Category 存在
-
     $sql = "
         SELECT
             category_id
@@ -136,7 +131,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $category_id,
         $store_id
@@ -144,13 +138,10 @@ try {
 
     if (!$stmt->fetch()) {
 
-        throw new Exception(
-            "Category not found"
-        );
+        throw new Exception("Category not found");
     }
 
     // 取得目前所有 active 商品
-
     $sql = "
         SELECT
             product_id
@@ -164,7 +155,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id
@@ -174,12 +164,10 @@ try {
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
-        $existing_product_ids[] =
-            (int)$row["product_id"];
+        $existing_product_ids[] = (int)$row["product_id"];
     }
 
     // 目前沒有商品
-
     if (count($existing_product_ids) === 0) {
 
         echo json_encode([
@@ -194,27 +182,19 @@ try {
     }
 
     // 至少需要一個商品
-
     if (count($product_ids) < 1) {
-
-        throw new Exception(
-            "At least one product is required"
-        );
+        throw new Exception("At least one product is required");
     }
 
     // 商品數量必須完全一致
-
     if (
         count($product_ids)
         !== count($existing_product_ids)
     ) {
-        throw new Exception(
-            "Product list is incomplete"
-        );
+        throw new Exception("Product list is incomplete");
     }
 
     // 驗證 Product ID
-
     $validated_product_ids = [];
 
     foreach ($product_ids as $product_id) {
@@ -224,21 +204,16 @@ try {
             floor((float)$product_id)
             != (float)$product_id
         ) {
-            throw new Exception(
-                "Invalid product ID"
-            );
+            throw new Exception("Invalid product ID");
         }
 
         $product_id = (int)$product_id;
 
         if ($product_id <= 0) {
-            throw new Exception(
-                "Invalid product ID"
-            );
+            throw new Exception("Invalid product ID");
         }
 
         // 防止重複商品
-
         if (
             in_array(
                 $product_id,
@@ -246,9 +221,7 @@ try {
                 true
             )
         ) {
-            throw new Exception(
-                "Duplicate product ID"
-            );
+            throw new Exception("Duplicate product ID");
         }
 
         $validated_product_ids[] =
@@ -256,25 +229,18 @@ try {
     }
 
     // 建立目前商品 ID 對照表
-
-    $existing_lookup =
-        array_flip($existing_product_ids);
+    $existing_lookup = array_flip($existing_product_ids);
 
     // 確認商品全部屬於目前 Store 和 Category
-
     foreach ($validated_product_ids as $product_id) {
 
         if (!isset($existing_lookup[$product_id])) {
 
-            throw new Exception(
-                "Product not found"
-            );
+            throw new Exception("Product not found");
         }
     }
 
-    // 暫時提高 sort_order
-    // 避免重新排序時產生重複排序值
-
+    // 暫時提高 sort_order 避免重新排序時產生重複排序值
     $temporary_offset = 1000000;
 
     $sql = "
@@ -287,7 +253,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $temporary_offset,
         $store_id,
@@ -295,7 +260,6 @@ try {
     ]);
 
     // 重新設定 sort_order
-
     $sql = "
         UPDATE PRODUCT
         SET
@@ -346,25 +310,18 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id
     ]);
 
-    $products =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($products as &$product) {
 
-        $product["product_id"] =
-            (int)$product["product_id"];
-
-        $product["store_id"] =
-            (int)$product["store_id"];
-
-        $product["category_id"] =
-            (int)$product["category_id"];
+        $product["product_id"] = (int)$product["product_id"];
+        $product["store_id"] = (int)$product["store_id"];
+        $product["category_id"] = (int)$product["category_id"];
 
         $product["sort_order"] =
             $product["sort_order"] !== null
@@ -375,14 +332,9 @@ try {
     unset($product);
 
     echo json_encode([
-        "message" =>
-            "Products reordered successfully",
-
-        "category_id" =>
-            $category_id,
-
-        "products" =>
-            $products
+        "message" => "Products reordered successfully",
+        "category_id" => $category_id,
+        "products" =>  $products
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -392,8 +344,7 @@ try {
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

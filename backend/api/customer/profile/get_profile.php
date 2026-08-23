@@ -70,17 +70,11 @@ WHERE customer_id = ?
 ";
 
 try {
-
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $customer_id
-    ]);
-
+    $stmt->execute([$customer_id]);
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
-
     echo json_encode([
         "error" => "Failed to retrieve customer profile"
     ], JSON_UNESCAPED_UNICODE);
@@ -90,7 +84,6 @@ try {
 
 // 找不到會員
 if (!$customer) {
-
     echo json_encode([
         "error" => "Customer not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -117,12 +110,8 @@ $delivery_map = [
     3 => "store_pickup"
 ];
 
-// preferred_payment
 $preferred_payment = $customer["preferred_payment"];
-
-// preferred_delivery
 $preferred_delivery = $customer["preferred_delivery"];
-
 // 如果資料庫存的是 ID，轉成 method
 $preferred_payment_method = null;
 
@@ -130,8 +119,7 @@ if (
     is_numeric($preferred_payment) &&
     isset($payment_map[(int)$preferred_payment])
 ) {
-    $preferred_payment_method =
-        $payment_map[(int)$preferred_payment];
+    $preferred_payment_method = $payment_map[(int)$preferred_payment];
 } elseif (
     is_string($preferred_payment) &&
     in_array(
@@ -140,8 +128,7 @@ if (
         true
     )
 ) {
-    $preferred_payment_method =
-        $preferred_payment;
+    $preferred_payment_method = $preferred_payment;
 }
 
 // 如果資料庫存的是 ID，轉成 method
@@ -167,42 +154,18 @@ if (
 
 // 回傳
 echo json_encode([
-
-    "message" =>
-        "Customer profile retrieved successfully",
-
+    "message" => "Customer profile retrieved successfully",
     "customer" => [
-
-        "customer_id" =>
-            $customer["customer_id"],
-
-        "name" =>
-            $customer["name"],
-
-        "email" =>
-            $customer["email"],
-
-        "phone" =>
-            $customer["phone"],
-
-        "address" =>
-            $customer["address"],
-
-        // 會員預設付款方式
-        "preferred_payment" =>
-            $preferred_payment_method,
-
-        // 會員預設配送方式
-        "preferred_delivery" =>
-            $preferred_delivery_method,
-
-        "created_at" =>
-            $customer["created_at"],
-
-        "updated_at" =>
-            $customer["updated_at"]
+        "customer_id" => $customer["customer_id"],
+        "name" => $customer["name"],
+        "email" => $customer["email"],
+        "phone" => $customer["phone"],
+        "address" => $customer["address"],
+        "preferred_payment" => $preferred_payment_method,
+        "preferred_delivery" => $preferred_delivery_method,
+        "created_at" => $customer["created_at"],
+        "updated_at" => $customer["updated_at"]
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

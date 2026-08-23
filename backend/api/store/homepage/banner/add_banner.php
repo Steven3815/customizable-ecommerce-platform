@@ -43,7 +43,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -84,8 +83,7 @@ if (mb_strlen($description) > 80) {
 }
 
 // 取得預設圖片 ID
-$default_banner_id =
-    $_POST["default_banner_id"] ?? null;
+$default_banner_id = $_POST["default_banner_id"] ?? null;
 
 // 是否有上傳圖片
 $has_upload_image =
@@ -130,15 +128,10 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
+    $stmt->execute([$store_id]);
 
     if ($stmt->fetch()) {
-        throw new Exception(
-            "Banner already exists"
-        );
+        throw new Exception("Banner already exists");
     }
 
     // 使用預設 Banner
@@ -150,18 +143,13 @@ try {
             floor((float)$default_banner_id)
             != (float)$default_banner_id
         ) {
-            throw new Exception(
-                "Invalid default banner ID"
-            );
+            throw new Exception("Invalid default banner ID");
         }
 
-        $default_banner_id =
-            (int)$default_banner_id;
+        $default_banner_id = (int)$default_banner_id;
 
         if ($default_banner_id <= 0) {
-            throw new Exception(
-                "Invalid default banner ID"
-            );
+            throw new Exception("Invalid default banner ID");
         }
 
         // 取得預設圖片
@@ -174,23 +162,15 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $default_banner_id
-        ]);
-
-        $default_banner =
-            $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([$default_banner_id]);
+        $default_banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$default_banner) {
-            throw new Exception(
-                "Default banner not found"
-            );
+            throw new Exception("Default banner not found");
         }
 
         // 使用預設 Banner 的圖片
-        $image_url =
-            $default_banner["image_url"];
+        $image_url = $default_banner["image_url"];
     }
 
     // 使用 Store 上傳圖片
@@ -203,8 +183,7 @@ try {
             600
         );
 
-        $image_url =
-            $uploaded_image_url;
+        $image_url = $uploaded_image_url;
 
         $default_banner_id = null;
     }
@@ -234,7 +213,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $default_banner_id,
@@ -243,41 +221,23 @@ try {
         $description
     ]);
 
-    $banner_id =
-        (int)$pdo->lastInsertId();
+    $banner_id = (int)$pdo->lastInsertId();
 
     $pdo->commit();
 
     // 回傳新增資料
     echo json_encode([
-        "message" =>
-            "Banner added successfully",
-
-        "banner" => [
-            "banner_id" =>
-                $banner_id,
-
-            "store_id" =>
-                $store_id,
-
-            "default_banner_id" =>
-                $default_banner_id,
-
-            "image_url" =>
-                $image_url,
-
-            "title" =>
-                $title,
-
-            "description" =>
-                $description,
-
-            "sort_order" =>
-                1,
-
-            "status" =>
-                "active"
-        ]
+    "message" => "Banner added successfully",
+    "banner" => [
+        "banner_id" => $banner_id,
+        "store_id" => $store_id,
+        "default_banner_id" => $default_banner_id,
+        "image_url" => $image_url,
+        "title" => $title,
+        "description" => $description,
+        "sort_order" => 1,
+        "status" => "active"
+    ]
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -286,16 +246,13 @@ try {
         $pdo->rollBack();
     }
 
-    // 如果是上傳圖片
-    // 但資料庫新增失敗
-    // 刪除剛上傳的圖片
+    // 如果是上傳圖片但資料庫新增失敗,刪除剛上傳的圖片
     if ($uploaded_image_url !== null) {
         deleteImage($uploaded_image_url);
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

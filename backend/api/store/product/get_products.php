@@ -43,11 +43,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -135,12 +131,10 @@ if ($category_id !== null) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $category_id,
         $store_id
     ]);
-
     $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
@@ -195,13 +189,8 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
-    $store_setting =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt->execute([$store_id]);
+    $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store_setting) {
         echo json_encode([
@@ -228,15 +217,12 @@ try {
         "p.store_id = ?"
     ];
 
-    $params = [
-        $store_id
-    ];
+    $params = [$store_id];
 
     // Category 篩選
     if ($category_id !== null) {
 
         $where[] = "p.category_id = ?";
-
         $params[] = $category_id;
     }
 
@@ -244,7 +230,6 @@ try {
     if ($status !== null) {
 
         $where[] = "p.status = ?";
-
         $params[] = $status;
     }
 
@@ -277,21 +262,15 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute($params);
-
-    $products =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $result_products = [];
 
     foreach ($products as $product) {
 
-        $product_id =
-            (int)$product["product_id"];
-
-        $has_spec =
-            (bool)$product["has_spec"];
+        $product_id = (int)$product["product_id"];
+        $has_spec = (bool)$product["has_spec"];
 
         // 無規格商品
         if (!$has_spec) {
@@ -304,20 +283,17 @@ try {
             // 判斷庫存狀態
             if ($stock <= 0) {
 
-                $current_stock_status =
-                    "out_of_stock";
+                $current_stock_status = "out_of_stock";
 
             } elseif (
                 $stock <= $stock_alert_threshold
             ) {
 
-                $current_stock_status =
-                    "low_stock";
+                $current_stock_status = "low_stock";
 
             } else {
 
-                $current_stock_status =
-                    "in_stock";
+                $current_stock_status = "in_stock";
             }
 
             // Stock Status 篩選
@@ -330,54 +306,26 @@ try {
             }
 
             $result_products[] = [
-
-                "product_id" =>
-                    $product_id,
-
-                "store_id" =>
-                    (int)$product["store_id"],
-
-                "category_id" =>
-                    $product["category_id"] !== null
-                        ? (int)$product["category_id"]
-                        : null,
-
-                "category_name" =>
-                    $product["category_name"],
-
-                "product_name" =>
-                    $product["product_name"],
-
-                "has_spec" =>
-                    false,
-
-                "spec_name" =>
-                    null,
-
-                "spec_id" =>
-                    null,
-
-                "spec_value" =>
-                    null,
-
-                "price" =>
-                    $product["price"] !== null
-                        ? (float)$product["price"]
-                        : null,
-
-                "stock" =>
-                    $stock,
-
-                "stock_status" =>
-                    $current_stock_status,
-
-                "sort_order" =>
-                    $product["sort_order"] !== null
-                        ? (int)$product["sort_order"]
-                        : null,
-
-                "status" =>
-                    $product["status"]
+                "product_id" => $product_id,
+                "store_id" => (int)$product["store_id"],
+                "category_id" => $product["category_id"] !== null
+                    ? (int)$product["category_id"]
+                    : null,
+                "category_name" => $product["category_name"],
+                "product_name" => $product["product_name"],
+                "has_spec" => false,
+                "spec_name" => null,
+                "spec_id" => null,
+                "spec_value" => null,
+                "price" => $product["price"] !== null
+                    ? (float)$product["price"]
+                    : null,
+                "stock" => $stock,
+                "stock_status" => $current_stock_status,
+                "sort_order" => $product["sort_order"] !== null
+                    ? (int)$product["sort_order"]
+                    : null,
+                "status" => $product["status"]
             ];
 
             continue;
@@ -401,13 +349,8 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $product_id
-        ]);
-
-        $specs =
-            $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([$product_id]);
+        $specs =$stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // 沒有規格資料
         if (!$specs) {
@@ -417,30 +360,24 @@ try {
         // 每個規格算一筆
         foreach ($specs as $spec) {
 
-            $spec_id =
-                (int)$spec["spec_id"];
+            $spec_id = (int)$spec["spec_id"];
 
-            $spec_stock =
-                (int)$spec["stock"];
+            $spec_stock = (int)$spec["stock"];
 
             // 判斷規格庫存狀態
             if ($spec_stock <= 0) {
 
-                $current_stock_status =
-                    "out_of_stock";
+                $current_stock_status = "out_of_stock";
 
             } elseif (
-                $spec_stock <=
-                $spec_stock_alert_threshold
+                $spec_stock <= $spec_stock_alert_threshold
             ) {
 
-                $current_stock_status =
-                    "low_stock";
+                $current_stock_status = "low_stock";
 
             } else {
 
-                $current_stock_status =
-                    "in_stock";
+                $current_stock_status = "in_stock";
             }
 
             // Stock Status 篩選
@@ -453,66 +390,42 @@ try {
             }
 
             $result_products[] = [
+                "product_id" => $product_id,
+                "store_id" => (int)$product["store_id"],
+                "category_id" => $product["category_id"] !== null
+                    ? (int)$product["category_id"]
+                    : null,
+                "category_name" => $product["category_name"],
+                "product_name" => $product["product_name"],
+                "has_spec" => true,
 
-                "product_id" =>
-                    $product_id,
+                // 規格名稱 PRODUCT.spec_name
+                "spec_name" => $product["spec_name"],
 
-                "store_id" =>
-                    (int)$product["store_id"],
+                "spec_id" => $spec_id,
 
-                "category_id" =>
-                    $product["category_id"] !== null
-                        ? (int)$product["category_id"]
-                        : null,
+                // 規格值 PRODUCT_SPEC.spec_name
+                "spec_value" => $spec["spec_name"],
 
-                "category_name" =>
-                    $product["category_name"],
+                "price" => $spec["price"] !== null
+                    ? (float)$spec["price"]
+                    : null,
 
-                "product_name" =>
-                    $product["product_name"],
+                "stock" => $spec_stock,
+                "stock_status" => $current_stock_status,
 
-                "has_spec" =>
-                    true,
+                "sort_order" => $product["sort_order"] !== null
+                    ? (int)$product["sort_order"]
+                    : null,
 
-                // 規格名稱
-                // PRODUCT.spec_name
-                "spec_name" =>
-                    $product["spec_name"],
-
-                "spec_id" =>
-                    $spec_id,
-
-                // 規格值
-                // PRODUCT_SPEC.spec_name
-                "spec_value" =>
-                    $spec["spec_name"],
-
-                "price" =>
-                    $spec["price"] !== null
-                        ? (float)$spec["price"]
-                        : null,
-
-                "stock" =>
-                    $spec_stock,
-
-                "stock_status" =>
-                    $current_stock_status,
-
-                "sort_order" =>
-                    $product["sort_order"] !== null
-                        ? (int)$product["sort_order"]
-                        : null,
-
-                "status" =>
-                    $product["status"]
+                "status" => $product["status"]
             ];
         }
     }
 
     // 符合條件的總筆數
     // 有規格商品會按照規格數量計算
-    $total =
-        count($result_products);
+    $total = count($result_products);
 
     // 計算總頁數
     $total_pages =
@@ -524,46 +437,22 @@ try {
     if ($total === 0) {
 
         echo json_encode([
-
-            "message" =>
-                "No products found",
-
-            "store_id" =>
-                $store_id,
-
-            "category_id" =>
-                $category_id,
-
-            "status" =>
-                $status,
-
-            "stock_status" =>
-                $stock_status,
+            "message" => "No products found",
+            "store_id" => $store_id,
+            "category_id" => $category_id,
+            "status" => $status,
+            "stock_status" => $stock_status,
 
             "pagination" => [
-
-                "current_page" =>
-                    $page,
-
-                "per_page" =>
-                    $per_page,
-
-                "total" =>
-                    0,
-
-                "total_pages" =>
-                    0,
-
-                "has_previous_page" =>
-                    false,
-
-                "has_next_page" =>
-                    false
+                "current_page" => $page,
+                "per_page" => $per_page,
+                "total" => 0,
+                "total_pages" => 0,
+                "has_previous_page" => false,
+                "has_next_page" => false
             ],
 
-            "products" =>
-                []
-
+            "products" => []
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -581,8 +470,7 @@ try {
     }
 
     // 計算起始位置
-    $offset =
-        ($page - 1) * $per_page;
+    $offset = ($page - 1) * $per_page;
 
     // 取得目前頁面的 50 筆
     $paged_products =
@@ -594,53 +482,28 @@ try {
 
     // 回傳
     echo json_encode([
-
-        "message" =>
-            "Product management data retrieved successfully",
-
-        "store_id" =>
-            $store_id,
-
-        "category_id" =>
-            $category_id,
-
-        "status" =>
-            $status,
-
-        "stock_status" =>
-            $stock_status,
+        "message" => "Product management data retrieved successfully",
+        "store_id" => $store_id,
+        "category_id" => $category_id,
+        "status" => $status,
+        "stock_status" => $stock_status,
 
         "pagination" => [
-
-            "current_page" =>
-                $page,
-
-            "per_page" =>
-                $per_page,
-
-            "total" =>
-                $total,
-
-            "total_pages" =>
-                $total_pages,
-
-            "has_previous_page" =>
-                $page > 1,
-
-            "has_next_page" =>
-                $page < $total_pages
+            "current_page" => $page,
+            "per_page" => $per_page,
+            "total" => $total,
+            "total_pages" => $total_pages,
+            "has_previous_page" => $page > 1,
+            "has_next_page" => $page < $total_pages
         ],
 
-        "products" =>
-            $paged_products
-
+        "products" => $paged_products
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

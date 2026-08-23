@@ -43,7 +43,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -113,9 +112,9 @@ if ($description === "") {
     exit;
 }
 
-if (mb_strlen($description) > 2000) {
+if (mb_strlen($description) > 1000) {
     echo json_encode([
-        "error" => "Description must be less than 2000 characters"
+        "error" => "Description must be less than 1000 characters"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -154,11 +153,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -188,11 +183,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
@@ -233,12 +224,10 @@ LIMIT 1
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $customer_id,
     $store_id
 ]);
-
 $existing_service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($existing_service) {
@@ -266,13 +255,11 @@ if ($order_id !== null) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $order_id,
         $customer_id,
         $store_id
     ]);
-
     $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$order) {
@@ -300,42 +287,9 @@ if (
         exit;
     }
 
-    $image = $_FILES["service_image"];
-
-    $allowed_types = [
-        "image/jpeg",
-        "image/png",
-        "image/webp"
-    ];
-
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-
-    $mime_type = finfo_file(
-        $finfo,
-        $image["tmp_name"]
-    );
-
-    finfo_close($finfo);
-
-    if (!in_array($mime_type, $allowed_types, true)) {
-        echo json_encode([
-            "error" => "Invalid image type"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
-
-    if ($image["size"] > 5 * 1024 * 1024) {
-        echo json_encode([
-            "error" => "Image size must be less than 5MB"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
-
     try {
         $image_url = uploadImage(
-            $image,
+            $_FILES["service_image"],
             "customer_service"
         );
     } catch (Exception $e) {

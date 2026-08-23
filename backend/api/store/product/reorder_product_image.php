@@ -41,11 +41,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -125,9 +121,6 @@ try {
     // 開始 Transaction
     $pdo->beginTransaction();
 
-    // 確認 Product 存在
-    // 而且屬於目前 Store
-    // 而且不是 deleted
     $sql = "
         SELECT
             product_id,
@@ -142,12 +135,10 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$product) {
@@ -170,7 +161,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
@@ -180,8 +170,7 @@ try {
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
-        $existing_image_ids[] =
-            (int)$row["image_id"];
+        $existing_image_ids[] = (int)$row["image_id"];
     }
 
     // 目前沒有圖片
@@ -202,9 +191,7 @@ try {
     // 至少需要一張圖片
     if (count($image_ids) < 1) {
 
-        throw new Exception(
-            "At least one image is required"
-        );
+        throw new Exception("At least one image is required");
     }
 
     // 圖片數量必須完全一致
@@ -213,9 +200,7 @@ try {
         !== count($existing_image_ids)
     ) {
 
-        throw new Exception(
-            "Image list is incomplete"
-        );
+        throw new Exception("Image list is incomplete");
     }
 
     // 驗證 Image ID
@@ -228,17 +213,13 @@ try {
             floor((float)$image_id)
             != (float)$image_id
         ) {
-            throw new Exception(
-                "Invalid image ID"
-            );
+            throw new Exception("Invalid image ID");
         }
 
         $image_id = (int)$image_id;
 
         if ($image_id <= 0) {
-            throw new Exception(
-                "Invalid image ID"
-            );
+            throw new Exception("Invalid image ID");
         }
 
         // 防止重複圖片
@@ -249,28 +230,21 @@ try {
                 true
             )
         ) {
-            throw new Exception(
-                "Duplicate image ID"
-            );
+            throw new Exception("Duplicate image ID");
         }
 
-        $validated_image_ids[] =
-            $image_id;
+        $validated_image_ids[] = $image_id;
     }
 
     // 建立目前圖片 ID 對照表
-    $existing_lookup =
-        array_flip($existing_image_ids);
+    $existing_lookup = array_flip($existing_image_ids);
 
-    // 確認所有圖片都屬於目前 Product
-    // 且目前 Store
+    // 確認所有圖片都屬於目前 Product和 Store
     foreach ($validated_image_ids as $image_id) {
 
         if (!isset($existing_lookup[$image_id])) {
 
-            throw new Exception(
-                "Image not found"
-            );
+            throw new Exception("Image not found");
         }
     }
 
@@ -287,7 +261,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $temporary_offset,
         $product_id,
@@ -307,8 +280,7 @@ try {
     $stmt = $pdo->prepare($sql);
 
     foreach (
-        $validated_image_ids
-        as $index => $image_id
+        $validated_image_ids as $index => $image_id
     ) {
 
         $sort_order = $index + 1;
@@ -341,27 +313,18 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
-    $images =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 整理資料型別
     foreach ($images as &$image) {
 
-        $image["image_id"] =
-            (int)$image["image_id"];
-
-        $image["product_id"] =
-            (int)$image["product_id"];
-
-        $image["store_id"] =
-            (int)$image["store_id"];
-
+        $image["image_id"] = (int)$image["image_id"];
+        $image["product_id"] = (int)$image["product_id"];
+        $image["store_id"] = (int)$image["store_id"];
         $image["sort_order"] =
             $image["sort_order"] !== null
                 ? (int)$image["sort_order"]
@@ -373,21 +336,11 @@ try {
     // 回傳
     echo json_encode([
 
-        "message" =>
-            "Product images reordered successfully",
-
-        "store_id" =>
-            $store_id,
-
-        "product_id" =>
-            $product_id,
-
-        "product_name" =>
-            $product["product_name"],
-
-        "images" =>
-            $images
-
+        "message" => "Product images reordered successfully",
+        "store_id" => $store_id,
+        "product_id" => $product_id,
+        "product_name" => $product["product_name"],
+        "images" => $images
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -397,8 +350,7 @@ try {
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

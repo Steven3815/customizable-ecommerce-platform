@@ -42,7 +42,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -123,11 +122,7 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $customer_id
-]);
-
+$stmt->execute([$customer_id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -139,26 +134,14 @@ if (!$customer) {
 }
 
 // 使用原本資料作為預設值
-$name =
-    $customer["name"];
-
-$phone =
-    $customer["phone"];
-
-$address =
-    $customer["address"];
-
-$preferred_payment =
-    $customer["preferred_payment"];
-
-$preferred_delivery =
-    $customer["preferred_delivery"];
+$name = $customer["name"];
+$phone = $customer["phone"];
+$address = $customer["address"];
+$preferred_payment = $customer["preferred_payment"];
+$preferred_delivery = $customer["preferred_delivery"];
 
 
-// =========================
 // 修改姓名
-// =========================
-
 if (array_key_exists("name", $data)) {
 
     $name = trim($data["name"]);
@@ -173,36 +156,19 @@ if (array_key_exists("name", $data)) {
     }
 }
 
-
-// =========================
 // 修改電話
-// =========================
-
 if (array_key_exists("phone", $data)) {
-
     $phone = trim($data["phone"]);
 }
 
-
-// =========================
 // 修改地址
-// =========================
-
 if (array_key_exists("address", $data)) {
-
     $address = trim($data["address"]);
 }
 
-
-// =========================
 // 修改預設付款方式
-// =========================
-
 if (array_key_exists("preferred_payment", $data)) {
-
-    $preferred_payment =
-        trim($data["preferred_payment"]);
-
+    $preferred_payment = trim($data["preferred_payment"]);
     $allowed_payment_methods = [
         "credit_card",
         "atm",
@@ -218,7 +184,6 @@ if (array_key_exists("preferred_payment", $data)) {
             true
         )
     ) {
-
         echo json_encode([
             "error" => "Invalid preferred payment method"
         ], JSON_UNESCAPED_UNICODE);
@@ -227,11 +192,7 @@ if (array_key_exists("preferred_payment", $data)) {
     }
 }
 
-
-// =========================
 // 修改預設配送方式
-// =========================
-
 if (array_key_exists("preferred_delivery", $data)) {
 
     $preferred_delivery =
@@ -250,7 +211,6 @@ if (array_key_exists("preferred_delivery", $data)) {
             true
         )
     ) {
-
         echo json_encode([
             "error" => "Invalid preferred delivery method"
         ], JSON_UNESCAPED_UNICODE);
@@ -259,11 +219,7 @@ if (array_key_exists("preferred_delivery", $data)) {
     }
 }
 
-
-// =========================
 // 更新 Customer
-// =========================
-
 $sql = "
 UPDATE CUSTOMER
 
@@ -281,9 +237,7 @@ WHERE customer_id = ?
 try {
 
     $pdo->beginTransaction();
-
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $name,
         $phone,
@@ -308,42 +262,18 @@ try {
     exit;
 }
 
-
-// =========================
 // 回傳
-// =========================
-
 echo json_encode([
-
-    "message" =>
-        "Profile updated successfully",
-
+    "message" => "Profile updated successfully",
     "customer" => [
-
-        "customer_id" =>
-            $customer_id,
-
-        "name" =>
-            $name,
-
-        "email" =>
-            $customer["email"],
-
-        "phone" =>
-            $phone,
-
-        "address" =>
-            $address,
-
-        // 只有一個預設付款方式
-        "preferred_payment" =>
-            $preferred_payment,
-
-        // 只有一個預設配送方式
-        "preferred_delivery" =>
-            $preferred_delivery
+        "customer_id" => $customer_id,
+        "name" => $name,
+        "email" => $customer["email"],
+        "phone" => $phone,
+        "address" => $address,
+        "preferred_payment" => $preferred_payment,
+        "preferred_delivery" => $preferred_delivery
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

@@ -43,7 +43,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -68,14 +67,8 @@ if (
 }
 
 $order_id = $_POST["order_id"];
-
-$refund_reason = trim(
-    $_POST["refund_reason"]
-);
-
-$refund_description = trim(
-    $_POST["refund_description"]
-);
+$refund_reason = trim($_POST["refund_reason"]);
+$refund_description = trim($_POST["refund_description"]);
 
 // 檢查 Order ID
 if (
@@ -126,12 +119,10 @@ AND o.customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $customer_id
 ]);
-
 $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 訂單不存在
@@ -156,11 +147,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 如果沒有 Store Setting
@@ -221,8 +208,7 @@ if (empty($order["estimated_arrival_date"])) {
 }
 
 // 計算退款期限
-// 目前先使用 estimated_arrival_date
-// 作為實際到貨日期
+// 目前先使用 estimated_arrival_date作為實際到貨日期
 $refund_deadline = date(
     "Y-m-d",
     strtotime(
@@ -254,12 +240,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $store_id
 ]);
-
 $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($refund) {
@@ -292,51 +276,6 @@ if (
     }
 
     $image = $_FILES["refund_image"];
-
-    // 允許的圖片類型
-    $allowed_types = [
-        "image/jpeg",
-        "image/png",
-        "image/webp"
-    ];
-
-    // 檢查 MIME Type
-    $finfo = finfo_open(
-        FILEINFO_MIME_TYPE
-    );
-
-    $mime_type = finfo_file(
-        $finfo,
-        $image["tmp_name"]
-    );
-
-    finfo_close($finfo);
-
-    if (
-        !in_array(
-            $mime_type,
-            $allowed_types,
-            true
-        )
-    ) {
-        echo json_encode([
-            "error" => "Invalid image type"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
-
-    // 檢查圖片大小
-    if (
-        $image["size"] >
-        5 * 1024 * 1024
-    ) {
-        echo json_encode([
-            "error" => "Image size must be less than 5MB"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
 
     // 上傳圖片
     try {
@@ -379,7 +318,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $order_id,
         $store_id,
@@ -387,7 +325,6 @@ try {
         $refund_description,
         $image_url
     ]);
-
     $refund_id = (int)$pdo->lastInsertId();
 
 } catch (PDOException $e) {

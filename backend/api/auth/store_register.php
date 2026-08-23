@@ -14,7 +14,6 @@ $data = json_decode(
 
 // 檢查 JSON 格式
 if (!is_array($data)) {
-
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -49,7 +48,6 @@ $store_mode = trim($data["store_mode"]);
 
 // 檢查商家名稱
 if ($store_name === "") {
-
     echo json_encode([
         "error" => "Store name is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -59,7 +57,6 @@ if ($store_name === "") {
 
 // 檢查負責人姓名
 if ($owner_name === "") {
-
     echo json_encode([
         "error" => "Owner name is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -69,7 +66,6 @@ if ($owner_name === "") {
 
 // 檢查 Email
 if ($email === "") {
-
     echo json_encode([
         "error" => "Email is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -82,7 +78,6 @@ $email = strtolower($email);
 
 // 檢查 Email 格式
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-
     echo json_encode([
         "error" => "Invalid email format"
     ], JSON_UNESCAPED_UNICODE);
@@ -92,7 +87,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
 // 檢查密碼
 if ($password === "") {
-
     echo json_encode([
         "error" => "Password is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -102,7 +96,6 @@ if ($password === "") {
 
 // 密碼至少 8 碼
 if (strlen($password) < 8) {
-
     echo json_encode([
         "error" => "Password must be at least 8 characters"
     ], JSON_UNESCAPED_UNICODE);
@@ -112,7 +105,6 @@ if (strlen($password) < 8) {
 
 // 檢查電話
 if ($phone === "") {
-
     echo json_encode([
         "error" => "Phone is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -146,7 +138,6 @@ $stmt->execute([$email]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($store) {
-
     echo json_encode([
         "error" => "Email already registered",
         "action" => "login"
@@ -162,7 +153,6 @@ $hashed_password = password_hash(
 );
 
 try {
-
     $pdo->beginTransaction();
 
     // store_url 先暫時 NULL
@@ -194,7 +184,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_name,
         $email,
@@ -261,10 +250,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
+    $stmt->execute([$store_id]);
 
     // 建立 HOMEPAGE_PRODUCT_SETTING
     $sql = "
@@ -279,10 +265,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
+    $stmt->execute([$store_id]);
 
     // 每個 Store 固定建立 5 種付款方式
     $sql = "
@@ -302,7 +285,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $store_id,
@@ -328,14 +310,12 @@ try {
             "store_mode" => $store_mode
         ]
     ], JSON_UNESCAPED_UNICODE);
-
+    
 } catch (Exception $e) {
-
     // 發生錯誤 → Rollback
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-
     echo json_encode([
         "error" => "Store registration failed"
     ], JSON_UNESCAPED_UNICODE);

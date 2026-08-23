@@ -42,7 +42,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -225,11 +224,7 @@ WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -330,12 +325,10 @@ AND delivery_method = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $store_id,
     $delivery_method
 ]);
-
 $store_delivery = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_delivery) {
@@ -562,80 +555,34 @@ switch ($payment_method) {
 
 // 回傳
 echo json_encode([
-
     "message" => $message,
-
     "payment" => [
-
-        "payment_id" =>
-            $payment_id,
-
+        "payment_id" => $payment_id,
         "order_number" => $order["order_number"],
-
-
-        "store_id" =>
-            $store_id,
-
-        "payment_method" =>
-            $payment_method,
-
-        "amount" =>
-            (float)$order["total_amount"],
-
-        "payment_status" =>
-            "pending",
-
-        "payment_confirm_status" =>
-            "waiting",
-
-        "next_action" =>
-            $next_action
+        "store_id" => $store_id,
+        "payment_method" => $payment_method,
+        "amount" => (float)$order["total_amount"],
+        "payment_status" => "pending",
+        "payment_confirm_status" => "waiting",
+        "next_action" => $next_action
     ],
-
     "order" => [
-        
         "order_number" => $order["order_number"],
-
-        "customer_id" =>
-            (int)$order["customer_id"],
-
-        "store_id" =>
-            $store_id,
-
-        "product_amount" =>
-            (float)$order["product_amount"],
-
-        "shipping_fee" =>
-            (float)$order["shipping_fee"],
-
-        "total_amount" =>
-            (float)$order["total_amount"],
-
-        "receiver_name" =>
-            $order["receiver_name"],
-
-        "receiver_email" =>
-            $order["customer_email"],
-
-        "receiver_phone" =>
-            $order["receiver_phone"],
-
-        "receiver_address" =>
-            $order["receiver_address"],
-
-        "delivery_method" =>
-            $delivery_method
+        "customer_id" => (int)$order["customer_id"],
+        "store_id" => $store_id,
+        "product_amount" => (float)$order["product_amount"],
+        "shipping_fee" => (float)$order["shipping_fee"],
+        "total_amount" => (float)$order["total_amount"],
+        "receiver_name" => $order["receiver_name"],
+        "receiver_email" => $order["customer_email"],
+        "receiver_phone" => $order["receiver_phone"],
+        "receiver_address" => $order["receiver_address"],
+        "delivery_method" => $delivery_method
     ],
-
     "store" => [
-
-        "store_id" =>
-            $store_id,
-
-        "store_name" =>
-            $store_name
+        "store_id" => $store_id,
+        "store_name" => $store_name
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

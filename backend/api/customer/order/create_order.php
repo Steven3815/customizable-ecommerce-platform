@@ -42,7 +42,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -83,18 +82,10 @@ if (
 }
 
 $cart_item_ids = $data["cart_item_ids"];
-
-$receiver_name =
-    trim($data["receiver_name"]);
-
-$receiver_phone =
-    trim($data["receiver_phone"]);
-
-$receiver_address =
-    trim($data["receiver_address"]);
-
-$delivery_method =
-    trim($data["delivery_method"]);
+$receiver_name = trim($data["receiver_name"]);
+$receiver_phone = trim($data["receiver_phone"]);
+$receiver_address = trim($data["receiver_address"]);
+$delivery_method = trim($data["delivery_method"]);
 
 // 檢查購物車商品
 if (
@@ -171,7 +162,6 @@ $placeholders = implode(
 $pdo->beginTransaction();
 
 try {
-
     // 再次檢查會員
     $sql = "
     SELECT
@@ -181,11 +171,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $customer_id
-    ]);
-
+    $stmt->execute([$customer_id]);
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$customer) {
@@ -245,14 +231,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $params = array_merge(
         [$customer_id],
         $cart_item_ids
     );
-
     $stmt->execute($params);
-
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 檢查商品是否全部存在
@@ -301,11 +284,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
+    $stmt->execute([$store_id]);
     $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store) {
@@ -346,12 +325,10 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $delivery_method
     ]);
-
     $delivery = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$delivery) {
@@ -701,23 +678,14 @@ try {
     // 回傳
     echo json_encode([
         "message" => "Order created successfully",
-
         "order_number" => $order_number,
-
         "customer_id" => $customer_id,
-
         "store_id" => $store_id,
-
         "product_amount" => $product_amount,
-
         "shipping_fee" => $shipping_fee,
-
         "total_amount" => $total_amount,
-
         "delivery_method" => $delivery_method,
-
         "delivery_status" => "pending"
-
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -725,7 +693,6 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

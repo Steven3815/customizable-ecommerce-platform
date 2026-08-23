@@ -43,7 +43,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -78,26 +77,17 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
+    $stmt->execute([$store_id]);
     $banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // 沒有 Banner
     if (!$banner) {
-        throw new Exception(
-            "Banner not found"
-        );
+        throw new Exception("Banner not found");
     }
 
     // 判斷是否為 Store 上傳圖片
-    $default_banner_id =
-        $banner["default_banner_id"];
-
-    $old_image_url =
-        $banner["image_url"];
+    $default_banner_id = $banner["default_banner_id"];
+    $old_image_url = $banner["image_url"];
 
     // Soft Delete
     $sql = "
@@ -112,13 +102,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $banner["banner_id"],
         $store_id
     ]);
 
-    // Commit
     $pdo->commit();
 
     // 如果是 Store 上傳圖片才刪除實體圖片
@@ -131,14 +119,9 @@ try {
 
     // 回傳
     echo json_encode([
-        "message" =>
-            "Banner deleted successfully",
-
-        "banner_id" =>
-            (int)$banner["banner_id"],
-
-        "store_id" =>
-            $store_id
+        "message" => "Banner deleted successfully",
+        "banner_id" => (int)$banner["banner_id"],
+        "store_id" => $store_id
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -149,8 +132,7 @@ try {
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

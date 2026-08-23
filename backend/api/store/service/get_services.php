@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -96,9 +95,7 @@ FROM CUSTOMER_SERVICE
 WHERE store_id = ?
 ";
 
-$count_params = [
-    $store_id
-];
+$count_params = [$store_id];
 
 if ($status !== "all") {
     $count_sql .= "
@@ -109,9 +106,7 @@ if ($status !== "all") {
 }
 
 $stmt = $pdo->prepare($count_sql);
-
 $stmt->execute($count_params);
-
 $total = (int)$stmt->fetchColumn();
 
 // 計算總頁數
@@ -145,9 +140,7 @@ LEFT JOIN ORDERS o
 WHERE cs.store_id = ?
 ";
 
-$params = [
-    $store_id
-];
+$params = [$store_id];
 
 // 套用狀態篩選
 if ($status !== "all") {
@@ -165,9 +158,7 @@ LIMIT $limit OFFSET $offset
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute($params);
-
 $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理回傳資料
@@ -177,20 +168,14 @@ foreach ($services as $service) {
 
     $result[] = [
         "service_id" => (int)$service["service_id"],
-
         "customer_id" => (int)$service["customer_id"],
-
         "customer_name" => $service["customer_name"],
-
         "order_id" => $service["order_id"] !== null
             ? (int)$service["order_id"]
             : null,
         "order_number" => $service["order_number"],
-        
         "problem_type" => $service["problem_type"],
-
         "status" => $service["status"],
-
         "created_at" => $service["created_at"]
     ];
 }

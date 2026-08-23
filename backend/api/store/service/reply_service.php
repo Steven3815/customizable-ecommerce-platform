@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -79,7 +78,6 @@ if (
 }
 
 $service_id = $data["service_id"];
-
 $admin_reply = trim($data["admin_reply"]);
 
 // 檢查 Service ID
@@ -124,12 +122,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $service_id,
     $store_id
 ]);
-
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 客服案件不存在
@@ -161,7 +157,6 @@ AND status = 'pending'
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $admin_reply,
     $service_id,

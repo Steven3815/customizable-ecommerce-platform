@@ -43,7 +43,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -108,12 +107,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $product_id,
     $store_id
 ]);
-
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
@@ -136,27 +133,16 @@ if ($product["status"] === "deleted") {
 // 取得基本資料
 // category_id 不接受前端修改
 $category_id = (int)$product["category_id"];
-
-$product_name =
-    trim($_POST["product_name"] ?? "");
-
-$description =
-    trim($_POST["description"] ?? "");
-
-$price =
-    $_POST["price"] ?? null;
-
+$product_name = trim($_POST["product_name"] ?? "");
+$description = trim($_POST["description"] ?? "");
+$price = $_POST["price"] ?? null;
 $has_spec =
     isset($_POST["has_spec"])
         ? (int)$_POST["has_spec"]
         : 0;
 
-$status =
-    $_POST["status"] ?? $product["status"];
-
-// 規格類型名稱
-$spec_name =
-    trim($_POST["spec_name"] ?? "");
+$status = $_POST["status"] ?? $product["status"];
+$spec_name = trim($_POST["spec_name"] ?? "");
 
 // 檢查商品名稱
 if ($product_name === "") {
@@ -291,8 +277,7 @@ if ($has_spec === 1) {
         }
 
         // spec_id
-        $spec_id =
-            $spec["spec_id"] ?? null;
+        $spec_id = $spec["spec_id"] ?? null;
 
         if (
             $spec_id === null ||
@@ -337,13 +322,11 @@ if ($has_spec === 1) {
                 exit;
             }
 
-            $submitted_spec_ids_check[] =
-                $spec_id;
+            $submitted_spec_ids_check[] = $spec_id;
         }
 
         // 規格值
-        $spec_value =
-            trim($spec["spec_name"] ?? "");
+        $spec_value = trim($spec["spec_name"] ?? "");
 
         if ($spec_value === "") {
             echo json_encode([
@@ -362,8 +345,7 @@ if ($has_spec === 1) {
         }
 
         // 庫存
-        $spec_stock =
-            $spec["stock"] ?? null;
+        $spec_stock = $spec["stock"] ?? null;
 
         if (
             $spec_stock === null ||
@@ -382,8 +364,7 @@ if ($has_spec === 1) {
         $spec_stock = (int)$spec_stock;
 
         // 規格狀態
-        $spec_status =
-            $spec["status"] ?? "active";
+        $spec_status = $spec["status"] ?? "active";
 
         if (
             !in_array(
@@ -490,14 +471,11 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $product_id,
             $store_id
         ]);
-
-        $existing_specs =
-            $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $existing_specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $existing_spec_ids = [];
 
@@ -526,8 +504,7 @@ try {
                     );
                 }
 
-                $submitted_spec_ids[] =
-                    $spec["spec_id"];
+                $submitted_spec_ids[] = $spec["spec_id"];
 
                 // 更新既有規格
                 $sql = "
@@ -544,7 +521,6 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $spec["spec_name"],
                     $price,
@@ -568,20 +544,15 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $product_id,
                     $store_id,
                     $spec["spec_name"]
                 ]);
-
-                $existing_spec =
-                    $stmt->fetch(PDO::FETCH_ASSOC);
+                $existing_spec = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($existing_spec) {
-                    throw new Exception(
-                        "Specification already exists. Please use the existing specification ID."
-                    );
+                    throw new Exception("Specification already exists. Please use the existing specification ID.");
                 }
 
                 // 新增規格
@@ -607,7 +578,6 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $product_id,
                     $store_id,
@@ -616,14 +586,11 @@ try {
                     $spec["stock"],
                     $spec["status"]
                 ]);
-
-                $submitted_spec_ids[] =
-                    (int)$pdo->lastInsertId();
+                $submitted_spec_ids[] = (int)$pdo->lastInsertId();
             }
         }
 
-        // 沒有被送回來的舊規格
-        // 不刪除，只改成 inactive
+        // 沒有被送回來的舊規格不刪除，只改成 inactive
         foreach ($existing_spec_ids as $existing_spec_id) {
 
             if (
@@ -645,7 +612,6 @@ try {
                 ";
 
                 $stmt = $pdo->prepare($sql);
-
                 $stmt->execute([
                     $existing_spec_id,
                     $product_id,
@@ -668,7 +634,6 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $product_id,
             $store_id
@@ -685,17 +650,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
+    $image_sort_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $image_sort_data =
-        $stmt->fetch(PDO::FETCH_ASSOC);
-
-    $next_sort_order =
-        (int)$image_sort_data["max_sort_order"] + 1;
+    $next_sort_order = (int)$image_sort_data["max_sort_order"] + 1;
 
     // 新增商品圖片
     if (
@@ -704,8 +665,7 @@ try {
         is_array($_FILES["images"]["name"])
     ) {
 
-        $file_count =
-            count($_FILES["images"]["name"]);
+        $file_count = count($_FILES["images"]["name"]);
 
         for ($i = 0; $i < $file_count; $i++) {
 
@@ -717,20 +677,11 @@ try {
             }
 
             $file = [
-                "name" =>
-                    $_FILES["images"]["name"][$i],
-
-                "type" =>
-                    $_FILES["images"]["type"][$i],
-
-                "tmp_name" =>
-                    $_FILES["images"]["tmp_name"][$i],
-
-                "error" =>
-                    $_FILES["images"]["error"][$i],
-
-                "size" =>
-                    $_FILES["images"]["size"][$i]
+                "name" => $_FILES["images"]["name"][$i],
+                "type" => $_FILES["images"]["type"][$i],
+                "tmp_name" => $_FILES["images"]["tmp_name"][$i],
+                "error" => $_FILES["images"]["error"][$i],
+                "size" => $_FILES["images"]["size"][$i]
             ];
 
             $image_url =
@@ -741,20 +692,17 @@ try {
                     1000
                 );
 
-            $relative_path =
-                ltrim($image_url, "/");
+            $relative_path = ltrim($image_url, "/");
 
             $file_path =
                 dirname(__DIR__, 3)
                 . "/"
                 . $relative_path;
 
-            $uploaded_file_paths[] =
-                $file_path;
+            $uploaded_file_paths[] = $file_path;
 
             // 新圖片自動排在最後
-            $sort_order =
-                $next_sort_order;
+            $sort_order = $next_sort_order;
 
             $sql = "
             INSERT INTO PRODUCT_IMAGE
@@ -774,7 +722,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $product_id,
                 $store_id,
@@ -782,12 +729,8 @@ try {
                 $sort_order
             ]);
 
-            $new_image_id =
-                (int)$pdo->lastInsertId();
-
-            $new_image_ids[] =
-                $new_image_id;
-
+            $new_image_id = (int)$pdo->lastInsertId();
+            $new_image_ids[] = $new_image_id;
             $next_sort_order++;
         }
     }
@@ -804,25 +747,18 @@ try {
         ) {
 
             if (!is_array($image_order)) {
-                throw new Exception(
-                    "Invalid image order data"
-                );
+                throw new Exception("Invalid image order data");
             }
 
-            $image_id =
-                $image_order["image_id"] ?? null;
-
-            $sort_order =
-                $image_order["sort_order"] ?? null;
+            $image_id = $image_order["image_id"] ?? null;
+            $sort_order = $image_order["sort_order"] ?? null;
 
             if (
                 $image_id === null ||
                 !is_numeric($image_id) ||
                 floor((float)$image_id) != (float)$image_id
             ) {
-                throw new Exception(
-                    "Invalid image ID"
-                );
+                throw new Exception("Invalid image ID");
             }
 
             if (
@@ -831,9 +767,7 @@ try {
                 floor((float)$sort_order) != (float)$sort_order ||
                 (int)$sort_order < 1
             ) {
-                throw new Exception(
-                    "Invalid image sort order"
-                );
+                throw new Exception("Invalid image sort order");
             }
 
             $image_id = (int)$image_id;
@@ -861,7 +795,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $image_id,
                 $product_id,
@@ -869,9 +802,7 @@ try {
             ]);
 
             if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
-                throw new Exception(
-                    "Image does not belong to this product"
-                );
+                throw new Exception("Image does not belong to this product");
             }
 
             // 更新圖片排序
@@ -885,7 +816,6 @@ try {
             ";
 
             $stmt = $pdo->prepare($sql);
-
             $stmt->execute([
                 $sort_order,
                 $image_id,
@@ -941,9 +871,7 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-
-    $all_image_ids =
-        $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $all_image_ids =$stmt->fetchAll(PDO::FETCH_COLUMN);
 
     // 重新設定 1, 2, 3...
     $sql = "
@@ -957,9 +885,7 @@ try {
 
     $stmt = $pdo->prepare($sql);
 
-    foreach (
-        $all_image_ids as $index => $image_id
-    ) {
+    foreach ($all_image_ids as $index => $image_id) {
 
         $stmt->execute([
             $index + 1,
@@ -1022,19 +948,15 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
-    $updated_product =
-        $stmt->fetch(PDO::FETCH_ASSOC);
+    $updated_product =$stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$updated_product) {
         echo json_encode([
-            "error" =>
-                "Product updated, but failed to retrieve product"
+            "error" => "Product updated, but failed to retrieve product"
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -1053,22 +975,15 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
-    $images =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $images =$stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($images as &$image) {
-
-        $image["image_id"] =
-            (int)$image["image_id"];
-
-        $image["sort_order"] =
-            (int)$image["sort_order"];
+        $image["image_id"] = (int)$image["image_id"];
+        $image["sort_order"] = (int)$image["sort_order"];
     }
 
     unset($image);
@@ -1090,117 +1005,64 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
-    $specs =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($specs as &$spec) {
-
-        $spec["spec_id"] =
-            (int)$spec["spec_id"];
-
-        $spec["price"] =
-            (float)$spec["price"];
-
-        $spec["stock"] =
-            (int)$spec["stock"];
+        $spec["spec_id"] = (int)$spec["spec_id"];
+        $spec["price"] = (float)$spec["price"];
+        $spec["stock"] = (int)$spec["stock"];
     }
 
     unset($spec);
 
     // 整理商品資料
-    $updated_product["product_id"] =
-        (int)$updated_product["product_id"];
+    $updated_product["product_id"] = (int)$updated_product["product_id"];
+    $updated_product["store_id"] = (int)$updated_product["store_id"];
+    $updated_product["category_id"] = (int)$updated_product["category_id"];
 
-    $updated_product["store_id"] =
-        (int)$updated_product["store_id"];
+    $updated_product["price"] = $updated_product["price"] !== null
+        ? (float)$updated_product["price"]
+        : null;
 
-    $updated_product["category_id"] =
-        (int)$updated_product["category_id"];
+    $updated_product["stock"] = $updated_product["stock"] !== null
+        ? (int)$updated_product["stock"]
+        : null;
 
-    $updated_product["price"] =
-        $updated_product["price"] !== null
-            ? (float)$updated_product["price"]
-            : null;
-
-    $updated_product["stock"] =
-        $updated_product["stock"] !== null
-            ? (int)$updated_product["stock"]
-            : null;
-
-    $updated_product["has_spec"] =
-        (bool)$updated_product["has_spec"];
+    $updated_product["has_spec"] = (bool)$updated_product["has_spec"];
 
     // 回傳
     echo json_encode([
-        "message" =>
-            "Product updated successfully",
-
-        "store_id" =>
-            $store_id,
-
-        "product" => [
-
-            "product_id" =>
-                $updated_product["product_id"],
-
-            "category" => [
-
-                "category_id" =>
-                    $updated_product["category_id"],
-
-                "category_name" =>
-                    $updated_product["category_name"]
-            ],
-
-            "product_name" =>
-                $updated_product["product_name"],
-
-            "description" =>
-                $updated_product["description"],
-
-            "price" =>
-                $updated_product["price"],
-
-            "stock" =>
-                $updated_product["stock"],
-
-            "has_spec" =>
-                $updated_product["has_spec"],
-
-            "spec_name" =>
-                $updated_product["spec_name"],
-
-            "specs" =>
-                $specs,
-
-            "images" =>
-                $images,
-
-            "status" =>
-                $updated_product["status"],
-
-            "created_at" =>
-                $updated_product["created_at"],
-
-            "updated_at" =>
-                $updated_product["updated_at"]
-        ]
-
+    "message" => "Product updated successfully",
+    "store_id" => $store_id,
+    "product" => [
+        "product_id" => $updated_product["product_id"],
+        "category" => [
+            "category_id" => $updated_product["category_id"],
+            "category_name" => $updated_product["category_name"]
+        ],
+        "product_name" => $updated_product["product_name"],
+        "description" => $updated_product["description"],
+        "price" => $updated_product["price"],
+        "stock" => $updated_product["stock"],
+        "has_spec" => $updated_product["has_spec"],
+        "spec_name" => $updated_product["spec_name"],
+        "specs" => $specs,
+        "images" => $images,
+        "status" => $updated_product["status"],
+        "created_at" => $updated_product["created_at"],
+        "updated_at" => $updated_product["updated_at"]
+    ]
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
 
     echo json_encode([
-        "error" =>
-            "Product updated successfully, but failed to retrieve updated data",
-        "detail" =>
-            $e->getMessage()
+        "error" => "Product updated successfully, but failed to retrieve updated data",
+        "detail" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

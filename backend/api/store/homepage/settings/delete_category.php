@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -154,21 +153,17 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $category_id,
             $store_id
         ]);
 
         if (!$stmt->fetch()) {
-            throw new Exception(
-                "Category not found"
-            );
+            throw new Exception("Category not found");
         }
     }
 
-    // Soft Delete
-    // 同時將 sort_order 設為 NULL
+    // Soft Delete 同時將 sort_order 設為 NULL
     foreach ($validated_category_ids as $category_id) {
 
         $sql = "
@@ -183,7 +178,6 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
             $category_id,
             $store_id
@@ -201,16 +195,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
+    $stmt->execute([$store_id]);
     $remaining_category_ids =
         $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     // 重新整理 sort_order
-    // 從 1 開始重新排列
     $sort_order = 1;
 
     foreach (
@@ -239,7 +228,6 @@ try {
         $sort_order++;
     }
 
-    // Commit
     $pdo->commit();
 
     // 取得重新排序後的 Category
@@ -255,21 +243,14 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
-    $categories =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([$store_id]);
+    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 回傳
     echo json_encode([
-        "message" =>
-            "Categories deleted and reordered successfully",
+        "message" => "Categories deleted and reordered successfully",
 
-        "categories" =>
-            $categories
+        "categories" => $categories
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

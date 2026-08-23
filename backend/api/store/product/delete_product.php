@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -99,12 +98,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $product_id,
     $store_id
 ]);
-
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
@@ -135,12 +132,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $product_id,
     $store_id
 ]);
-
 $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 開始交易
@@ -148,7 +143,7 @@ $pdo->beginTransaction();
 
 try {
 
-    // 1. 移除購物車中的商品
+    // 移除購物車中的商品
     $sql = "
     DELETE FROM CART_ITEM
     WHERE product_id = ?
@@ -156,15 +151,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
     $deleted_cart_items = $stmt->rowCount();
 
-    // 2. 停用商品規格
+    // 停用商品規格
     // 不刪除 PRODUCT_SPEC，保留歷史資料
     $sql = "
     UPDATE PRODUCT_SPEC
@@ -176,15 +169,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
     $deactivated_specs = $stmt->rowCount();
 
-    // 3. 刪除商品圖片資料庫紀錄
+    // 刪除商品圖片資料庫紀錄
     $sql = "
     DELETE FROM PRODUCT_IMAGE
     WHERE product_id = ?
@@ -192,15 +183,13 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
     ]);
-
     $deleted_images = $stmt->rowCount();
 
-    // 4. 軟刪除商品
+    // 軟刪除商品
     $sql = "
     UPDATE PRODUCT
     SET
@@ -211,7 +200,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $product_id,
         $store_id
@@ -237,14 +225,11 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $category_id
     ]);
-
-    $remaining_products =
-        $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $remaining_products = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     $temporary_offset = 1000000;
 
@@ -258,7 +243,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $temporary_offset,
         $store_id,
@@ -292,10 +276,10 @@ try {
             $category_id
         ]);
     }
-    // 5. 完成交易
+    // 完成交易
     $pdo->commit();
 
-    // 6. 刪除實體圖片
+    // 刪除實體圖片
     $deleted_physical_images = 0;
 
     foreach ($images as $image) {
@@ -324,7 +308,7 @@ try {
         }
     }
 
-    // 7. 回傳
+    // 回傳
     echo json_encode([
         "message" => "Product deleted successfully",
         "store_id" => $store_id,

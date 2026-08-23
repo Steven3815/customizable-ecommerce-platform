@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -107,12 +106,10 @@ AND p.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $product_id,
     $store_id
 ]);
-
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 商品不存在或不屬於目前 Store
@@ -168,20 +165,13 @@ ORDER BY sort_order ASC, image_id ASC
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $product_id
-]);
-
+$stmt->execute([$product_id]);
 $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($images as &$image) {
 
-    $image["image_id"] =
-        (int)$image["image_id"];
-
-    $image["sort_order"] =
-        (int)$image["sort_order"];
+    $image["image_id"] = (int)$image["image_id"];
+    $image["sort_order"] = (int)$image["sort_order"];
 }
 
 unset($image);
@@ -206,23 +196,14 @@ if ($product["has_spec"]) {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $product_id
-    ]);
-
+    $stmt->execute([$product_id]);
     $specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($specs as &$spec) {
 
-        $spec["spec_id"] =
-            (int)$spec["spec_id"];
-
-        $spec["price"] =
-            (float)$spec["price"];
-
-        $spec["stock"] =
-            (int)$spec["stock"];
+        $spec["spec_id"] = (int)$spec["spec_id"];
+        $spec["price"] = (float)$spec["price"];
+        $spec["stock"] = (int)$spec["stock"];
     }
 
     unset($spec);
@@ -235,50 +216,24 @@ echo json_encode([
     "store_id" => $store_id,
 
     "product" => [
-
-        "product_id" =>
-            $product["product_id"],
+        "product_id" => $product["product_id"],
 
         "category" => [
-
-            "category_id" =>
-                $product["category_id"],
-
-            "category_name" =>
-                $product["category_name"]
+            "category_id" => $product["category_id"],
+            "category_name" => $product["category_name"]
         ],
 
-        "product_name" =>
-            $product["product_name"],
-
-        "description" =>
-            $product["description"],
-
-        "price" =>
-            $product["price"],
-
-        "stock" =>
-            $product["stock"],
-
-        "has_spec" =>
-            $product["has_spec"],
-
-        "specs" =>
-            $specs,
-
-        "images" =>
-            $images,
-
-        "status" =>
-            $product["status"],
-
-        "created_at" =>
-            $product["created_at"],
-
-        "updated_at" =>
-            $product["updated_at"]
+        "product_name" => $product["product_name"],
+        "description" => $product["description"],
+        "price" => $product["price"],
+        "stock" => $product["stock"],
+        "has_spec" => $product["has_spec"],
+        "specs" => $specs,
+        "images" => $images,
+        "status" => $product["status"],
+        "created_at" => $product["created_at"],
+        "updated_at" => $product["updated_at"]
     ]
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

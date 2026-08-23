@@ -41,11 +41,7 @@ WHERE customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $customer_id
-]);
-
+$stmt->execute([$customer_id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -129,12 +125,10 @@ AND o.customer_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $customer_id
 ]);
-
 $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 訂單不存在
@@ -204,12 +198,10 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order_id,
     $store_id
 ]);
-
 $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Payment 不存在
@@ -286,12 +278,10 @@ AND payment_method = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $store_id,
     $payment_method
 ]);
-
 $store_payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_payment) {
@@ -360,11 +350,8 @@ if ($payment_method === "atm") {
     }
 
     $payment_account = [
-        "bank_name" =>
-            $account["bank_name"],
-
-        "bank_number" =>
-            $account["bank_number"]
+        "bank_name" => $account["bank_name"],
+        "bank_number" => $account["bank_number"]
     ];
 
 } elseif ($payment_method === "post_office") {
@@ -378,80 +365,37 @@ if ($payment_method === "atm") {
     }
 
     $payment_account = [
-        "post_office_number" =>
-            $account["post_office_number"]
+        "post_office_number" => $account["post_office_number"]
     ];
 }
 
 // 回傳轉帳資訊
 echo json_encode([
-
-    "message" =>
-        "Transfer information",
-
+    "message" => "Transfer information",
     "payment" => [
-
-        "payment_id" =>
-            (int)$payment["payment_id"],
-
-        "order_number" =>
-            $order["order_number"],
-
-        "store_id" =>
-            (int)$payment["store_id"],
-
-        "payment_method" =>
-            $payment_method,
-
-        "amount" =>
-            (float)$payment["amount"],
-
-        "payment_status" =>
-            $payment["payment_status"],
-
-        "payment_confirm_status" =>
-            $payment["payment_confirm_status"]
+        "payment_id" => (int)$payment["payment_id"],
+        "order_number" => $order["order_number"],
+        "store_id" => (int)$payment["store_id"],
+        "payment_method" => $payment_method,
+        "amount" => (float)$payment["amount"],
+        "payment_status" => $payment["payment_status"],
+        "payment_confirm_status" => $payment["payment_confirm_status"]
     ],
-
     "order" => [
-
-        "order_number" =>
-            $order["order_number"],
-
-        "customer_id" =>
-            (int)$order["customer_id"],
-
-        "store_id" =>
-            (int)$order["store_id"],
-
-        "product_amount" =>
-            (float)$order["product_amount"],
-
-        "shipping_fee" =>
-            (float)$order["shipping_fee"],
-
-        "total_amount" =>
-            (float)$order["total_amount"],
-
-        "delivery_method" =>
-            $order["delivery_method"],
-
-        "delivery_status" =>
-            $order["delivery_status"]
+        "order_number" => $order["order_number"],
+        "customer_id" => (int)$order["customer_id"],
+        "store_id" => (int)$order["store_id"],
+        "product_amount" => (float)$order["product_amount"],
+        "shipping_fee" => (float)$order["shipping_fee"],
+        "total_amount" => (float)$order["total_amount"],
+        "delivery_method" => $order["delivery_method"],
+        "delivery_status" => $order["delivery_status"]
     ],
-
     "store" => [
-
-        "store_id" =>
-            $store_id,
-
-        "store_name" =>
-            $store_name
+        "store_id" => $store_id,
+        "store_name" => $store_name
     ],
-
-    "payment_account" =>
-        $payment_account
-
+    "payment_account" => $payment_account
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

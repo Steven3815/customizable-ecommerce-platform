@@ -42,7 +42,6 @@ WHERE store_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$store_id]);
-
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -158,17 +157,12 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
+    $stmt->execute([$store_id]);
 
     $existing_image_ids = [];
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-
-        $existing_image_ids[] =
-            (int)$row["image_id"];
+        $existing_image_ids[] = (int)$row["image_id"];
     }
 
     // 確認數量完全一致
@@ -176,29 +170,22 @@ try {
         count($validated_image_ids)
         !== count($existing_image_ids)
     ) {
-        throw new Exception(
-            "Image list is incomplete"
-        );
+        throw new Exception("Image list is incomplete");
     }
 
     // 建立目前 Store Image ID 對照表
-    $existing_lookup = array_flip(
-        $existing_image_ids
-    );
+    $existing_lookup = array_flip($existing_image_ids);
 
     // 確認所有圖片都屬於目前 Store
     foreach ($validated_image_ids as $image_id) {
 
         if (!isset($existing_lookup[$image_id])) {
 
-            throw new Exception(
-                "Slider image not found"
-            );
+            throw new Exception("Slider image not found");
         }
     }
 
-    // 暫時提高 sort_order
-    // 避免重新排序時產生重複排序值
+    // 暫時提高 sort_order避免重新排序時產生重複排序值
     $temporary_offset = 1000000;
 
     $sql = "
@@ -210,7 +197,6 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $temporary_offset,
         $store_id
@@ -263,25 +249,16 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id
-    ]);
-
-    $slider_images =
-        $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([$store_id]);
+    $slider_images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 整理資料
     foreach (
         $slider_images
         as &$image
     ) {
-
-        $image["image_id"] =
-            (int)$image["image_id"];
-
-        $image["store_id"] =
-            (int)$image["store_id"];
+        $image["image_id"] = (int)$image["image_id"];
+        $image["store_id"] = (int)$image["store_id"];
 
         $image["sort_order"] =
             $image["sort_order"] !== null
@@ -292,11 +269,9 @@ try {
     unset($image);
 
     echo json_encode([
-        "message" =>
-            "Slider images reordered successfully",
+        "message" => "Slider images reordered successfully",
 
-        "slider_images" =>
-            $slider_images
+        "slider_images" => $slider_images
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
@@ -306,8 +281,7 @@ try {
     }
 
     echo json_encode([
-        "error" =>
-            $e->getMessage()
+        "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

@@ -79,9 +79,7 @@ function uploadImage(
             0777,
             true
         )) {
-            throw new Exception(
-                "Failed to create upload directory"
-            );
+            throw new Exception("Failed to create upload directory");
         }
     }
 
@@ -96,10 +94,9 @@ function uploadImage(
         $upload_dir
         . $file_name;
 
-    /*
-     * 沒有指定 resize
-     * → 保留原始圖片
-     */
+
+    // 沒有指定 resize → 保留原始圖片
+
     if (
         $resize_width === null ||
         $resize_height === null
@@ -110,128 +107,72 @@ function uploadImage(
             $file_path
         )) {
 
-            throw new Exception(
-                "Failed to save image"
-            );
+            throw new Exception("Failed to save image");
         }
 
     } else {
 
-        /*
-         * 指定 resize
-         * → 自動裁切成指定比例
-         */
+        // 指定 resize → 自動裁切成指定比例
 
         if (
             $resize_width <= 0 ||
             $resize_height <= 0
         ) {
-            throw new Exception(
-                "Invalid resize dimensions"
-            );
+            throw new Exception("Invalid resize dimensions");
         }
 
         // 建立來源圖片
         switch ($mime_type) {
 
             case "image/jpeg":
-                $source_image =
-                    imagecreatefromjpeg(
-                        $file["tmp_name"]
-                    );
+                $source_image = imagecreatefromjpeg($file["tmp_name"]);
                 break;
 
             case "image/png":
-                $source_image =
-                    imagecreatefrompng(
-                        $file["tmp_name"]
-                    );
+                $source_image = imagecreatefrompng($file["tmp_name"]);
                 break;
 
             case "image/webp":
-                $source_image =
-                    imagecreatefromwebp(
-                        $file["tmp_name"]
-                    );
+                $source_image = imagecreatefromwebp($file["tmp_name"]);
                 break;
 
             default:
-                throw new Exception(
-                    "Unsupported image type"
-                );
+                throw new Exception("Unsupported image type");
         }
 
         if ($source_image === false) {
-            throw new Exception(
-                "Failed to create source image"
-            );
+            throw new Exception("Failed to create source image");
         }
 
-        /*
-         * 計算來源圖片比例
-         */
-        $source_ratio =
-            $original_width /
-            $original_height;
+        // 計算來源圖片比例
+        $source_ratio = $original_width / $original_height;
 
-        $target_ratio =
-            $resize_width /
-            $resize_height;
+        $target_ratio = $resize_width / $resize_height;
 
-        /*
-         * 計算裁切範圍
-         */
+        //計算裁切範圍
         if ($source_ratio > $target_ratio) {
 
             // 原圖太寬
-            $crop_height =
-                $original_height;
-
-            $crop_width =
-                (int)(
-                    $original_height
-                    * $target_ratio
-                );
-
-            $crop_x =
-                (int)(
-                    ($original_width - $crop_width)
-                    / 2
-                );
-
+            $crop_height = $original_height;
+            $crop_width = (int)($original_height* $target_ratio);
+            $crop_x =(int)(($original_width - $crop_width)/ 2);
             $crop_y = 0;
 
         } else {
 
             // 原圖太高
-            $crop_width =
-                $original_width;
-
-            $crop_height =
-                (int)(
-                    $original_width
-                    / $target_ratio
-                );
-
+            $crop_width = $original_width;
+            $crop_height = (int)($original_width/ $target_ratio);
             $crop_x = 0;
-
-            $crop_y =
-                (int)(
-                    ($original_height - $crop_height)
-                    / 2
-                );
+            $crop_y = (int)(($original_height - $crop_height)/ 2);
         }
 
         // 建立新的圖片
-        $new_image =
-            imagecreatetruecolor(
-                $resize_width,
-                $resize_height
-            );
+        $new_image = imagecreatetruecolor($resize_width, $resize_height);
 
-        /*
-         * PNG / WebP 保留透明背景
-         */
+
+        // PNG / WebP 保留透明背景
+
         if (
             $mime_type === "image/png" ||
             $mime_type === "image/webp"
@@ -317,13 +258,8 @@ function uploadImage(
         }
 
         // 釋放記憶體
-        imagedestroy(
-            $source_image
-        );
-
-        imagedestroy(
-            $new_image
-        );
+        imagedestroy($source_image);
+        imagedestroy($new_image);
     }
 
     // 回傳給資料庫儲存的 URL
@@ -334,9 +270,7 @@ function uploadImage(
 }
 
 
-/**
- * 刪除已上傳的圖片
- */
+// 刪除已上傳的圖片
 function deleteImage($image_url)
 {
     if (
@@ -348,23 +282,15 @@ function deleteImage($image_url)
 
     $prefix = "/uploads/";
 
-    if (
-        strpos($image_url, $prefix) !== 0
-    ) {
+    if (strpos($image_url, $prefix) !== 0) {
         return;
     }
 
     // 去掉 /uploads/
-    $relative_path =
-        substr(
-            $image_url,
-            strlen($prefix)
-        );
+    $relative_path = substr($image_url,strlen($prefix));
 
     // 避免 ../ 路徑攻擊
-    if (
-        strpos($relative_path, "..") !== false
-    ) {
+    if (strpos($relative_path, "..") !== false) {
         return;
     }
 

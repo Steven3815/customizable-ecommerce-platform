@@ -39,11 +39,7 @@ WHERE store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -68,7 +64,6 @@ if ($page < 1) {
 }
 
 $limit = 30;
-
 $offset = ($page - 1) * $limit;
 
 // 搜尋
@@ -99,13 +94,9 @@ if (!in_array($sort, $allowed_sort, true)) {
 // 搜尋條件
 $search_condition = "";
 
-$count_params = [
-    $store_id
-];
+$count_params = [$store_id];
 
-$data_params = [
-    $store_id
-];
+$data_params = [$store_id];
 
 if ($search !== "") {
 
@@ -178,13 +169,9 @@ $search_condition
 ";
 
 $count_stmt = $pdo->prepare($count_sql);
+$count_stmt->execute($count_params);
 
-$count_stmt->execute(
-    $count_params
-);
-
-$total_customers =
-    (int)$count_stmt->fetchColumn();
+$total_customers =(int)$count_stmt->fetchColumn();
 
 $total_pages = $total_customers > 0
     ? (int)ceil(
@@ -233,70 +220,33 @@ OFFSET $offset
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute(
-    $data_params
-);
-
-$customers =
-    $stmt->fetchAll(
-        PDO::FETCH_ASSOC
-    );
+$stmt->execute($data_params);
+$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理資料
 $result = [];
 
 foreach ($customers as $customer) {
-
     $result[] = [
-
-        "customer_id" =>
-            (int)$customer["customer_id"],
-
-        "name" =>
-            $customer["name"],
-
-        "phone" =>
-            $customer["phone"],
-
-        "email" =>
-            $customer["email"],
-
-        "order_count" =>
-            (int)$customer["order_count"],
-
-        "total_spending" =>
-            (float)$customer["total_spending"],
-
-        "created_at" =>
-            $customer["created_at"]
+        "customer_id" => (int)$customer["customer_id"],
+        "name" => $customer["name"],
+        "phone" => $customer["phone"],
+        "email" => $customer["email"],
+        "order_count" => (int)$customer["order_count"],
+        "total_spending" => (float)$customer["total_spending"],
+        "created_at" => $customer["created_at"]
     ];
 }
 
 // 回傳
 echo json_encode([
-
-    "page" =>
-        $page,
-
-    "limit" =>
-        $limit,
-
-    "total_customers" =>
-        $total_customers,
-
-    "total_pages" =>
-        $total_pages,
-
-    "search" =>
-        $search,
-
-    "sort" =>
-        $sort,
-
-    "customers" =>
-        $result
-
+    "page" => $page,
+    "limit" => $limit,
+    "total_customers" => $total_customers,
+    "total_pages" => $total_pages,
+    "search" => $search,
+    "sort" => $sort,
+    "customers" => $result
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

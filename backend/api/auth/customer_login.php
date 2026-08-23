@@ -16,7 +16,6 @@ $data = json_decode(
 
 // 檢查 JSON 格式
 if (!is_array($data)) {
-
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -55,7 +54,6 @@ if ($store_id <= 0) {
 
 // 檢查 Email
 if ($email === "") {
-
     echo json_encode([
         "error" => "Email is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -68,7 +66,6 @@ $email = strtolower($email);
 
 // 檢查 Email 格式
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-
     echo json_encode([
         "error" => "Invalid email format"
     ], JSON_UNESCAPED_UNICODE);
@@ -78,7 +75,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
 // 檢查密碼
 if ($password === "") {
-
     echo json_encode([
         "error" => "Password is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -103,16 +99,11 @@ WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Store 不存在
 if (!$store) {
-
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -122,7 +113,6 @@ if (!$store) {
 
 // Store 帳號停用
 if ($store["store_status"] !== "active") {
-
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -132,7 +122,6 @@ if ($store["store_status"] !== "active") {
 
 // 展示模式禁止登入
 if ($store["store_mode"] !== "shopping") {
-
     echo json_encode([
         "error" => "Login is unavailable in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -156,16 +145,11 @@ WHERE email = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $email
-]);
-
+$stmt->execute([$email]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到會員
 if (!$customer) {
-
     echo json_encode([
         "error" => "Invalid email or password"
     ], JSON_UNESCAPED_UNICODE);
@@ -178,7 +162,6 @@ if (!password_verify(
     $password,
     $customer["password"]
 )) {
-
     echo json_encode([
         "error" => "Invalid email or password"
     ], JSON_UNESCAPED_UNICODE);
@@ -193,11 +176,9 @@ session_regenerate_id(true);
 // 建立 Customer Session
 $_SESSION["customer_id"] = (int)$customer["customer_id"];
 $_SESSION["role"] = "customer";
-$_SESSION["store_id"] = $store_id;
 
 // 回傳
 echo json_encode([
-
     "message" => "Login successful",
 
     "customer" => [

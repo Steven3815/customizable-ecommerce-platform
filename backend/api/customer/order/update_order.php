@@ -42,7 +42,6 @@ WHERE customer_id = ?
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
-
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
@@ -137,11 +136,7 @@ WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $order["store_id"]
-]);
-
+$stmt->execute([$order["store_id"]]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
@@ -202,17 +197,10 @@ if (
     exit;
 }
 
-$receiver_name =
-    trim($data["receiver_name"]);
-
-$receiver_phone =
-    trim($data["receiver_phone"]);
-
-$receiver_address =
-    trim($data["receiver_address"]);
-
-$delivery_method =
-    trim($data["delivery_method"]);
+$receiver_name = trim($data["receiver_name"]);
+$receiver_phone = trim($data["receiver_phone"]);
+$receiver_address = trim($data["receiver_address"]);
+$delivery_method = trim($data["delivery_method"]);
 
 // 檢查收件資料
 if (
@@ -252,12 +240,10 @@ LIMIT 1
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $order["store_id"],
     $delivery_method
 ]);
-
 $delivery = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$delivery) {
@@ -286,7 +272,6 @@ AND delivery_status = 'pending'
 ";
 
 $stmt = $pdo->prepare($sql);
-
 $stmt->execute([
     $receiver_name,
     $receiver_phone,
@@ -300,19 +285,12 @@ $stmt->execute([
 
 echo json_encode([
     "message" => "Order updated successfully",
-
     "order_number" => $order["order_number"],
-
     "store_id" => (int)$order["store_id"],
-
     "receiver_name" => $receiver_name,
-
     "receiver_phone" => $receiver_phone,
-
     "receiver_address" => $receiver_address,
-
     "delivery_method" => $delivery_method
-
 ], JSON_UNESCAPED_UNICODE);
 
 ?>
