@@ -4,38 +4,10 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../config/database.php";
+require_once "../../../middleware/customer_auth.php";
 
-session_start();
-
-// 檢查 Customer Session
-if (
-    !isset($_SESSION["customer_id"]) ||
-    !isset($_SESSION["role"]) ||
-    $_SESSION["role"] !== "customer"
-) {
-    echo json_encode([
-        "error" => "Unauthorized"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$customer_id = (int)$_SESSION["customer_id"];
-
-// 檢查 Customer ID
-if ($customer_id <= 0) {
-    echo json_encode([
-        "error" => "Invalid customer ID"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查 Customer 是否存在
 $sql = "
 SELECT
-    customer_id,
     email,
     preferred_payment
 FROM CUSTOMER
@@ -45,14 +17,6 @@ WHERE customer_id = ?
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$customer_id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$customer) {
-    echo json_encode([
-        "error" => "Customer not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
 
 // 取得 order_id 和 store_id
 if (
