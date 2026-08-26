@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     !isset($data["cart_item_id"]) ||
     !isset($data["store_id"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Cart item ID and store ID are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -42,6 +45,7 @@ if (
     floor($cart_item_id) != $cart_item_id ||
     (int)$cart_item_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid cart item ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -57,6 +61,7 @@ if (
     floor($store_id) != $store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -80,6 +85,7 @@ $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Store Setting 不存在
 if (!$store_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -89,6 +95,7 @@ if (!$store_setting) {
 
 // 展示模式不可刪除購物車商品
 if ($store_setting["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -124,6 +131,7 @@ $item = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到商品
 if (!$item) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Cart item not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -150,6 +158,7 @@ $stmt->execute([
 
 // 確認是否成功刪除
 if ($stmt->rowCount() !== 1) {
+    http_response_code(500);
     echo json_encode([
         "error" => "Cart item could not be deleted"
     ], JSON_UNESCAPED_UNICODE);

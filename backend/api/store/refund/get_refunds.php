@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 分頁
@@ -30,6 +31,7 @@ $allowed_sort = [
 ];
 
 if (!in_array($sort, $allowed_sort, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid sort"
     ], JSON_UNESCAPED_UNICODE);

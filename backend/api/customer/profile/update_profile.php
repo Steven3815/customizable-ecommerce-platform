@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     array_key_exists("email", $data) ||
     array_key_exists("password", $data)
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Email and password cannot be modified"
     ], JSON_UNESCAPED_UNICODE);
@@ -54,6 +57,7 @@ foreach ($allowed_fields as $field) {
 }
 
 if (!$has_update) {
+    http_response_code(400);
     echo json_encode([
         "error" => "No fields to update"
     ], JSON_UNESCAPED_UNICODE);
@@ -80,6 +84,7 @@ $stmt->execute([$customer_id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Customer not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -102,6 +107,7 @@ if (array_key_exists("name", $data)) {
 
     if ($name === "") {
 
+        http_response_code(400);
         echo json_encode([
             "error" => "Name cannot be empty"
         ], JSON_UNESCAPED_UNICODE);
@@ -138,6 +144,7 @@ if (array_key_exists("preferred_payment", $data)) {
             true
         )
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid preferred payment method"
         ], JSON_UNESCAPED_UNICODE);
@@ -165,6 +172,7 @@ if (array_key_exists("preferred_delivery", $data)) {
             true
         )
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid preferred delivery method"
         ], JSON_UNESCAPED_UNICODE);
@@ -209,6 +217,7 @@ try {
         $pdo->rollBack();
     }
 
+    http_response_code(500);
     echo json_encode([
         "error" => "Profile update failed"
     ], JSON_UNESCAPED_UNICODE);

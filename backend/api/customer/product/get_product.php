@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 Product ID, Store ID
@@ -15,6 +16,7 @@ if (
     $product_id === null ||
     $product_id === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -28,6 +30,7 @@ if (
         != (float)$product_id ||
     (int)$product_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -42,6 +45,7 @@ if (
     $store_id === null ||
     $store_id === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -55,6 +59,7 @@ if (
         != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -79,6 +84,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -88,6 +94,7 @@ if (!$store) {
 
 // Store 必須是 active
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -133,6 +140,7 @@ $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 商品不存在或商品 inactive或 Category inactive
 if (!$product) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Product not found"
     ], JSON_UNESCAPED_UNICODE);

@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../config/cors.php";
 require_once "../../config/database.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON 格式
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -31,6 +33,7 @@ if (
     !isset($data["store_mode"])
 ) {
 
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -48,6 +51,7 @@ $store_mode = trim($data["store_mode"]);
 
 // 檢查商家名稱
 if ($store_name === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store name is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -57,6 +61,7 @@ if ($store_name === "") {
 
 // 檢查負責人姓名
 if ($owner_name === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Owner name is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -66,6 +71,7 @@ if ($owner_name === "") {
 
 // 檢查 Email
 if ($email === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Email is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -78,6 +84,7 @@ $email = strtolower($email);
 
 // 檢查 Email 格式
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid email format"
     ], JSON_UNESCAPED_UNICODE);
@@ -87,6 +94,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
 // 檢查密碼
 if ($password === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Password is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -96,6 +104,7 @@ if ($password === "") {
 
 // 密碼至少 8 碼
 if (strlen($password) < 8) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Password must be at least 8 characters"
     ], JSON_UNESCAPED_UNICODE);
@@ -105,6 +114,7 @@ if (strlen($password) < 8) {
 
 // 檢查電話
 if ($phone === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Phone is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -118,6 +128,7 @@ if (
     $store_mode !== "showcase"
 ) {
 
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -138,6 +149,7 @@ $stmt->execute([$email]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($store) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Email already registered",
         "action" => "login"
@@ -316,6 +328,7 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    http_response_code(500);
     echo json_encode([
         "error" => "Store registration failed"
     ], JSON_UNESCAPED_UNICODE);

@@ -2,9 +2,11 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 if (!isset($_GET["customer_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Customer ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -18,6 +20,7 @@ if (
     floor((float)$customer_id) != (float)$customer_id ||
     (int)$customer_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid customer ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -31,6 +34,7 @@ $page = isset($_GET["page"])
     : 1;
 
 if ($page < 1) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid page"
     ], JSON_UNESCAPED_UNICODE);
@@ -47,6 +51,7 @@ $allowed_sort = [
 ];
 
 if (!in_array($sort, $allowed_sort, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid sort option"
     ], JSON_UNESCAPED_UNICODE);
@@ -102,6 +107,7 @@ $stmt->execute([
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$customer) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Customer not found"
     ], JSON_UNESCAPED_UNICODE);

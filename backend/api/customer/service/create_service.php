@@ -5,6 +5,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../helpers/upload_image.php";
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 檢查必要欄位
@@ -13,6 +14,7 @@ if (
     !isset($_POST["problem_type"]) ||
     !isset($_POST["description"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID, problem type and description are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,6 +32,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -50,6 +53,7 @@ $allowed_problem_types = [
 ];
 
 if (!in_array($problem_type, $allowed_problem_types, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid problem type"
     ], JSON_UNESCAPED_UNICODE);
@@ -59,6 +63,7 @@ if (!in_array($problem_type, $allowed_problem_types, true)) {
 
 // 檢查問題描述
 if ($description === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Description is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -67,6 +72,7 @@ if ($description === "") {
 }
 
 if (mb_strlen($description) > 1000) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Description must be less than 1000 characters"
     ], JSON_UNESCAPED_UNICODE);
@@ -86,6 +92,7 @@ if (
         floor((float)$_POST["order_id"]) != (float)$_POST["order_id"] ||
         (int)$_POST["order_id"] <= 0
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid order ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -111,6 +118,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -120,6 +128,7 @@ if (!$store) {
 
 // 檢查 Store 是否啟用
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -141,6 +150,7 @@ $stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -150,6 +160,7 @@ if (!$store_setting) {
 
 // 展示模式不可使用客服
 if ($store_setting["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -159,6 +170,7 @@ if ($store_setting["store_mode"] !== "shopping") {
 
 // 檢查客服功能是否開啟
 if ((int)$store_setting["customer_service_enable"] !== 1) {
+    http_response_code(403);
     echo json_encode([
         "error" => "Customer service is currently unavailable"
     ], JSON_UNESCAPED_UNICODE);
@@ -185,6 +197,7 @@ $stmt->execute([
 $existing_service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($existing_service) {
+    http_response_code(409);
     echo json_encode([
         "error" => "You already have a pending customer service request"
     ], JSON_UNESCAPED_UNICODE);
@@ -217,6 +230,7 @@ if ($order_id !== null) {
     $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$order) {
+        http_response_code(404);
         echo json_encode([
             "error" => "Order not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -234,6 +248,7 @@ if (
     $_FILES["service_image"]["error"] !== UPLOAD_ERR_NO_FILE
 ) {
     if ($_FILES["service_image"]["error"] !== UPLOAD_ERR_OK) {
+        http_response_code(500);
         echo json_encode([
             "error" => "Service image upload failed"
         ], JSON_UNESCAPED_UNICODE);
@@ -247,6 +262,7 @@ if (
             "customer_service"
         );
     } catch (Exception $e) {
+        http_response_code(500);
         echo json_encode([
             "error" => $e->getMessage()
         ], JSON_UNESCAPED_UNICODE);
@@ -298,6 +314,7 @@ try {
     $service_id = (int)$pdo->lastInsertId();
 
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode([
         "error" => "Failed to create customer service request"
     ], JSON_UNESCAPED_UNICODE);

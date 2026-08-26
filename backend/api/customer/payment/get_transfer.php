@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -23,6 +25,7 @@ if (!is_array($data)) {
 
 // 檢查必要欄位
 if (!isset($data["order_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Order ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -38,6 +41,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -87,6 +91,7 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 訂單不存在
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -98,6 +103,7 @@ $store_id = (int)$order["store_id"];
 
 // 檢查 Store ID
 if ($store_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -107,6 +113,7 @@ if ($store_id <= 0) {
 
 // Store 是否啟用
 if ($order["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -116,6 +123,7 @@ if ($order["store_status"] !== "active") {
 
 // 商店暫停營業
 if ($order["business_status"] !== "open") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently closed"
     ], JSON_UNESCAPED_UNICODE);
@@ -125,6 +133,7 @@ if ($order["business_status"] !== "open") {
 
 // 展示模式
 if ($order["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -160,6 +169,7 @@ $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Payment 不存在
 if (!$payment) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Payment not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -175,6 +185,7 @@ if (
     $payment_method !== "atm" &&
     $payment_method !== "post_office"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "This payment method does not support transfer"
     ], JSON_UNESCAPED_UNICODE);
@@ -187,6 +198,7 @@ if (
     $payment["payment_status"] === "paid" &&
     $payment["payment_confirm_status"] === "confirmed"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order has already been paid"
     ], JSON_UNESCAPED_UNICODE);
@@ -199,6 +211,7 @@ if (
     $payment["payment_status"] === "processing" &&
     $payment["payment_confirm_status"] === "waiting"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Transfer is already waiting for store confirmation"
     ], JSON_UNESCAPED_UNICODE);
@@ -211,6 +224,7 @@ if (
     $payment["payment_status"] !== "pending" ||
     $payment["payment_confirm_status"] !== "waiting"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Payment is not available for transfer"
     ], JSON_UNESCAPED_UNICODE);
@@ -239,6 +253,7 @@ $stmt->execute([
 $store_payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_payment) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Payment method is not available for this store"
     ], JSON_UNESCAPED_UNICODE);
@@ -248,6 +263,7 @@ if (!$store_payment) {
 
 // 付款方式已停用
 if ($store_payment["status"] !== "active") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Selected payment method is currently unavailable"
     ], JSON_UNESCAPED_UNICODE);
@@ -280,6 +296,7 @@ $account = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Store 付款帳戶不存在
 if (!$account) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store payment account not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -296,6 +313,7 @@ if ($payment_method === "atm") {
         empty($account["bank_name"]) ||
         empty($account["bank_number"])
     ) {
+        http_response_code(404);
         echo json_encode([
             "error" => "Store bank account is not configured"
         ], JSON_UNESCAPED_UNICODE);
@@ -311,6 +329,7 @@ if ($payment_method === "atm") {
 } elseif ($payment_method === "post_office") {
 
     if (empty($account["post_office_number"])) {
+        http_response_code(404);
         echo json_encode([
             "error" => "Store post office account is not configured"
         ], JSON_UNESCAPED_UNICODE);

@@ -5,6 +5,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../helpers/upload_image.php";
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 檢查必要欄位
@@ -13,6 +14,7 @@ if (
     !isset($_POST["refund_reason"]) ||
     !isset($_POST["refund_description"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,6 +32,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -41,6 +44,7 @@ $order_id = (int)$order_id;
 
 // 檢查退款原因
 if ($refund_reason === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Refund reason is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -50,6 +54,7 @@ if ($refund_reason === "") {
 
 // 檢查退款說明
 if ($refund_description === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Refund description is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -81,6 +86,7 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 訂單不存在
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -106,6 +112,7 @@ $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 如果沒有 Store Setting
 if (!$store_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -115,6 +122,7 @@ if (!$store_setting) {
 
 // 展示模式不能申請退款
 if ($store_setting["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -124,6 +132,7 @@ if ($store_setting["store_mode"] !== "shopping") {
 
 // 檢查退款功能是否開啟
 if ((int)$store_setting["refund_enable"] !== 1) {
+    http_response_code(403);
     echo json_encode([
         "error" => "Refund service is currently unavailable"
     ], JSON_UNESCAPED_UNICODE);
@@ -136,6 +145,7 @@ $refund_days_limit = (int)$store_setting["refund_days_limit"];
 
 // 防止錯誤設定
 if ($refund_days_limit < 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid refund days limit"
     ], JSON_UNESCAPED_UNICODE);
@@ -145,6 +155,7 @@ if ($refund_days_limit < 0) {
 
 // 確認訂單已送達
 if ($order["delivery_status"] !== "completed") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order has not been delivered yet"
     ], JSON_UNESCAPED_UNICODE);
@@ -154,6 +165,7 @@ if ($order["delivery_status"] !== "completed") {
 
 // 確認有到貨日期
 if (empty($order["estimated_arrival_date"])) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Delivery date is unavailable"
     ], JSON_UNESCAPED_UNICODE);
@@ -175,6 +187,7 @@ $refund_deadline = date(
 
 // 檢查是否超過退款期限
 if (date("Y-m-d") > $refund_deadline) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Refund period has expired",
         "refund_deadline" => $refund_deadline
@@ -201,6 +214,7 @@ $stmt->execute([
 $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($refund) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Refund already requested",
         "refund_id" => (int)$refund["refund_id"],
@@ -222,6 +236,7 @@ if (
         $_FILES["refund_image"]["error"] !==
         UPLOAD_ERR_OK
     ) {
+        http_response_code(500);
         echo json_encode([
             "error" => "Refund image upload failed"
         ], JSON_UNESCAPED_UNICODE);
@@ -238,6 +253,7 @@ if (
             "refunds"
         );
     } catch (Exception $e) {
+        http_response_code(500);
         echo json_encode([
             "error" => $e->getMessage()
         ], JSON_UNESCAPED_UNICODE);
@@ -282,6 +298,7 @@ try {
     $refund_id = (int)$pdo->lastInsertId();
 
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode([
         "error" => "Failed to create refund request"
     ], JSON_UNESCAPED_UNICODE);

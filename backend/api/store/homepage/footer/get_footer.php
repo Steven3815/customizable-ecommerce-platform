@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 
 // 取得 Footer 設定
@@ -29,6 +30,7 @@ $footer_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到設定
 if (!$footer_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Footer setting not found"
     ], JSON_UNESCAPED_UNICODE);

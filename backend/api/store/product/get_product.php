@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 檢查 Product ID
@@ -11,6 +12,7 @@ if (
     !isset($_GET["product_id"]) ||
     $_GET["product_id"] === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -21,6 +23,7 @@ if (
     !is_numeric($_GET["product_id"]) ||
     floor((float)$_GET["product_id"]) != (float)$_GET["product_id"]
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,6 +33,7 @@ if (
 $product_id = (int)$_GET["product_id"];
 
 if ($product_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -68,6 +72,7 @@ $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 商品不存在或不屬於目前 Store
 if (!$product) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Product not found"
     ], JSON_UNESCAPED_UNICODE);

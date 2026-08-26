@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 取得 Image ID
@@ -13,6 +14,7 @@ if (
     $image_id === null ||
     $image_id === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Image ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     floor((float)$image_id) != (float)$image_id ||
     (int)$image_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid image ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -61,6 +64,7 @@ $stmt->execute([
 $image = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$image) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Image not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -70,6 +74,7 @@ if (!$image) {
 
 // deleted 商品禁止操作
 if ($image["status"] === "deleted") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Deleted product image cannot be modified"
     ], JSON_UNESCAPED_UNICODE);
@@ -94,6 +99,7 @@ $stmt->execute([
 $image_count = (int)$stmt->fetchColumn();
 
 if ($image_count <= 1) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product must have at least one image"
     ], JSON_UNESCAPED_UNICODE);
@@ -108,6 +114,7 @@ if (
     !is_string($image_url) ||
     strpos($image_url, "/uploads/") !== 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid image path"
     ], JSON_UNESCAPED_UNICODE);
@@ -204,6 +211,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

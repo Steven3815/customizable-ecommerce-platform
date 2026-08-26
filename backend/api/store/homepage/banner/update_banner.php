@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 require_once "../../../../helpers/upload_image.php";
 
 // 檢查 banner_id
@@ -15,6 +16,7 @@ if (
     !is_numeric($banner_id) ||
     floor((float)$banner_id) != (float)$banner_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid banner ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -25,6 +27,7 @@ if (
 $banner_id = (int)$banner_id;
 
 if ($banner_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid banner ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -39,6 +42,7 @@ if (
     !isset($_POST["title"]) &&
     !isset($_POST["description"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Nothing to update"
     ], JSON_UNESCAPED_UNICODE);
@@ -79,7 +83,7 @@ try {
     $banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$banner) {
-        throw new Exception("Banner not found");
+        throw new Exception("Banner not found", 404);
     }
 
     $old_image_url = $banner["image_url"];
@@ -100,7 +104,7 @@ try {
         $has_default_banner &&
         $has_upload_image
     ) {
-        throw new Exception("Choose either default banner or uploaded image");
+        throw new Exception("Choose either default banner or uploaded image", 400);
     }
 
     // 使用預設 Banner
@@ -114,13 +118,13 @@ try {
             floor((float)$default_banner_id)
                 != (float)$default_banner_id
         ) {
-            throw new Exception("Invalid default banner ID");
+            throw new Exception("Invalid default banner ID", 400);
         }
 
         $default_banner_id = (int)$default_banner_id;
 
         if ($default_banner_id <= 0) {
-            throw new Exception("Invalid default banner ID");
+            throw new Exception("Invalid default banner ID", 400);
         }
 
         // 確認預設 Banner 存在
@@ -137,7 +141,7 @@ try {
         $default_banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$default_banner) {
-            throw new Exception("Default banner not found");
+            throw new Exception("Default banner not found", 404);
         }
 
         $new_default_banner_id = $default_banner_id;
@@ -182,7 +186,7 @@ try {
             $title !== null &&
             mb_strlen($title) > 20
         ) {
-            throw new Exception("Title is too long");
+            throw new Exception("Title is too long", 400);
         }
 
     } else {
@@ -196,7 +200,7 @@ try {
         $description = trim($_POST["description"]);
 
         if (mb_strlen($description) > 80) {
-            throw new Exception("Description is too long");
+            throw new Exception("Description is too long", 400);
         }
 
     } else {
@@ -267,6 +271,11 @@ try {
     if ($new_uploaded_image_url !== null) {
         deleteImage($new_uploaded_image_url);
     }
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

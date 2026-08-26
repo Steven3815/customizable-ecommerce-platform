@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 require_once "../../../../helpers/upload_image.php";
 
 // 檢查 image_id
@@ -15,6 +16,7 @@ if (
     !is_numeric($image_id) ||
     floor((float)$image_id) != (float)$image_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid image ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -25,6 +27,7 @@ if (
 $image_id = (int)$image_id;
 
 if ($image_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid image ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -37,6 +40,7 @@ if (
     !isset($_POST["title"]) &&
     !isset($_FILES["image"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Nothing to update"
     ], JSON_UNESCAPED_UNICODE);
@@ -74,9 +78,7 @@ try {
     $slider = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$slider) {
-        throw new Exception(
-            "Slider image not found"
-        );
+        throw new Exception("Slider image not found", 404);
     }
 
     $old_image_url = $slider["image_url"];
@@ -96,7 +98,7 @@ try {
             $title !== null &&
             mb_strlen($title) > 200
         ) {
-            throw new Exception("Title is too long");
+            throw new Exception("Title is too long", 400);
         }
 
     } else {
@@ -183,6 +185,11 @@ try {
         deleteImage($new_image_url);
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

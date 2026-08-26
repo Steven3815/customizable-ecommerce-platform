@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON 格式
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     !isset($data["refund_id"]) ||
     !isset($data["refund_status"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -43,6 +46,7 @@ if (
     floor((float)$refund_id) != (float)$refund_id ||
     (int)$refund_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid refund ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -59,6 +63,7 @@ $allowed_status = [
 ];
 
 if (!in_array($refund_status, $allowed_status, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid refund status"
     ], JSON_UNESCAPED_UNICODE);
@@ -70,6 +75,7 @@ if (!in_array($refund_status, $allowed_status, true)) {
 if ($admin_reply !== null) {
 
     if (!is_string($admin_reply)) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid admin reply"
         ], JSON_UNESCAPED_UNICODE);
@@ -80,6 +86,7 @@ if ($admin_reply !== null) {
     $admin_reply = trim($admin_reply);
 
     if (mb_strlen($admin_reply) > 1000) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Admin reply is too long"
         ], JSON_UNESCAPED_UNICODE);
@@ -107,6 +114,7 @@ $stmt->execute([
 $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$refund) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Refund not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -116,6 +124,7 @@ if (!$refund) {
 
 // 只能處理 pending
 if ($refund["refund_status"] !== "pending") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Refund has already been processed"
     ], JSON_UNESCAPED_UNICODE);
@@ -159,6 +168,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => "Refund update failed"
     ], JSON_UNESCAPED_UNICODE);

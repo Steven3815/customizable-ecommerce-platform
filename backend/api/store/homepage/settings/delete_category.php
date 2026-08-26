@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     !isset($data["category_ids"]) ||
     !is_array($data["category_ids"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Category IDs are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -37,6 +40,7 @@ $category_ids = $data["category_ids"];
 
 // 至少一個 Category
 if (count($category_ids) < 1) {
+    http_response_code(400);
     echo json_encode([
         "error" => "At least one category is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -54,6 +58,7 @@ foreach ($category_ids as $category_id) {
         !is_numeric($category_id) ||
         floor((float)$category_id) != (float)$category_id
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -65,6 +70,7 @@ foreach ($category_ids as $category_id) {
 
     // ID 必須大於 0
     if ($category_id <= 0) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -80,6 +86,7 @@ foreach ($category_ids as $category_id) {
             true
         )
     ) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Duplicate category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -114,7 +121,7 @@ try {
         ]);
 
         if (!$stmt->fetch()) {
-            throw new Exception("Category not found");
+            throw new Exception("Category not found", 404);
         }
     }
 
@@ -215,6 +222,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得搜尋條件
@@ -17,6 +18,7 @@ if (
     $store_id === null ||
     $store_id === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -29,6 +31,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -53,6 +56,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -62,6 +66,7 @@ if (!$store) {
 
 // Store 必須是 active
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -80,6 +85,7 @@ if (
             != (float)$category_id ||
         (int)$category_id <= 0
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -107,6 +113,7 @@ if (
     $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
+        http_response_code(403);
         echo json_encode([
             "error" => "Category not found or inactive"
         ], JSON_UNESCAPED_UNICODE);
@@ -123,6 +130,7 @@ if (
         true
     )
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid sort option"
     ], JSON_UNESCAPED_UNICODE);

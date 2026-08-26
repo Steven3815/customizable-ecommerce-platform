@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,7 +32,7 @@ try {
         !isset($data["intro_section_enable"]) ||
         !isset($data["banner_section_enable"])
     ) {
-        throw new Exception("Website setting is required");
+        throw new Exception("Website setting is required", 400);
     }
 
     $intro_section_enable = (int)$data["intro_section_enable"];
@@ -48,7 +50,7 @@ try {
             true
         )
     ) {
-        throw new Exception("Invalid website setting");
+        throw new Exception("Invalid website setting", 400);
     }
 
     $sql = "
@@ -77,13 +79,13 @@ try {
         $check->execute([$store_id]);
 
         if (!$check->fetch()) {
-            throw new Exception("Website setting not found");
+            throw new Exception("Website setting not found", 404);
         }
     }
 
     // 更新首頁商品排列設定
     if (!isset($data["display_limit"])) {
-        throw new Exception("Display limit is required");
+        throw new Exception("Display limit is required", 400);
     }
 
     $display_limit = (int)$data["display_limit"];
@@ -95,7 +97,7 @@ try {
             true
         )
     ) {
-        throw new Exception("Display limit must be 4, 5, or 6");
+        throw new Exception("Display limit must be 4, 5, or 6", 400);
     }
 
     $sql = "
@@ -122,7 +124,7 @@ try {
         $check->execute([$store_id]);
 
         if (!$check->fetch()) {
-            throw new Exception("Homepage product setting not found");
+            throw new Exception("Homepage product setting not found", 404);
         }
     }
 
@@ -130,7 +132,7 @@ try {
     if (isset($data["categories"])) {
 
         if (!is_array($data["categories"])) {
-            throw new Exception("Invalid categories");
+            throw new Exception("Invalid categories", 400);
         }
 
         // 防止同一次 Request 出現重複名稱
@@ -139,22 +141,22 @@ try {
         foreach ($data["categories"] as $category) {
 
             if (!is_array($category)) {
-                throw new Exception("Invalid category data");
+                throw new Exception("Invalid category data", 400);
             }
 
             if (!isset($category["category_name"])) {
-                throw new Exception("Category name is required");
+                throw new Exception("Category name is required", 400);
             }
 
             $category_name =
                 trim($category["category_name"]);
 
             if ($category_name === "") {
-                throw new Exception("Category name cannot be empty");
+                throw new Exception("Category name cannot be empty", 400);
             }
 
             if (mb_strlen($category_name) > 255) {
-                throw new Exception("Category name is too long");
+                throw new Exception("Category name is too long", 400);
             }
 
             $name_key = mb_strtolower($category_name);
@@ -166,7 +168,7 @@ try {
                     true
                 )
             ) {
-                throw new Exception("Category name duplicated in request");
+                throw new Exception("Category name duplicated in request", 409);
             }
 
             $submitted_category_names[] = $name_key;
@@ -182,15 +184,13 @@ try {
                     floor((float)$category_id)
                     != (float)$category_id
                 ) {
-                    throw new Exception(
-                        "Invalid category ID"
-                    );
+                    throw new Exception("Invalid category ID", 400);
                 }
 
                 $category_id = (int)$category_id;
 
                 if ($category_id <= 0) {
-                    throw new Exception("Invalid category ID");
+                    throw new Exception("Invalid category ID", 400);
                 }
 
                 // 確認 Category 屬於目前 Store
@@ -210,7 +210,7 @@ try {
                 ]);
 
                 if (!$stmt->fetch()) {
-                    throw new Exception("Category not found");
+                    throw new Exception("Category not found", 404);
                 }
 
                 // 檢查修改後的名稱是否與其他 Category 重複
@@ -234,7 +234,7 @@ try {
                 ]);
 
                 if ($stmt->fetch()) {
-                    throw new Exception("Category name already exists");
+                    throw new Exception("Category name already exists", 409);
                 }
 
                 // 更新 Category 不修改 sort_order
@@ -275,7 +275,7 @@ try {
                 ]);
 
                 if ($stmt->fetch()) {
-                    throw new Exception("Category name already exists");
+                    throw new Exception("Category name already exists", 409);
                 }
 
                 // 取得下一個 sort_order
@@ -325,11 +325,11 @@ try {
 
     // 更新 Footer 設定
     if (!isset($data["footer"])) {
-        throw new Exception("Footer setting is required");
+        throw new Exception("Footer setting is required", 400);
     }
 
     if (!is_array($data["footer"])) {
-        throw new Exception("Invalid footer setting");
+        throw new Exception("Invalid footer setting", 400);
     }
 
     $footer_fields = [
@@ -342,7 +342,7 @@ try {
     foreach ($footer_fields as $field) {
 
         if (!isset($data["footer"][$field])) {
-            throw new Exception("$field is required");
+            throw new Exception("$field is required", 400);
         }
 
         $value = (int)$data["footer"][$field];
@@ -354,7 +354,7 @@ try {
                 true
             )
         ) {
-            throw new Exception("Invalid footer setting");
+            throw new Exception("Invalid footer setting", 400);
         }
     }
 
@@ -394,7 +394,7 @@ try {
         $check->execute([$store_id]);
 
         if (!$check->fetch()) {
-            throw new Exception("Footer setting not found");
+            throw new Exception("Footer setting not found", 404);
         }
     }
 
@@ -411,6 +411,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

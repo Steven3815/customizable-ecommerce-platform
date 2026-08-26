@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 $per_page = 50;
@@ -21,6 +22,7 @@ if (
     floor((float)$page) != (float)$page ||
     (int)$page < 1
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid page"
     ], JSON_UNESCAPED_UNICODE);
@@ -57,6 +59,7 @@ if ($category_id !== null) {
         floor((float)$category_id)
             != (float)$category_id
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -67,6 +70,7 @@ if ($category_id !== null) {
     $category_id = (int)$category_id;
 
     if ($category_id <= 0) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -92,6 +96,7 @@ if ($category_id !== null) {
     $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
+        http_response_code(403);
         echo json_encode([
             "error" => "Category does not belong to this store"
         ], JSON_UNESCAPED_UNICODE);
@@ -107,6 +112,7 @@ if ($status !== null) {
         $status !== "active" &&
         $status !== "inactive"
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid status"
         ], JSON_UNESCAPED_UNICODE);
@@ -123,6 +129,7 @@ if ($stock_status !== null) {
         $stock_status !== "low_stock" &&
         $stock_status !== "out_of_stock"
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid stock status"
         ], JSON_UNESCAPED_UNICODE);
@@ -147,6 +154,7 @@ try {
     $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store_setting) {
+        http_response_code(404);
         echo json_encode([
             "error" => "Store setting not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -415,6 +423,7 @@ try {
     // 頁數超過範圍
     if ($page > $total_pages) {
 
+        http_response_code(409);
         echo json_encode([
             "error" => "Page out of range",
             "total_pages" => $total_pages
@@ -456,6 +465,7 @@ try {
 
 } catch (Exception $e) {
 
+    http_response_code(500);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

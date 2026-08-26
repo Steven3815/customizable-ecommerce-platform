@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 require_once "../../../../helpers/upload_image.php";
 
 $old_image_url = null;
@@ -36,7 +37,7 @@ try {
 
     // 沒有 Banner
     if (!$banner) {
-        throw new Exception("Banner not found");
+        throw new Exception("Banner not found", 404);
     }
 
     // 判斷是否為 Store 上傳圖片
@@ -85,6 +86,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

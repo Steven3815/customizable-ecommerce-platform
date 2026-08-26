@@ -1,9 +1,9 @@
 <?php
-
 // Customer 加入購物車
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +14,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -27,6 +28,7 @@ if (
     !isset($data["product_id"]) ||
     !isset($data["quantity"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID, product ID and quantity are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -45,6 +47,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -60,6 +63,7 @@ if (
     floor((float)$product_id) != (float)$product_id ||
     (int)$product_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -77,6 +81,7 @@ if ($spec_id !== null) {
         floor((float)$spec_id) != (float)$spec_id ||
         (int)$spec_id <= 0
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid specification ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -93,6 +98,7 @@ if (
     floor((float)$quantity) != (float)$quantity ||
     (int)$quantity <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid quantity"
     ], JSON_UNESCAPED_UNICODE);
@@ -116,6 +122,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -125,6 +132,7 @@ if (!$store) {
 
 // Store 必須 active
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -145,6 +153,7 @@ $stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -154,6 +163,7 @@ if (!$store_setting) {
 
 // 展示模式不可加入購物車
 if ($store_setting["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -191,6 +201,7 @@ $stmt->execute([
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
+    http_response_code(403);
     echo json_encode([
         "error" => "Product, category or store data is inactive or not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -203,6 +214,7 @@ if ((int)$product["has_spec"] === 1) {
 
     // 有規格商品必須傳 Spec ID
     if ($spec_id === null) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Spec ID is required"
         ], JSON_UNESCAPED_UNICODE);
@@ -233,6 +245,7 @@ if ((int)$product["has_spec"] === 1) {
     $spec = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$spec) {
+        http_response_code(403);
         echo json_encode([
             "error" => "Invalid or inactive specification"
         ], JSON_UNESCAPED_UNICODE);
@@ -242,6 +255,7 @@ if ((int)$product["has_spec"] === 1) {
 
     // 檢查規格庫存
     if ((int)$spec["stock"] < $quantity) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Insufficient stock"
         ], JSON_UNESCAPED_UNICODE);
@@ -251,6 +265,7 @@ if ((int)$product["has_spec"] === 1) {
 } else {
     // 無規格商品不可傳 Spec ID
     if ($spec_id !== null) {
+        http_response_code(400);
         echo json_encode([
             "error" => "This product does not have specifications"
         ], JSON_UNESCAPED_UNICODE);
@@ -260,6 +275,7 @@ if ((int)$product["has_spec"] === 1) {
 
     // 檢查商品庫存
     if ((int)$product["stock"] < $quantity) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Insufficient stock"
         ], JSON_UNESCAPED_UNICODE);
@@ -356,6 +372,7 @@ if ($cart_item) {
 
     // 檢查累加後是否超過庫存
     if ($new_quantity > $available_stock) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Insufficient stock"
         ], JSON_UNESCAPED_UNICODE);
@@ -424,6 +441,28 @@ if ($cart_item) {
 }
 
 // 回傳
+echo json_encode([
+    "message" => $message,
+    "customer_id" => $customer_id,
+    "cart_id" => $cart_id,
+    "store_id" => $store_id,
+    "product_id" => $product_id,
+    "spec_id" => $spec_id,
+    "quantity" => $final_quantity
+], JSON_UNESCAPED_UNICODE);
+
+?>       $store_id,
+        $product_id,
+        $spec_id,
+        $quantity
+    ]);
+
+    $message = "Product added to cart";
+
+    $final_quantity = $quantity;
+}
+
+// ?
 echo json_encode([
     "message" => $message,
     "customer_id" => $customer_id,

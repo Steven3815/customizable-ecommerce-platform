@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 取得商家資料
@@ -28,6 +29,7 @@ $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到商家
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);

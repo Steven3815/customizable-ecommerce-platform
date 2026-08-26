@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 $sql = "
@@ -23,6 +24,7 @@ if (
     !isset($_GET["order_id"]) ||
     !isset($_GET["store_id"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Order ID and store ID are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -35,6 +37,7 @@ $store_id = (int)$_GET["store_id"];
 
 // 檢查 Order ID
 if ($order_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -44,6 +47,7 @@ if ($order_id <= 0) {
 
 // 檢查 Store ID
 if ($store_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -99,6 +103,7 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 檢查訂單
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -112,6 +117,7 @@ $store_name = $order["store_name"];
 
 // 檢查 Store ID
 if ($store_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -121,6 +127,7 @@ if ($store_id <= 0) {
 
 // 商店帳號停用
 if ($order["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -130,6 +137,7 @@ if ($order["store_status"] !== "active") {
 
 // 商店暫停營業
 if ($order["business_status"] !== "open") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently closed"
     ], JSON_UNESCAPED_UNICODE);
@@ -139,6 +147,7 @@ if ($order["business_status"] !== "open") {
 
 // 展示模式
 if ($order["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);

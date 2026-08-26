@@ -4,13 +4,15 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 // 取得 category_id
 if (
     !isset($_POST["category_id"]) ||
     $_POST["category_id"] === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Category ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     floor((float)$category_id)
     != (float)$category_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid category ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -36,6 +39,7 @@ if (
 $category_id = (int)$category_id;
 
 if ($category_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid category ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -47,6 +51,7 @@ if ($category_id <= 0) {
 $product_name = trim($_POST["product_name"] ?? "");
 
 if ($product_name === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product name is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -55,6 +60,7 @@ if ($product_name === "") {
 }
 
 if (mb_strlen($product_name) > 200) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product name is too long"
     ], JSON_UNESCAPED_UNICODE);
@@ -83,6 +89,7 @@ try {
     $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
+        http_response_code(404);
         echo json_encode([
             "error" => "Category not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -154,6 +161,7 @@ try {
 
 } catch (Exception $e) {
 
+    http_response_code(500);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

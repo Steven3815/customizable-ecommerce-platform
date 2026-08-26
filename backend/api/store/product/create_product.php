@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 取得商品基本資料
@@ -29,6 +30,7 @@ if (
     $category_id === null ||
     $product_name === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -42,6 +44,7 @@ if (
     floor((float)$category_id) != (float)$category_id ||
     (int)$category_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid category ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -53,6 +56,7 @@ $category_id = (int)$category_id;
 
 // 檢查商品名稱
 if (mb_strlen($product_name) > 200) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product name is too long"
     ], JSON_UNESCAPED_UNICODE);
@@ -62,6 +66,7 @@ if (mb_strlen($product_name) > 200) {
 
 // 檢查商品描述
 if (mb_strlen($description) > 5000) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Description is too long"
     ], JSON_UNESCAPED_UNICODE);
@@ -74,6 +79,7 @@ if (
     $has_spec !== 0 &&
     $has_spec !== 1
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid has_spec"
     ], JSON_UNESCAPED_UNICODE);
@@ -88,6 +94,7 @@ if (
     !is_numeric($price) ||
     (float)$price < 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid price"
     ], JSON_UNESCAPED_UNICODE);
@@ -108,6 +115,7 @@ if ($has_spec === 0) {
         (float)$stock < 0 ||
         floor((float)$stock) != (float)$stock
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid stock"
         ], JSON_UNESCAPED_UNICODE);
@@ -124,6 +132,7 @@ if ($has_spec === 0) {
 
     // 有規格商品時必須填寫規格類型名稱
     if ($spec_name === "") {
+        http_response_code(400);
         echo json_encode([
             "error" => "Specification name is required"
         ], JSON_UNESCAPED_UNICODE);
@@ -132,6 +141,7 @@ if ($has_spec === 0) {
     }
 
     if (mb_strlen($spec_name) > 100) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Specification name is too long"
         ], JSON_UNESCAPED_UNICODE);
@@ -157,6 +167,7 @@ $stmt->execute([
 $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$category) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Category not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -174,6 +185,7 @@ if ($has_spec === 1) {
         !isset($_POST["specs"]) ||
         !is_array($_POST["specs"])
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Specifications are required"
         ], JSON_UNESCAPED_UNICODE);
@@ -185,6 +197,7 @@ if ($has_spec === 1) {
 
     // 至少一個規格
     if (count($specs) < 1) {
+        http_response_code(400);
         echo json_encode([
             "error" => "At least one specification is required"
         ], JSON_UNESCAPED_UNICODE);
@@ -194,6 +207,7 @@ if ($has_spec === 1) {
 
     // 最多 10 個規格
     if (count($specs) > 10) {
+        http_response_code(400);
         echo json_encode([
             "error" => "A product can have at most 10 specifications"
         ], JSON_UNESCAPED_UNICODE);
@@ -206,6 +220,7 @@ if ($has_spec === 1) {
     foreach ($specs as $spec) {
 
         if (!is_array($spec)) {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Invalid specification data"
             ], JSON_UNESCAPED_UNICODE);
@@ -219,6 +234,7 @@ if ($has_spec === 1) {
 
         // 檢查規格值
         if ($spec_value === "") {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Specification value is required"
             ], JSON_UNESCAPED_UNICODE);
@@ -227,6 +243,7 @@ if ($has_spec === 1) {
         }
 
         if (mb_strlen($spec_value) > 100) {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Specification value is too long"
             ], JSON_UNESCAPED_UNICODE);
@@ -242,6 +259,7 @@ if ($has_spec === 1) {
             (float)$spec_stock < 0 ||
             floor((float)$spec_stock) != (float)$spec_stock
         ) {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Invalid specification stock"
             ], JSON_UNESCAPED_UNICODE);
@@ -271,6 +289,7 @@ if ($has_spec === 1) {
                 true
             )
         ) {
+            http_response_code(409);
             echo json_encode([
                 "error" => "Duplicate specification value"
             ], JSON_UNESCAPED_UNICODE);
@@ -298,6 +317,7 @@ if (
     !isset($_FILES["images"]["name"]) ||
     !is_array($_FILES["images"]["name"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "At least one product image is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -320,6 +340,7 @@ for ($i = 0; $i < $file_count; $i++) {
 }
 
 if ($valid_image_count < 1) {
+    http_response_code(400);
     echo json_encode([
         "error" => "At least one product image is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -537,6 +558,11 @@ try {
         }
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -23,6 +25,7 @@ if (!is_array($data)) {
 
 // 檢查必要欄位
 if (!isset($data["order_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Order ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -38,6 +41,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -84,6 +88,7 @@ $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Order 或 Payment 不存在
 if (!$payment) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Payment not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -95,6 +100,7 @@ $store_id = (int)$payment["store_id"];
 
 // 檢查 Store ID
 if ($store_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -110,6 +116,7 @@ if (
     $payment_method !== "atm" &&
     $payment_method !== "post_office"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "This payment method does not support transfer confirmation"
     ], JSON_UNESCAPED_UNICODE);
@@ -119,6 +126,7 @@ if (
 
 // 已付款
 if ($payment["payment_status"] === "paid") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order has already been paid"
     ], JSON_UNESCAPED_UNICODE);
@@ -131,6 +139,7 @@ if (
     $payment["payment_status"] === "processing" &&
     $payment["payment_confirm_status"] === "waiting"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Transfer is already waiting for store confirmation"
     ], JSON_UNESCAPED_UNICODE);
@@ -143,6 +152,7 @@ if (
     $payment["payment_status"] !== "pending" ||
     $payment["payment_confirm_status"] !== "waiting"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Payment is not available for transfer confirmation"
     ], JSON_UNESCAPED_UNICODE);
@@ -185,6 +195,7 @@ try {
 
         $pdo->rollBack();
 
+        http_response_code(500);
         echo json_encode([
             "error" => "Payment status could not be updated"
         ], JSON_UNESCAPED_UNICODE);
@@ -200,6 +211,7 @@ try {
         $pdo->rollBack();
     }
 
+    http_response_code(500);
     echo json_encode([
         "error" => "Transfer confirmation failed"
     ], JSON_UNESCAPED_UNICODE);

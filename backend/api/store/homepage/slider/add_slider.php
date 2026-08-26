@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 require_once "../../../../helpers/upload_image.php";
 
 // 檢查圖片
@@ -12,6 +13,7 @@ if (
     !isset($_FILES["image"]) ||
     !is_array($_FILES["image"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Image is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -32,6 +34,7 @@ if (
     $title !== null &&
     mb_strlen($title) > 200
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Title is too long"
     ], JSON_UNESCAPED_UNICODE);
@@ -59,7 +62,7 @@ try {
 
     // 最多 5 張
     if ($image_count >= 5) {
-        throw new Exception("Maximum 5 slider images are allowed");
+        throw new Exception("Maximum 5 slider images are allowed", 400);
     }
 
     // 取得下一個 sort_order
@@ -83,7 +86,7 @@ try {
         $sort_order < 1 ||
         $sort_order > 5
     ) {
-        throw new Exception("Invalid slider image sort order");
+        throw new Exception("Invalid slider image sort order", 400);
     }
 
     // 上傳圖片
@@ -150,6 +153,11 @@ try {
         deleteImage($image_url);
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

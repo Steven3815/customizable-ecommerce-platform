@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 
 // 取得首頁區塊設定
@@ -21,6 +22,7 @@ $stmt->execute([$store_id]);
 $website_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$website_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Website setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -47,6 +49,7 @@ $stmt->execute([$store_id]);
 $product_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Homepage product setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -96,6 +99,7 @@ $stmt->execute([$store_id]);
 $footer_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$footer_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Footer setting not found"
     ], JSON_UNESCAPED_UNICODE);

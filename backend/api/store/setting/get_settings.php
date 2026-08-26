@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 try {
@@ -31,6 +32,7 @@ try {
     $store_settings = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store_settings) {
+        http_response_code(404);
         echo json_encode([
             "error" => "Store settings not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -158,6 +160,7 @@ try {
 
 } catch (PDOException $e) {
 
+    http_response_code(500);
     echo json_encode([
         "error" => "Failed to get store settings"
     ], JSON_UNESCAPED_UNICODE);

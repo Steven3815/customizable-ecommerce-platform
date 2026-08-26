@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -25,6 +27,7 @@ if (
     !isset($data["service_id"]) ||
     !isset($data["admin_reply"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Service ID and reply are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -40,6 +43,7 @@ if (
     floor((float)$service_id) != (float)$service_id ||
     (int)$service_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid service ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -50,6 +54,7 @@ $service_id = (int)$service_id;
 
 // 檢查回覆內容
 if ($admin_reply === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Reply content is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -58,6 +63,7 @@ if ($admin_reply === "") {
 
 // 檢查回覆長度
 if (mb_strlen($admin_reply, "UTF-8") > 300) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Reply must not exceed 300 characters"
     ], JSON_UNESCAPED_UNICODE);
@@ -84,6 +90,7 @@ $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 客服案件不存在
 if (!$service) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Service not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -92,6 +99,7 @@ if (!$service) {
 
 // 已處理案件不可修改
 if ($service["status"] === "resolved") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Resolved service cannot be modified"
     ], JSON_UNESCAPED_UNICODE);
@@ -119,6 +127,7 @@ $stmt->execute([
 
 // 確認更新成功
 if ($stmt->rowCount() !== 1) {
+    http_response_code(500);
     echo json_encode([
         "error" => "Service could not be updated"
     ], JSON_UNESCAPED_UNICODE);

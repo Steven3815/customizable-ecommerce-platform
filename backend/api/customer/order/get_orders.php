@@ -4,10 +4,12 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 Store ID
 if (!isset($_GET["store_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -23,6 +25,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -48,6 +51,7 @@ $allowed_payment_status = [
 ];
 
 if (!in_array($payment_status, $allowed_payment_status, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid payment status"
     ], JSON_UNESCAPED_UNICODE);
@@ -70,6 +74,7 @@ if (
         true
     )
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid payment confirm status"
     ], JSON_UNESCAPED_UNICODE);
@@ -86,6 +91,7 @@ $allowed_delivery_status = [
 ];
 
 if (!in_array($delivery_status, $allowed_delivery_status, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid delivery status"
     ], JSON_UNESCAPED_UNICODE);
@@ -102,6 +108,7 @@ $allowed_refund_status = [
 ];
 
 if (!in_array($refund_status, $allowed_refund_status, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid refund status"
     ], JSON_UNESCAPED_UNICODE);
@@ -129,6 +136,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -138,6 +146,7 @@ if (!$store) {
 
 // 商店帳號停用
 if ($store["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -147,6 +156,7 @@ if ($store["store_status"] !== "active") {
 
 // 展示模式
 if ($store["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);

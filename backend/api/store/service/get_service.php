@@ -4,10 +4,12 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 檢查 Service ID
 if (!isset($_GET["service_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Service ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -21,6 +23,7 @@ if (
     floor((float)$service_id) != (float)$service_id ||
     (int)$service_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid service ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -76,6 +79,7 @@ $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 客服案件不存在
 if (!$service) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Service not found"
     ], JSON_UNESCAPED_UNICODE);

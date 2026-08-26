@@ -4,10 +4,12 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 檢查 refund_id
 if (!isset($_GET["refund_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Refund ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -23,6 +25,7 @@ if (
     floor((float)$refund_id) != (float)$refund_id ||
     (int)$refund_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid refund ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -74,6 +77,7 @@ $refund = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 退款不存在
 if (!$refund) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Refund not found"
     ], JSON_UNESCAPED_UNICODE);

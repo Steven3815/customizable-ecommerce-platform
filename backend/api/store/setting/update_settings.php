@@ -2,6 +2,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 $data = json_decode(
@@ -10,6 +11,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -29,7 +31,7 @@ try {
             $store_status !== "open" &&
             $store_status !== "closed"
         ) {
-            throw new Exception("Invalid store status");
+            throw new Exception("Invalid store status", 400);
         }
 
         $sql = "
@@ -54,7 +56,7 @@ try {
             $store_mode !== "shopping" &&
             $store_mode !== "showcase"
         ) {
-            throw new Exception("Invalid store mode");
+            throw new Exception("Invalid store mode", 400);
         }
 
         $sql = "
@@ -69,7 +71,7 @@ try {
         $current_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$current_setting) {
-            throw new Exception("Store setting not found");
+            throw new Exception("Store setting not found", 404);
         }
 
         $current_mode = $current_setting["store_mode"];
@@ -78,7 +80,7 @@ try {
             $current_mode === "shopping" &&
             $store_mode === "showcase"
         ) {
-            throw new Exception("Shopping mode cannot be changed to showcase mode");
+            throw new Exception("Shopping mode cannot be changed to showcase mode", 409);
         }
 
         $sql = "
@@ -98,7 +100,7 @@ try {
     if (isset($data["refund"])) {
 
         if (!is_array($data["refund"])) {
-            throw new Exception("Invalid refund settings");
+            throw new Exception("Invalid refund settings", 400);
         }
 
         if (isset($data["refund"]["enabled"])) {
@@ -106,7 +108,7 @@ try {
             $refund_enable = $data["refund"]["enabled"];
 
             if (!is_bool($refund_enable)) {
-                throw new Exception("Invalid refund enabled");
+                throw new Exception("Invalid refund enabled", 400);
             }
 
             $sql = "
@@ -132,7 +134,7 @@ try {
                     != (float)$days_limit ||
                 (int)$days_limit < 0
             ) {
-                throw new Exception("Invalid refund days limit");
+                throw new Exception("Invalid refund days limit", 400);
             }
 
             $sql = "
@@ -153,7 +155,7 @@ try {
     if (isset($data["shipping"])) {
 
         if (!is_array($data["shipping"])) {
-            throw new Exception("Invalid shipping settings");
+            throw new Exception("Invalid shipping settings", 400);
         }
 
         if (
@@ -168,7 +170,7 @@ try {
                     != (float)$shipping_days ||
                 (int)$shipping_days < 0
             ) {
-                throw new Exception("Invalid shipping days");
+                throw new Exception("Invalid shipping days", 400);
             }
 
             $sql = "
@@ -196,7 +198,7 @@ try {
                     != (float)$delivery_days ||
                 (int)$delivery_days < 0
             ) {
-                throw new Exception("Invalid delivery days");
+                throw new Exception("Invalid delivery days", 400);
             }
 
             $sql = "
@@ -217,7 +219,7 @@ try {
     if (isset($data["stock_alert"])) {
 
         if (!is_array($data["stock_alert"])) {
-            throw new Exception("Invalid stock alert settings");
+            throw new Exception("Invalid stock alert settings", 400);
         }
 
         // 是否啟用庫存預警
@@ -227,7 +229,7 @@ try {
                 $data["stock_alert"]["enabled"];
 
             if (!is_bool($stock_alert_enable)) {
-                throw new Exception("Invalid stock alert enabled");
+                throw new Exception("Invalid stock alert enabled", 400);
             }
 
             $sql = "
@@ -259,7 +261,7 @@ try {
                     (int)$threshold < 0
                 )
             ) {
-                throw new Exception("Invalid stock alert threshold");
+                throw new Exception("Invalid stock alert threshold", 400);
             }
 
             $sql = "
@@ -293,7 +295,7 @@ try {
                     (int)$spec_threshold < 0
                 )
             ) {
-                throw new Exception("Invalid spec stock alert threshold");
+                throw new Exception("Invalid spec stock alert threshold", 400);
             }
 
             $sql = "
@@ -316,7 +318,7 @@ try {
     if (isset($data["customer_service"])) {
 
         if (!is_array($data["customer_service"])) {
-            throw new Exception("Invalid customer service settings");
+            throw new Exception("Invalid customer service settings", 400);
         }
 
         if (isset($data["customer_service"]["enabled"])) {
@@ -324,7 +326,7 @@ try {
             $customer_service_enable = $data["customer_service"]["enabled"];
 
             if (!is_bool($customer_service_enable)) {
-                throw new Exception("Invalid customer service enabled");
+                throw new Exception("Invalid customer service enabled", 400);
             }
 
             $sql = "
@@ -345,20 +347,20 @@ try {
     if (isset($data["payment_methods"])) {
 
         if (!is_array($data["payment_methods"])) {
-            throw new Exception("Invalid payment methods");
+            throw new Exception("Invalid payment methods", 400);
         }
 
         foreach ($data["payment_methods"] as $payment) {
 
             if (!is_array($payment)) {
-                throw new Exception("Invalid payment method data");
+                throw new Exception("Invalid payment method data", 400);
             }
 
             if (
                 !isset($payment["store_payment_id"]) ||
                 !isset($payment["enabled"])
             ) {
-                throw new Exception("Payment method ID and enabled are required");
+                throw new Exception("Payment method ID and enabled are required", 400);
             }
 
             $store_payment_id = $payment["store_payment_id"];
@@ -371,13 +373,13 @@ try {
                 (int)$store_payment_id < 1 ||
                 (int)$store_payment_id > 5
             ) {
-                throw new Exception("Invalid payment method ID");
+                throw new Exception("Invalid payment method ID", 400);
             }
 
             $store_payment_id = (int)$store_payment_id;
 
             if (!is_bool($enabled)) {
-                throw new Exception("Invalid payment method enabled");
+                throw new Exception("Invalid payment method enabled", 400);
             }
 
             $payment_map = [
@@ -408,7 +410,7 @@ try {
             $payment_method = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$payment_method) {
-                throw new Exception("Payment method not found");
+                throw new Exception("Payment method not found", 404);
             }
 
             if (
@@ -444,7 +446,7 @@ try {
                 $bank_name === "" ||
                 $bank_number === ""
             ) {
-                throw new Exception("Bank name and bank number are required");
+                throw new Exception("Bank name and bank number are required", 400);
             }
 
             $sql = "
@@ -515,7 +517,7 @@ try {
                 $post_office_number = trim($payment["post_office_number"] ?? "");
 
                 if ($post_office_number === "") {
-                    throw new Exception("Post office number is required");
+                    throw new Exception("Post office number is required", 400);
                 }
 
                 $sql = "
@@ -582,7 +584,7 @@ try {
     if (isset($data["delivery_methods"])) {
 
         if (!is_array($data["delivery_methods"])) {
-            throw new Exception("Invalid delivery methods");
+            throw new Exception("Invalid delivery methods", 400);
         }
 
         $delivery_map = [
@@ -596,14 +598,14 @@ try {
         ) {
 
             if (!is_array($delivery)) {
-                throw new Exception("Invalid delivery method data");
+                throw new Exception("Invalid delivery method data", 400);
             }
 
             if (
                 !isset($delivery["store_delivery_id"]) ||
                 !isset($delivery["enabled"])
             ) {
-                throw new Exception("Delivery method ID and enabled are required");
+                throw new Exception("Delivery method ID and enabled are required", 400);
             }
 
             $store_delivery_id = $delivery["store_delivery_id"];
@@ -616,13 +618,13 @@ try {
                 (int)$store_delivery_id < 1 ||
                 (int)$store_delivery_id > 3
             ) {
-                throw new Exception("Invalid delivery method ID");
+                throw new Exception("Invalid delivery method ID", 400);
             }
 
             $store_delivery_id = (int)$store_delivery_id;
 
             if (!is_bool($enabled)) {
-                throw new Exception("Invalid delivery method enabled");
+                throw new Exception("Invalid delivery method enabled", 400);
             }
 
             $expected_delivery_method =
@@ -647,7 +649,7 @@ try {
             $delivery_method = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$delivery_method) {
-                throw new Exception("Delivery method not found");
+                throw new Exception("Delivery method not found", 404);
             }
 
             if (
@@ -688,6 +690,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

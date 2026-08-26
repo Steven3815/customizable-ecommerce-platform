@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 require_once "../../../../helpers/upload_image.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -27,6 +29,7 @@ if (
     !is_array($data["image_ids"]) ||
     count($data["image_ids"]) < 1
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Image IDs are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -42,6 +45,7 @@ foreach ($data["image_ids"] as $image_id) {
         !is_numeric($image_id) ||
         floor((float)$image_id) != (float)$image_id
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid image ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -52,6 +56,7 @@ foreach ($data["image_ids"] as $image_id) {
     $image_id = (int)$image_id;
 
     if ($image_id <= 0) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid image ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -60,6 +65,7 @@ foreach ($data["image_ids"] as $image_id) {
     }
 
     if (in_array($image_id, $validated_image_ids, true)) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Duplicate image ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -98,7 +104,7 @@ try {
         $image = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$image) {
-            throw new Exception("Slider image not found");
+            throw new Exception("Slider image not found", 404);
         }
 
         $deleted_image_urls[] = $image["image_url"];
@@ -213,6 +219,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

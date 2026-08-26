@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON 資料
@@ -13,6 +14,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON data"
     ], JSON_UNESCAPED_UNICODE);
@@ -22,6 +24,7 @@ if (!is_array($data)) {
 
 // 檢查必要欄位
 if (!isset($data["order_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -37,6 +40,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -68,6 +72,7 @@ $stmt->execute([
 $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -94,6 +99,7 @@ $stmt->execute([$order["store_id"]]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -103,6 +109,7 @@ if (!$store) {
 
 // 商店帳號停用
 if ($store["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -112,6 +119,7 @@ if ($store["store_status"] !== "active") {
 
 // 商店暫停營業
 if ($store["business_status"] !== "open") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently closed"
     ], JSON_UNESCAPED_UNICODE);
@@ -121,6 +129,7 @@ if ($store["business_status"] !== "open") {
 
 // 展示模式
 if ($store["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -130,6 +139,7 @@ if ($store["store_mode"] !== "shopping") {
 
 // 訂單只能在 pending 時修改
 if ($order["delivery_status"] !== "pending") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order cannot be updated after shipping"
     ], JSON_UNESCAPED_UNICODE);
@@ -144,6 +154,7 @@ if (
     !isset($data["receiver_address"]) ||
     !isset($data["delivery_method"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing order information"
     ], JSON_UNESCAPED_UNICODE);
@@ -162,6 +173,7 @@ if (
     $receiver_phone === "" ||
     $receiver_address === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Receiver information is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -171,6 +183,7 @@ if (
 
 // 檢查配送方式
 if ($delivery_method === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Delivery method is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -201,6 +214,7 @@ $stmt->execute([
 $delivery = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$delivery) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Selected delivery method is not available"
     ], JSON_UNESCAPED_UNICODE);

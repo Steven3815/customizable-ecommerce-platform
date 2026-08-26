@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 
@@ -14,6 +15,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     !isset($data["product_id"]) ||
     $data["product_id"] === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -40,6 +43,7 @@ if (
     !is_numeric($product_id) ||
     floor((float)$product_id) != (float)$product_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -50,6 +54,7 @@ if (
 $product_id = (int)$product_id;
 
 if ($product_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -62,6 +67,7 @@ if (
     !isset($data["image_ids"]) ||
     !is_array($data["image_ids"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Image IDs are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -98,9 +104,7 @@ try {
 
     if (!$product) {
 
-        throw new Exception(
-            "Product not found"
-        );
+        throw new Exception("Product not found", 404);
     }
 
     // 取得目前所有圖片
@@ -146,7 +150,7 @@ try {
     // 至少需要一張圖片
     if (count($image_ids) < 1) {
 
-        throw new Exception("At least one image is required");
+        throw new Exception("At least one image is required", 400);
     }
 
     // 圖片數量必須完全一致
@@ -155,7 +159,7 @@ try {
         !== count($existing_image_ids)
     ) {
 
-        throw new Exception("Image list is incomplete");
+        throw new Exception("Image list is incomplete", 400);
     }
 
     // 驗證 Image ID
@@ -168,13 +172,13 @@ try {
             floor((float)$image_id)
             != (float)$image_id
         ) {
-            throw new Exception("Invalid image ID");
+            throw new Exception("Invalid image ID", 400);
         }
 
         $image_id = (int)$image_id;
 
         if ($image_id <= 0) {
-            throw new Exception("Invalid image ID");
+            throw new Exception("Invalid image ID", 400);
         }
 
         // 防止重複圖片
@@ -185,7 +189,7 @@ try {
                 true
             )
         ) {
-            throw new Exception("Duplicate image ID");
+            throw new Exception("Duplicate image ID", 409);
         }
 
         $validated_image_ids[] = $image_id;
@@ -199,7 +203,7 @@ try {
 
         if (!isset($existing_lookup[$image_id])) {
 
-            throw new Exception("Image not found");
+            throw new Exception("Image not found", 404);
         }
     }
 
@@ -304,6 +308,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

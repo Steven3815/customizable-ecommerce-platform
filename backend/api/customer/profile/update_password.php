@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON 格式
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -26,6 +28,7 @@ if (
     !isset($data["current_password"]) ||
     !isset($data["new_password"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Current password and new password are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -38,6 +41,7 @@ $new_password = $data["new_password"];
 
 // 檢查目前密碼
 if ($current_password === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Current password is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -47,6 +51,7 @@ if ($current_password === "") {
 
 // 檢查新密碼
 if ($new_password === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "New password is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -56,6 +61,7 @@ if ($new_password === "") {
 
 // 新密碼至少 8 碼
 if (strlen($new_password) < 8) {
+    http_response_code(400);
     echo json_encode([
         "error" => "New password must be at least 8 characters"
     ], JSON_UNESCAPED_UNICODE);
@@ -78,6 +84,7 @@ $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到會員
 if (!$customer) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Customer not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -90,6 +97,7 @@ if (!password_verify(
     $current_password,
     $customer["password"]
 )) {
+    http_response_code(401);
     echo json_encode([
         "error" => "Current password is incorrect"
     ], JSON_UNESCAPED_UNICODE);
@@ -102,6 +110,7 @@ if (password_verify(
     $new_password,
     $customer["password"]
 )) {
+    http_response_code(409);
     echo json_encode([
         "error" => "New password must be different from current password"
     ], JSON_UNESCAPED_UNICODE);

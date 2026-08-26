@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../config/cors.php";
 require_once "../../config/database.php";
 
 session_start();
@@ -16,6 +17,7 @@ $data = json_decode(
 
 // 檢查 JSON 格式
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,6 +32,7 @@ if (
     !isset($data["password"])
 ) {
 
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID, email and password are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -45,6 +48,7 @@ $password = $data["password"];
 // 檢查 Store ID
 if ($store_id <= 0) {
 
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -54,6 +58,7 @@ if ($store_id <= 0) {
 
 // 檢查 Email
 if ($email === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Email is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -66,6 +71,7 @@ $email = strtolower($email);
 
 // 檢查 Email 格式
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid email format"
     ], JSON_UNESCAPED_UNICODE);
@@ -75,6 +81,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
 // 檢查密碼
 if ($password === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Password is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -104,6 +111,7 @@ $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Store 不存在
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -113,6 +121,7 @@ if (!$store) {
 
 // Store 帳號停用
 if ($store["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -122,6 +131,7 @@ if ($store["store_status"] !== "active") {
 
 // 展示模式禁止登入
 if ($store["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Login is unavailable in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -150,6 +160,7 @@ $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到會員
 if (!$customer) {
+    http_response_code(401);
     echo json_encode([
         "error" => "Invalid email or password"
     ], JSON_UNESCAPED_UNICODE);
@@ -162,6 +173,7 @@ if (!password_verify(
     $password,
     $customer["password"]
 )) {
+    http_response_code(401);
     echo json_encode([
         "error" => "Invalid email or password"
     ], JSON_UNESCAPED_UNICODE);

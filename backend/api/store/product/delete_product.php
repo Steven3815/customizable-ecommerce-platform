@@ -4,12 +4,14 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 取得 Product ID
 $product_id = $_POST["product_id"] ?? null;
 
 if ($product_id === null || $product_id === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -22,6 +24,7 @@ if (
     !is_numeric($product_id) ||
     floor((float)$product_id) != (float)$product_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -32,6 +35,7 @@ if (
 $product_id = (int)$product_id;
 
 if ($product_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -59,6 +63,7 @@ $stmt->execute([
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Product not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -68,6 +73,7 @@ if (!$product) {
 
 // 已刪除商品不能再次刪除
 if ($product["status"] === "deleted") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Product has already been deleted"
     ], JSON_UNESCAPED_UNICODE);
@@ -281,6 +287,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

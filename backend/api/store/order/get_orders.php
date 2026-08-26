@@ -3,10 +3,12 @@
 // Store 取得訂單列表
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 檢查 Store 是否啟用
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -79,6 +81,7 @@ if ($status === "pending") {
 
 } elseif ($status !== "all") {
 
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid delivery status"
     ], JSON_UNESCAPED_UNICODE);
@@ -136,6 +139,7 @@ if ($refund_status === "none") {
 
 } elseif ($refund_status !== "all") {
 
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid refund status"
     ], JSON_UNESCAPED_UNICODE);
@@ -164,6 +168,7 @@ if ($payment_confirm_status === "waiting") {
 
 } elseif ($payment_confirm_status !== "all") {
 
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid payment confirmation status"
     ], JSON_UNESCAPED_UNICODE);
@@ -192,6 +197,7 @@ switch ($sort) {
 
     default:
 
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid sort"
         ], JSON_UNESCAPED_UNICODE);

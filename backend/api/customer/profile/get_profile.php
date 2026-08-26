@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 查詢會員資料
@@ -28,6 +29,7 @@ try {
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode([
         "error" => "Failed to retrieve customer profile"
     ], JSON_UNESCAPED_UNICODE);
@@ -37,6 +39,7 @@ try {
 
 // 找不到會員
 if (!$customer) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Customer not found"
     ], JSON_UNESCAPED_UNICODE);

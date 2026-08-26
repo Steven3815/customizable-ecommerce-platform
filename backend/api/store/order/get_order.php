@@ -4,6 +4,7 @@
 // Store 取得單筆訂單詳細資料
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 檢查 Store 是否存在
@@ -21,6 +22,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,6 +32,7 @@ if (!$store) {
 
 // 檢查 Store 是否啟用
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -42,6 +45,7 @@ if (
     !isset($_GET["order_id"]) ||
     $_GET["order_id"] === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Order ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -57,6 +61,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -104,6 +109,7 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 如果訂單不存在，或不屬於目前 Store
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);

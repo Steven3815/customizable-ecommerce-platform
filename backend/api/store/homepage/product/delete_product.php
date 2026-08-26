@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 // 取得 JSON
 $data = json_decode(
@@ -13,6 +14,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -25,6 +27,7 @@ if (
     !isset($data["product_id"]) ||
     $data["product_id"] === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -40,6 +43,7 @@ if (
     floor((float)$product_id)
     != (float)$product_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -50,6 +54,7 @@ if (
 $product_id = (int)$product_id;
 
 if ($product_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -87,6 +92,7 @@ try {
 
         $pdo->rollBack();
 
+        http_response_code(404);
         echo json_encode([
             "error" => "Product not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -186,6 +192,7 @@ try {
         $pdo->rollBack();
     }
 
+    http_response_code(500);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

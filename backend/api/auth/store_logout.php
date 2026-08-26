@@ -4,6 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../config/cors.php";
+
 session_start();
 
 // 檢查是否為 Store
@@ -12,6 +14,7 @@ if (
     !isset($_SESSION["role"]) ||
     $_SESSION["role"] !== "store"
 ) {
+    http_response_code(401);
     echo json_encode([
         "error" => "Not logged in"
     ], JSON_UNESCAPED_UNICODE);

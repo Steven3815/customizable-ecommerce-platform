@@ -3,6 +3,7 @@
 // Store 更新訂單配送狀態
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 檢查 Store 是否存在
@@ -19,6 +20,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -28,6 +30,7 @@ if (!$store) {
 
 // 檢查 Store 是否啟用
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -42,6 +45,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON data"
     ], JSON_UNESCAPED_UNICODE);
@@ -54,6 +58,7 @@ if (
     !isset($data["order_id"]) ||
     !isset($data["delivery_status"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -70,6 +75,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -84,6 +90,7 @@ if (
     $delivery_status !== "shipping" &&
     $delivery_status !== "completed"
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid delivery status"
     ], JSON_UNESCAPED_UNICODE);
@@ -112,6 +119,7 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 找不到訂單或訂單不屬於這間 Store
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -129,6 +137,7 @@ if (
 
     $order["delivery_status"] === "completed"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Invalid delivery status transition"
     ], JSON_UNESCAPED_UNICODE);
@@ -159,6 +168,7 @@ $stmt->execute([
 
 // 確認是否真的更新成功
 if ($stmt->rowCount() !== 1) {
+    http_response_code(500);
     echo json_encode([
         "error" => "Failed to update order"
     ], JSON_UNESCAPED_UNICODE);

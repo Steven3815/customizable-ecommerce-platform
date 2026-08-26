@@ -4,7 +4,9 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../config/cors.php";
 require_once "../../config/database.php";
+
 
 // 取得 JSON
 $data = json_decode(
@@ -14,6 +16,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -28,6 +31,7 @@ if (
     !isset($data["email"]) ||
     !isset($data["password"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID, name, email and password are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -42,6 +46,7 @@ $password = $data["password"];
 
 // 檢查 Store ID
 if ($store_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -51,6 +56,7 @@ if ($store_id <= 0) {
 
 // 檢查姓名
 if ($name === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Name is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -60,6 +66,7 @@ if ($name === "") {
 
 // 檢查 Email
 if ($email === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Email is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -69,8 +76,9 @@ if ($email === "") {
 
 // 檢查 Email 格式
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
     echo json_encode([
-        "error" => "Please enter a valid email address"
+        "error" => "Email格式錯誤"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -81,6 +89,7 @@ $email = strtolower($email);
 
 // 檢查密碼
 if ($password === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Password is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -90,8 +99,9 @@ if ($password === "") {
 
 // 密碼至少 8 碼
 if (strlen($password) < 8) {
+    http_response_code(400);
     echo json_encode([
-        "error" => "Password must be at least 8 characters"
+        "error" => "密碼須至少8碼"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -114,17 +124,14 @@ WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-    $store_id
-]);
-
+$stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Store 不存在
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
-        "error" => "Store not found"
+        "error" => "商店不存在"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -132,6 +139,7 @@ if (!$store) {
 
 // Store 帳號停用
 if ($store["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -141,6 +149,7 @@ if ($store["store_status"] !== "active") {
 
 // 展示模式禁止註冊
 if ($store["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Registration is unavailable in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -165,6 +174,7 @@ $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 已經註冊
 if ($customer) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Email already registered",
         "action" => "login"
@@ -211,6 +221,7 @@ try {
 } catch (PDOException $e) {
     // 處理 Email UNIQUE 衝突
     if ($e->getCode() === "23000") {
+        http_response_code(409);
         echo json_encode([
             "error" => "Email already registered",
             "action" => "login"
@@ -218,6 +229,7 @@ try {
 
         exit;
     }
+    http_response_code(500);
     echo json_encode([
         "error" => "Registration failed"
     ], JSON_UNESCAPED_UNICODE);

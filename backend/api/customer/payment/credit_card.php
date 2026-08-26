@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -31,6 +33,7 @@ if (
     !isset($data["cvv"]) ||
     !isset($data["phone"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Order ID, store ID, transaction amount, card information and phone are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -53,6 +56,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -68,6 +72,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -82,6 +87,7 @@ if (
     !is_numeric($transaction_amount) ||
     (float)$transaction_amount <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid transaction amount"
     ], JSON_UNESCAPED_UNICODE);
@@ -102,6 +108,7 @@ if (!preg_match(
     '/^\d{13,19}$/',
     $card_number
 )) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid card number"
     ], JSON_UNESCAPED_UNICODE);
@@ -111,6 +118,7 @@ if (!preg_match(
 
 // 檢查有效期限
 if ($expiry_date === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Card expiry date is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -123,6 +131,7 @@ if (!preg_match(
     '/^\d{3}$/',
     $cvv
 )) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid CVV"
     ], JSON_UNESCAPED_UNICODE);
@@ -132,6 +141,7 @@ if (!preg_match(
 
 // 檢查手機
 if ($phone === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Phone number is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -177,6 +187,7 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 檢查訂單
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -210,6 +221,7 @@ $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Store 不存在
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -219,6 +231,7 @@ if (!$store) {
 
 // 商店帳號停用
 if ($store["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -228,6 +241,7 @@ if ($store["store_status"] !== "active") {
 
 // 商店暫停營業
 if ($store["business_status"] !== "open") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently closed"
     ], JSON_UNESCAPED_UNICODE);
@@ -237,6 +251,7 @@ if ($store["business_status"] !== "open") {
 
 // 展示模式
 if ($store["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -246,6 +261,7 @@ if ($store["store_mode"] !== "shopping") {
 
 // 檢查 Payment 是否已建立
 if (!$order["payment_id"]) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Payment has not been created"
     ], JSON_UNESCAPED_UNICODE);
@@ -255,6 +271,7 @@ if (!$order["payment_id"]) {
 
 // 檢查付款方式
 if ($order["payment_method"] !== "credit_card") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Payment method is not credit card"
     ], JSON_UNESCAPED_UNICODE);
@@ -267,6 +284,7 @@ if (
     $order["payment_status"] === "paid" &&
     $order["payment_confirm_status"] === "confirmed"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order has already been paid"
     ], JSON_UNESCAPED_UNICODE);
@@ -279,6 +297,7 @@ if (
     $order["payment_status"] !== "pending" ||
     $order["payment_confirm_status"] !== "waiting"
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Payment is not available for credit card payment"
     ], JSON_UNESCAPED_UNICODE);
@@ -292,6 +311,7 @@ $order_total = (float)$order["total_amount"];
 if (
     abs($transaction_amount - $order_total) > 0.01
 ) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Transaction amount does not match order total"
     ], JSON_UNESCAPED_UNICODE);
@@ -329,6 +349,7 @@ if (!$payment_success) {
         $store_id
     ]);
 
+    http_response_code(500);
     echo json_encode([
         "error" => "Payment failed"
     ], JSON_UNESCAPED_UNICODE);
@@ -371,6 +392,7 @@ try {
 
         $pdo->rollBack();
 
+        http_response_code(500);
         echo json_encode([
             "error" => "Payment status could not be updated"
         ], JSON_UNESCAPED_UNICODE);
@@ -386,6 +408,7 @@ try {
         $pdo->rollBack();
     }
 
+    http_response_code(500);
     echo json_encode([
         "error" => "Payment update failed"
     ], JSON_UNESCAPED_UNICODE);

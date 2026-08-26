@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 取得 JSON
@@ -14,6 +15,7 @@ $data = json_decode(
 
 // 檢查 JSON
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON format"
     ], JSON_UNESCAPED_UNICODE);
@@ -27,6 +29,7 @@ if (
     !isset($data["store_id"]) ||
     !isset($data["payment_method"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Order ID, store ID and payment method are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -45,6 +48,7 @@ if (
     floor((float)$order_id) != (float)$order_id ||
     (int)$order_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid order ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -60,6 +64,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -85,6 +90,7 @@ if (
         true
     )
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid payment method"
     ], JSON_UNESCAPED_UNICODE);
@@ -138,6 +144,7 @@ $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 訂單不存在
 if (!$order) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -150,6 +157,7 @@ if (
     $order["delivery_method"] === null ||
     trim($order["delivery_method"]) === ""
 ) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Order delivery method is not set"
     ], JSON_UNESCAPED_UNICODE);
@@ -182,6 +190,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -191,6 +200,7 @@ if (!$store) {
 
 // 商店帳號停用
 if ($store["store_status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -200,6 +210,7 @@ if ($store["store_status"] !== "active") {
 
 // 商店暫停營業
 if ($store["business_status"] !== "open") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently closed"
     ], JSON_UNESCAPED_UNICODE);
@@ -209,6 +220,7 @@ if ($store["business_status"] !== "open") {
 
 // 展示模式不能付款
 if ($store["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -220,6 +232,7 @@ $store_name = $store["store_name"];
 
 // 訂單只能在 pending 時進行付款設定
 if ($order["delivery_status"] !== "pending") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order cannot be paid after shipping"
     ], JSON_UNESCAPED_UNICODE);
@@ -250,6 +263,7 @@ $stmt->execute([
 $store_payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_payment) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Payment method is not available for this store"
     ], JSON_UNESCAPED_UNICODE);
@@ -258,6 +272,7 @@ if (!$store_payment) {
 }
 
 if ($store_payment["status"] !== "active") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Selected payment method is currently unavailable"
     ], JSON_UNESCAPED_UNICODE);
@@ -286,6 +301,7 @@ $stmt->execute([
 $store_delivery = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_delivery) {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order delivery method is no longer available"
     ], JSON_UNESCAPED_UNICODE);
@@ -294,6 +310,7 @@ if (!$store_delivery) {
 }
 
 if ($store_delivery["status"] !== "active") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Order delivery method is currently unavailable"
     ], JSON_UNESCAPED_UNICODE);
@@ -335,6 +352,7 @@ if ($existing_payment) {
         $existing_payment["payment_status"] === "paid" &&
         $existing_payment["payment_confirm_status"] === "confirmed"
     ) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Order has already been paid"
         ], JSON_UNESCAPED_UNICODE);
@@ -347,6 +365,7 @@ if ($existing_payment) {
         $existing_payment["payment_status"] === "processing" &&
         $existing_payment["payment_confirm_status"] === "waiting"
     ) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Payment is already waiting for store confirmation"
         ], JSON_UNESCAPED_UNICODE);
@@ -358,6 +377,7 @@ if ($existing_payment) {
     if (
         $existing_payment["payment_status"] !== "pending"
     ) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Payment cannot be modified in its current status"
         ], JSON_UNESCAPED_UNICODE);
@@ -369,6 +389,7 @@ if ($existing_payment) {
     if (
         $existing_payment["payment_confirm_status"] !== "waiting"
     ) {
+        http_response_code(409);
         echo json_encode([
             "error" => "Payment cannot be modified"
         ], JSON_UNESCAPED_UNICODE);
@@ -454,6 +475,7 @@ try {
 
             $pdo->rollBack();
 
+            http_response_code(500);
             echo json_encode([
                 "error" => "Payment could not be modified"
             ], JSON_UNESCAPED_UNICODE);
@@ -474,6 +496,7 @@ try {
         $pdo->rollBack();
     }
 
+    http_response_code(500);
     echo json_encode([
         "error" => "Payment creation failed"
     ], JSON_UNESCAPED_UNICODE);

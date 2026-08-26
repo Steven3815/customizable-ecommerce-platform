@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 // 取得 JSON
 $data = json_decode(
@@ -13,6 +14,7 @@ $data = json_decode(
 );
 
 if (!is_array($data)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid JSON"
     ], JSON_UNESCAPED_UNICODE);
@@ -25,6 +27,7 @@ if (
     !isset($data["category_id"]) ||
     $data["category_id"] === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Category ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -38,6 +41,7 @@ if (
     !is_numeric($category_id) ||
     floor((float)$category_id) != (float)$category_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid category ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -48,6 +52,7 @@ if (
 $category_id = (int)$category_id;
 
 if ($category_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid category ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -60,6 +65,7 @@ if (
     !isset($data["product_ids"]) ||
     !is_array($data["product_ids"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product IDs are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -92,7 +98,7 @@ try {
 
     if (!$stmt->fetch()) {
 
-        throw new Exception("Category not found");
+        throw new Exception("Category not found", 404);
     }
 
     // 取得目前所有 active 商品
@@ -137,7 +143,7 @@ try {
 
     // 至少需要一個商品
     if (count($product_ids) < 1) {
-        throw new Exception("At least one product is required");
+        throw new Exception("At least one product is required", 400);
     }
 
     // 商品數量必須完全一致
@@ -145,7 +151,7 @@ try {
         count($product_ids)
         !== count($existing_product_ids)
     ) {
-        throw new Exception("Product list is incomplete");
+        throw new Exception("Product list is incomplete", 400);
     }
 
     // 驗證 Product ID
@@ -158,13 +164,13 @@ try {
             floor((float)$product_id)
             != (float)$product_id
         ) {
-            throw new Exception("Invalid product ID");
+            throw new Exception("Invalid product ID", 400);
         }
 
         $product_id = (int)$product_id;
 
         if ($product_id <= 0) {
-            throw new Exception("Invalid product ID");
+            throw new Exception("Invalid product ID", 400);
         }
 
         // 防止重複商品
@@ -175,7 +181,7 @@ try {
                 true
             )
         ) {
-            throw new Exception("Duplicate product ID");
+            throw new Exception("Duplicate product ID", 409);
         }
 
         $validated_product_ids[] =
@@ -190,7 +196,7 @@ try {
 
         if (!isset($existing_lookup[$product_id])) {
 
-            throw new Exception("Product not found");
+            throw new Exception("Product not found", 404);
         }
     }
 
@@ -297,6 +303,11 @@ try {
         $pdo->rollBack();
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../config/cors.php";
 require_once "../../config/database.php";
 
 session_start();
@@ -20,6 +21,7 @@ if (
 
     // 檢查 Customer ID
     if ($customer_id <= 0) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid customer ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -39,6 +41,7 @@ if (
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$customer) {
+        http_response_code(404);
         echo json_encode([
             "error" => "Customer not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -57,6 +60,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -81,6 +85,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -89,6 +94,7 @@ if (!$store) {
 
 // 檢查 Store 是否啟用
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -109,6 +115,7 @@ $stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -129,6 +136,7 @@ $stmt->execute([$store_id]);
 $website_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$website_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Website setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -209,6 +217,7 @@ $stmt->execute([$store_id]);
 $homepage_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$homepage_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Homepage product setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -345,6 +354,7 @@ $stmt->execute([$store_id]);
 $footer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$footer) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Footer setting not found"
     ], JSON_UNESCAPED_UNICODE);

@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 require_once "../../../../helpers/upload_image.php";
 
 // 取得 Banner 標題
@@ -17,6 +18,7 @@ if ($title === "") {
 
 // 有標題時最多 20 字
 if ($title !== null && mb_strlen($title) > 20) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Title is too long"
     ], JSON_UNESCAPED_UNICODE);
@@ -29,6 +31,7 @@ $description = trim($_POST["description"] ?? "");
 
 // 描述最多 80 字
 if (mb_strlen($description) > 80) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Description is too long"
     ], JSON_UNESCAPED_UNICODE);
@@ -56,6 +59,7 @@ if (
     ($has_default_banner && $has_upload_image) ||
     (!$has_default_banner && !$has_upload_image)
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" =>
             "Please select either a default banner or upload an image"
@@ -85,7 +89,7 @@ try {
     $stmt->execute([$store_id]);
 
     if ($stmt->fetch()) {
-        throw new Exception("Banner already exists");
+        throw new Exception("Banner already exists", 409);
     }
 
     // 使用預設 Banner
@@ -97,13 +101,13 @@ try {
             floor((float)$default_banner_id)
             != (float)$default_banner_id
         ) {
-            throw new Exception("Invalid default banner ID");
+            throw new Exception("Invalid default banner ID", 400);
         }
 
         $default_banner_id = (int)$default_banner_id;
 
         if ($default_banner_id <= 0) {
-            throw new Exception("Invalid default banner ID");
+            throw new Exception("Invalid default banner ID", 400);
         }
 
         // 取得預設圖片
@@ -120,7 +124,7 @@ try {
         $default_banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$default_banner) {
-            throw new Exception("Default banner not found");
+            throw new Exception("Default banner not found", 404);
         }
 
         // 使用預設 Banner 的圖片
@@ -205,6 +209,11 @@ try {
         deleteImage($uploaded_image_url);
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

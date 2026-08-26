@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 取得頁數與狀態篩選
@@ -16,6 +17,7 @@ if (
     floor((float)$page) != (float)$page ||
     (int)$page <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid page"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,6 +32,7 @@ if (
     $status !== "pending" &&
     $status !== "resolved"
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid status"
     ], JSON_UNESCAPED_UNICODE);

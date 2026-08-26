@@ -4,10 +4,12 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
 // 檢查 Store ID
 if (!isset($_GET["store_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Store ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -17,6 +19,7 @@ if (!isset($_GET["store_id"])) {
 
 // 檢查 Service ID
 if (!isset($_GET["service_id"])) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Service ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -33,6 +36,7 @@ if (
     floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid store ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -48,6 +52,7 @@ if (
     floor((float)$service_id) != (float)$service_id ||
     (int)$service_id <= 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid service ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -72,6 +77,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -81,6 +87,7 @@ if (!$store) {
 
 // 檢查 Store 是否啟用
 if ($store["status"] !== "active") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is inactive"
     ], JSON_UNESCAPED_UNICODE);
@@ -102,6 +109,7 @@ $stmt->execute([$store_id]);
 $store_setting = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store_setting) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -111,6 +119,7 @@ if (!$store_setting) {
 
 // 展示模式不可使用客服
 if ($store_setting["store_mode"] !== "shopping") {
+    http_response_code(403);
     echo json_encode([
         "error" => "Store is currently in showcase mode"
     ], JSON_UNESCAPED_UNICODE);
@@ -120,6 +129,7 @@ if ($store_setting["store_mode"] !== "shopping") {
 
 // 客服功能未開啟
 if ((int)$store_setting["customer_service_enable"] !== 1) {
+    http_response_code(403);
     echo json_encode([
         "error" => "Customer service is currently unavailable"
     ], JSON_UNESCAPED_UNICODE);
@@ -177,6 +187,7 @@ $stmt->execute([
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$service) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Service not found"
     ], JSON_UNESCAPED_UNICODE);

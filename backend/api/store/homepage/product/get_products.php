@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 $has_category_id =
     isset($_GET["category_id"]) &&
@@ -19,6 +20,7 @@ if ($has_category_id) {
         floor((float)$category_id)
         != (float)$category_id
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -29,6 +31,7 @@ if ($has_category_id) {
     $category_id = (int)$category_id;
 
     if ($category_id <= 0) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid category ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -100,6 +103,7 @@ try {
 
     if (!$category) {
 
+        http_response_code(404);
         echo json_encode([
             "error" => "Category not found"
         ], JSON_UNESCAPED_UNICODE);
@@ -161,6 +165,7 @@ try {
 
 } catch (Exception $e) {
 
+    http_response_code(500);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

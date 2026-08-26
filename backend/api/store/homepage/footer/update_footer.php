@@ -4,7 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../middleware/store_auth.php";
+require_once "../../../../config/cors.php";
+require_once "../../../../middleware/store_auth.php";
 
 
 // 檢查必要欄位
@@ -18,6 +19,7 @@ if (
     !isset($_POST["service_phone"]) ||
     !isset($_POST["service_phone_enable"])
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -47,6 +49,7 @@ $enable_fields = [
 
 foreach ($enable_fields as $field => $value) {
     if ($value !== 0 && $value !== 1) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid " . $field
         ], JSON_UNESCAPED_UNICODE);
@@ -57,6 +60,7 @@ foreach ($enable_fields as $field => $value) {
 
 // 檢查 Email
 if ($email !== "" && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid email"
     ], JSON_UNESCAPED_UNICODE);
@@ -77,6 +81,7 @@ $stmt->execute([$store_id]);
 $footer = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$footer) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Footer setting not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -115,6 +120,7 @@ try {
     ]);
 
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode([
         "error" => "Failed to update footer settings"
     ], JSON_UNESCAPED_UNICODE);

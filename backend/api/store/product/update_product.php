@@ -4,6 +4,7 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
 // 檢查 product_id
@@ -13,6 +14,7 @@ if (
     $product_id === null ||
     $product_id === ""
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -24,6 +26,7 @@ if (
     !is_numeric($product_id) ||
     floor((float)$product_id) != (float)$product_id
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -34,6 +37,7 @@ if (
 $product_id = (int)$product_id;
 
 if ($product_id <= 0) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -67,6 +71,7 @@ $stmt->execute([
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Product not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -76,6 +81,7 @@ if (!$product) {
 
 // deleted 商品禁止更新
 if ($product["status"] === "deleted") {
+    http_response_code(409);
     echo json_encode([
         "error" => "Deleted product cannot be updated"
     ], JSON_UNESCAPED_UNICODE);
@@ -99,6 +105,7 @@ $spec_name = trim($_POST["spec_name"] ?? "");
 
 // 檢查商品名稱
 if ($product_name === "") {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product name is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -107,6 +114,7 @@ if ($product_name === "") {
 }
 
 if (mb_strlen($product_name) > 200) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Product name is too long"
     ], JSON_UNESCAPED_UNICODE);
@@ -121,6 +129,7 @@ if (
     !is_numeric($price) ||
     (float)$price < 0
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid price"
     ], JSON_UNESCAPED_UNICODE);
@@ -135,6 +144,7 @@ if (
     $has_spec !== 0 &&
     $has_spec !== 1
 ) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid has_spec"
     ], JSON_UNESCAPED_UNICODE);
@@ -149,6 +159,7 @@ $allowed_status = [
 ];
 
 if (!in_array($status, $allowed_status, true)) {
+    http_response_code(400);
     echo json_encode([
         "error" => "Invalid product status"
     ], JSON_UNESCAPED_UNICODE);
@@ -160,6 +171,7 @@ if (!in_array($status, $allowed_status, true)) {
 if ($has_spec === 1) {
 
     if ($spec_name === "") {
+        http_response_code(400);
         echo json_encode([
             "error" => "Specification name is required"
         ], JSON_UNESCAPED_UNICODE);
@@ -168,6 +180,7 @@ if ($has_spec === 1) {
     }
 
     if (mb_strlen($spec_name) > 100) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Specification name is too long"
         ], JSON_UNESCAPED_UNICODE);
@@ -190,6 +203,7 @@ if ($has_spec === 1) {
         !isset($_POST["specs"]) ||
         !is_array($_POST["specs"])
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Specifications are required"
         ], JSON_UNESCAPED_UNICODE);
@@ -201,6 +215,7 @@ if ($has_spec === 1) {
 
     // 至少一個規格
     if (count($specs) < 1) {
+        http_response_code(400);
         echo json_encode([
             "error" => "At least one specification is required"
         ], JSON_UNESCAPED_UNICODE);
@@ -210,6 +225,7 @@ if ($has_spec === 1) {
 
     // 最多 10 個規格
     if (count($specs) > 10) {
+        http_response_code(400);
         echo json_encode([
             "error" => "A product can have at most 10 specifications"
         ], JSON_UNESCAPED_UNICODE);
@@ -222,6 +238,7 @@ if ($has_spec === 1) {
     foreach ($specs as $index => $spec) {
 
         if (!is_array($spec)) {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Invalid specification data"
             ], JSON_UNESCAPED_UNICODE);
@@ -244,6 +261,7 @@ if ($has_spec === 1) {
                 !is_numeric($spec_id) ||
                 floor((float)$spec_id) != (float)$spec_id
             ) {
+                http_response_code(400);
                 echo json_encode([
                     "error" => "Invalid specification ID"
                 ], JSON_UNESCAPED_UNICODE);
@@ -254,6 +272,7 @@ if ($has_spec === 1) {
             $spec_id = (int)$spec_id;
 
             if ($spec_id <= 0) {
+                http_response_code(400);
                 echo json_encode([
                     "error" => "Invalid specification ID"
                 ], JSON_UNESCAPED_UNICODE);
@@ -268,6 +287,7 @@ if ($has_spec === 1) {
                     true
                 )
             ) {
+                http_response_code(409);
                 echo json_encode([
                     "error" => "Duplicate specification ID"
                 ], JSON_UNESCAPED_UNICODE);
@@ -282,6 +302,7 @@ if ($has_spec === 1) {
         $spec_value = trim($spec["spec_name"] ?? "");
 
         if ($spec_value === "") {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Specification value is required"
             ], JSON_UNESCAPED_UNICODE);
@@ -290,6 +311,7 @@ if ($has_spec === 1) {
         }
 
         if (mb_strlen($spec_value) > 100) {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Specification value is too long"
             ], JSON_UNESCAPED_UNICODE);
@@ -307,6 +329,7 @@ if ($has_spec === 1) {
             (float)$spec_stock < 0 ||
             floor((float)$spec_stock) != (float)$spec_stock
         ) {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Invalid specification stock"
             ], JSON_UNESCAPED_UNICODE);
@@ -326,6 +349,7 @@ if ($has_spec === 1) {
                 true
             )
         ) {
+            http_response_code(400);
             echo json_encode([
                 "error" => "Invalid specification status"
             ], JSON_UNESCAPED_UNICODE);
@@ -357,6 +381,7 @@ if ($has_spec === 0) {
         (float)$stock < 0 ||
         floor((float)$stock) != (float)$stock
     ) {
+        http_response_code(400);
         echo json_encode([
             "error" => "Invalid stock"
         ], JSON_UNESCAPED_UNICODE);
@@ -452,9 +477,7 @@ try {
                         true
                     )
                 ) {
-                    throw new Exception(
-                        "Invalid specification ID"
-                    );
+                    throw new Exception("Invalid specification ID", 400);
                 }
 
                 $submitted_spec_ids[] = $spec["spec_id"];
@@ -505,7 +528,7 @@ try {
                 $existing_spec = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($existing_spec) {
-                    throw new Exception("Specification already exists. Please use the existing specification ID.");
+                    throw new Exception("Specification already exists. Please use the existing specification ID.", 409);
                 }
 
                 // 新增規格
@@ -700,7 +723,7 @@ try {
         ) {
 
             if (!is_array($image_order)) {
-                throw new Exception("Invalid image order data");
+                throw new Exception("Invalid image order data", 400);
             }
 
             $image_id = $image_order["image_id"] ?? null;
@@ -711,7 +734,7 @@ try {
                 !is_numeric($image_id) ||
                 floor((float)$image_id) != (float)$image_id
             ) {
-                throw new Exception("Invalid image ID");
+                throw new Exception("Invalid image ID", 400);
             }
 
             if (
@@ -720,7 +743,7 @@ try {
                 floor((float)$sort_order) != (float)$sort_order ||
                 (int)$sort_order < 1
             ) {
-                throw new Exception("Invalid image sort order");
+                throw new Exception("Invalid image sort order", 400);
             }
 
             $image_id = (int)$image_id;
@@ -755,7 +778,7 @@ try {
             ]);
 
             if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
-                throw new Exception("Image does not belong to this product");
+                throw new Exception("Image does not belong to this product", 400);
             }
 
             // 更新圖片排序
@@ -867,6 +890,11 @@ try {
         }
     }
 
+    $status_code = $e->getCode();
+    if ($status_code < 400 || $status_code > 599) {
+        $status_code = 500;
+    }
+    http_response_code($status_code);
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
@@ -908,6 +936,7 @@ try {
     $updated_product =$stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$updated_product) {
+        http_response_code(500);
         echo json_encode([
             "error" => "Product updated, but failed to retrieve product"
         ], JSON_UNESCAPED_UNICODE);
@@ -1013,6 +1042,7 @@ try {
 
 } catch (Exception $e) {
 
+    http_response_code(500);
     echo json_encode([
         "error" => "Product updated successfully, but failed to retrieve updated data",
         "detail" => $e->getMessage()
