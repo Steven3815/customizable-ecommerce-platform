@@ -35,7 +35,7 @@ $password = $data["password"];
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Please enter a valid email address"
+        "error" => "Email格式錯誤"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -48,7 +48,7 @@ $email = strtolower($email);
 if ($password === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Password is required"
+        "error" => "密碼為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -78,7 +78,7 @@ $store = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$store) {
     http_response_code(401);
     echo json_encode([
-        "error" => "Invalid email or password"
+        "error" => "Email 帳號或密碼錯誤"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -88,7 +88,7 @@ if (!$store) {
 if ($store["status"] !== "active") {
     http_response_code(403);
     echo json_encode([
-        "error" => "Store account is inactive"
+        "error" => "商家帳號目前已停用"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -98,7 +98,24 @@ if ($store["status"] !== "active") {
 if (!password_verify($password, $store["password"])) {
     http_response_code(401);
     echo json_encode([
-        "error" => "Invalid email or password"
+        "error" => "Email 帳號或密碼錯誤"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 檢查目前已登入自己或其他商家
+if (isset($_SESSION["store_id"])) {
+
+    if ($_SESSION["store_id"] == (int)$store["store_id"]) {
+        $error = "您已登入";
+    } else {
+        $error = "請先登出目前帳號";
+    }
+
+    http_response_code(409);
+    echo json_encode([
+        "error" => $error
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -113,7 +130,7 @@ $_SESSION["role"] = "store";
 
 // 登入成功
 echo json_encode([
-    "message" => "Store login successful",
+    "message" => "商家登入成功",
 
     "store" => [
         "store_id" => (int)$store["store_id"],

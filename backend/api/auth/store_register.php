@@ -17,7 +17,7 @@ $data = json_decode(
 if (!is_array($data)) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Invalid JSON format"
+        "error" => "JSON 格式錯誤"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -53,7 +53,7 @@ $store_mode = trim($data["store_mode"]);
 if ($store_name === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Store name is required"
+        "error" => "商店名稱為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -63,7 +63,7 @@ if ($store_name === "") {
 if ($owner_name === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Owner name is required"
+        "error" => "負責人姓名為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -73,7 +73,7 @@ if ($owner_name === "") {
 if ($email === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Email is required"
+        "error" => "Email為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -86,7 +86,7 @@ $email = strtolower($email);
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Invalid email format"
+        "error" => "Email格式錯誤"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -96,7 +96,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 if ($password === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Password is required"
+        "error" => "密碼為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -106,7 +106,7 @@ if ($password === "") {
 if (strlen($password) < 8) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Password must be at least 8 characters"
+        "error" => "密碼須至少 8 碼"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -116,7 +116,7 @@ if (strlen($password) < 8) {
 if ($phone === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Phone is required"
+        "error" => "電話為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -130,7 +130,7 @@ if (
 
     http_response_code(400);
     echo json_encode([
-        "error" => "Invalid store mode"
+        "error" => "商店模式無效"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -151,7 +151,7 @@ $store = $stmt->fetch(PDO::FETCH_ASSOC);
 if ($store) {
     http_response_code(409);
     echo json_encode([
-        "error" => "Email already registered",
+        "error" => "Email 已註冊",
         "action" => "login"
     ], JSON_UNESCAPED_UNICODE);
 
@@ -309,7 +309,7 @@ try {
 
     // 回傳
     echo json_encode([
-        "message" => "Store registration successful",
+        "message" => "商家註冊成功",
         "action" => "login",
         "store" => [
             "store_id" => $store_id,
@@ -330,7 +330,7 @@ try {
     }
     http_response_code(500);
     echo json_encode([
-        "error" => "Store registration failed"
+        "error" => "商家註冊失敗"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

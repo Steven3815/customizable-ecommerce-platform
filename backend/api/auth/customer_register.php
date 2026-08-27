@@ -18,7 +18,7 @@ $data = json_decode(
 if (!is_array($data)) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Invalid JSON"
+        "error" => "JSON 格式錯誤"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -33,7 +33,7 @@ if (
 ) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Store ID, name, email and password are required"
+        "error" => "商店 ID、姓名、Email 和密碼為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -48,7 +48,7 @@ $password = $data["password"];
 if ($store_id <= 0) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Invalid store ID"
+        "error" => "商店 ID 無效"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -58,7 +58,7 @@ if ($store_id <= 0) {
 if ($name === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Name is required"
+        "error" => "姓名為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -68,7 +68,7 @@ if ($name === "") {
 if ($email === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Email is required"
+        "error" => "Email 為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -91,7 +91,7 @@ $email = strtolower($email);
 if ($password === "") {
     http_response_code(400);
     echo json_encode([
-        "error" => "Password is required"
+        "error" => "密碼為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -112,14 +112,8 @@ $sql = "
 SELECT
     s.store_id,
     s.store_name,
-    s.status AS store_status,
-    ss.store_mode
-
+    s.status AS store_status
 FROM STORE s
-
-INNER JOIN STORE_SETTING ss
-    ON s.store_id = ss.store_id
-
 WHERE s.store_id = ?
 ";
 
@@ -141,17 +135,7 @@ if (!$store) {
 if ($store["store_status"] !== "active") {
     http_response_code(403);
     echo json_encode([
-        "error" => "Store is inactive"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 展示模式禁止註冊
-if ($store["store_mode"] !== "shopping") {
-    http_response_code(403);
-    echo json_encode([
-        "error" => "Registration is unavailable in showcase mode"
+        "error" => "商店已停用"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -176,7 +160,7 @@ $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 if ($customer) {
     http_response_code(409);
     echo json_encode([
-        "error" => "Email already registered",
+        "error" => "Email已註冊",
         "action" => "login"
     ], JSON_UNESCAPED_UNICODE);
 
@@ -223,7 +207,7 @@ try {
     if ($e->getCode() === "23000") {
         http_response_code(409);
         echo json_encode([
-            "error" => "Email already registered",
+            "error" => "Email已註冊",
             "action" => "login"
         ], JSON_UNESCAPED_UNICODE);
 
@@ -231,7 +215,7 @@ try {
     }
     http_response_code(500);
     echo json_encode([
-        "error" => "Registration failed"
+        "error" => "註冊失敗"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
