@@ -6,7 +6,7 @@ import StoreRegister from '../views/auth/StoreRegister.vue'
 // 暫時加logout
 import CustomerLogout from '../views/auth/CustomerLogout.vue'
 import StoreLogout from '../views/auth/StoreLogout.vue'
-
+import Home from '../views/Home.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,12 +53,17 @@ const router = createRouter({
       path: '/store-:storeId/admin/logout',
       name: 'StoreLogout',
       component: StoreLogout
-    }
+    },
     /*{ 後臺主頁
       path: '/store-1/admin',
       name: '',
       component: 
     },*/
+    {
+      path: '/test',
+      name: 'Test',
+      component: Home
+    }
   ]
 })
 
