@@ -6,7 +6,8 @@ import StoreRegister from '../views/auth/StoreRegister.vue'
 // 暫時加logout
 import CustomerLogout from '../views/auth/CustomerLogout.vue'
 import StoreLogout from '../views/auth/StoreLogout.vue'
-import Home from '../views/Home.vue'
+
+import Home from '../views/customer/Home.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,8 +61,8 @@ const router = createRouter({
       component: 
     },*/
     {
-      path: '/test',
-      name: 'Test',
+      path: '/store-:storeId',
+      name: 'Home',
       component: Home
     }
   ]

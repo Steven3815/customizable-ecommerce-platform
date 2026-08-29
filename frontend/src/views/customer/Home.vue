@@ -12,7 +12,6 @@
 
         <div class="row">
           <div class="col-md-12">
-
             <div class="section-header d-flex flex-wrap justify-content-between my-5">
 
               <h2 class="section-title">
@@ -44,25 +43,19 @@
                   </button>
 
                 </div>
-
               </div>
-
             </div>
-
           </div>
         </div>
 
 
         <div class="row">
           <div class="col-md-12">
-
             <div
               ref="swiperElement"
               class="products-carousel swiper"
             >
-
               <div class="swiper-wrapper">
-
                 <ProductCard
                   v-for="product in products"
                   :key="product.productId"
@@ -71,38 +64,41 @@
                   :image="product.image"
                   :price="product.price"
                 />
-
               </div>
-
             </div>
-
           </div>
         </div>
 
       </div>
     </section>
+    <Footer />
   </div>
-  <Footer />
 </template>
 
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import Swiper from 'swiper'
 
-import CartOffcanvas from '../components/homepage/CartOffcanvas.vue'
-import ProductCard from '../components/homepage/ProductCard.vue'
-import IconSymbols from '../components/homepage/IconSymbols.vue'
-import Header from '../components/homepage/Header.vue'
-import Banner from '../components/homepage/Banner.vue'
-import Slider from '../components/homepage/Slider.vue'
-import SearchOffcanvas from '../components/homepage/SearchOffcanvas.vue'
-import Navbar from '../components/homepage/Navbar.vue'
-import Footer from '../components/homepage/Footer.vue'
+import { getStore } from '../../api/store.js'
+
+import CartOffcanvas from '../../components/homepage/CartOffcanvas.vue'
+import ProductCard from '../../components/homepage/ProductCard.vue'
+import IconSymbols from '../../components/homepage/IconSymbols.vue'
+import Header from '../../components/homepage/Header.vue'
+import Banner from '../../components/homepage/Banner.vue'
+import Slider from '../../components/homepage/Slider.vue'
+import SearchOffcanvas from '../../components/homepage/SearchOffcanvas.vue'
+import Navbar from '../../components/homepage/StoreNavbar.vue'
+import Footer from '../../components/homepage/Footer.vue'
 
 const swiperElement = ref(null)
 const swiper = ref(null)
 
+const route = useRoute()
+
+const store = ref(null)
 
 // 模擬 Store 尚未設定商品圖片
 const products = [
@@ -145,7 +141,18 @@ const products = [
 ]
 
 
-onMounted(() => {
+onMounted(async() => {
+  
+  const storeId = route.params.storeId
+
+  try {
+    store.value = await getStore(storeId)
+
+    console.log('Store:', store.value)
+
+  } catch (error) {
+    console.error('取得商店資料失敗:', error)
+  }
 
   swiper.value = new Swiper(swiperElement.value, {
 

@@ -37,10 +37,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import {
-    customerLogin,
-    getStore
-} from '../../api/auth.js'
+import { customerLogin } from '../../api/auth.js'
+import { getStore } from '../../api/store.js'
 
 const email = ref('')
 const password = ref('')
