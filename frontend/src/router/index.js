@@ -3,6 +3,7 @@ import CustomerLogin from '../views/auth/CustomerLogin.vue'
 import CustomerRegister from '../views/auth/CustomerRegister.vue'
 import StoreLogin from '../views/auth/StoreLogin.vue'
 import StoreRegister from '../views/auth/StoreRegister.vue'
+import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 // 暫時加logout
 import CustomerLogout from '../views/auth/CustomerLogout.vue'
 import StoreLogout from '../views/auth/StoreLogout.vue'
@@ -64,6 +65,11 @@ const router = createRouter({
       path: '/store-:storeId',
       name: 'Home',
       component: Home
+    },
+    {
+      path: '/store-:storeId/admin/dashboard',
+      name: 'StoreDashboard',
+      component: StoreDashboard
     }
   ]
 })
