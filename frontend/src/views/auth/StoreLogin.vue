@@ -62,7 +62,7 @@
 
                   <!-- Error -->
                   <CCol v-if="error" :xs="12">
-                    <p class="text-danger mb-0">
+                    <p class="text-error mb-0">
                       {{ error }}
                     </p>
                   </CCol>
@@ -138,7 +138,7 @@ async function login() {
 :deep(.form-control) {
     font-size: 14px;
 }
-.text-danger{
-    color: rgb(255, 73, 73) !important;
+.text-error{
+    color: rgb(255, 73, 73);
 }
 </style>

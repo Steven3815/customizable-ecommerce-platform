@@ -214,7 +214,7 @@ async function register() {
 
                     <div
                       v-if="confirmSuccess === false"
-                      class="text-danger small mt-1"
+                      class="text-error small mt-1"
                     >
                       密碼輸入不一致
                     </div>
@@ -270,7 +270,7 @@ async function register() {
                     v-if="error"
                     :xs="12"
                   >
-                    <div class="text-danger">
+                    <div class="text-error">
                       {{ error }}
                     </div>
                   </CCol>
@@ -345,7 +345,7 @@ async function register() {
     font-size: 14px;
 }
 
-.text-danger{
-    color: rgb(255, 73, 73) !important;
+.text-error{
+    color: rgb(255, 73, 73);
 }
 </style>
