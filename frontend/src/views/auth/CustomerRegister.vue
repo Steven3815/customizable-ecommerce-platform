@@ -40,11 +40,6 @@
     </div>
   </div>
   
-  <div v-else-if="storeError">
-    <p>{{ storeError }}</p>
-     <router-link to="/">前往首頁</router-link>
-  </div>
-  
   <div v-else>
     <p>載入商店資料中...</p>
   </div>
@@ -53,9 +48,9 @@
 <script setup>
 
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
-import { customerLogin } from '../../api/auth.js'
+import { customerRegister } from '../../api/auth.js'
 import { getStore } from '../../api/store.js'
 
 const name = ref('')
@@ -66,8 +61,8 @@ const confirmSuccess = ref(null)
 const success = ref('')
 const error = ref('')
 const store = ref(null)
-const storeError = ref('')
 const route = useRoute()
+const router = useRouter()
 const storeId = route.params.storeId
 
 
@@ -76,7 +71,8 @@ onMounted(async () => {
         const data = await getStore(storeId)
         store.value = data.store
     } catch (e) {
-        storeError.value = e.message
+        console.error('取得商店資料失敗:', e)
+        router.push('/404')
     }
 })
 

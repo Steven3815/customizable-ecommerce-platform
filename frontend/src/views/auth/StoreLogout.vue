@@ -19,7 +19,7 @@ async function logout() {
         router.push(`/store`)
 
     } catch (error) {
-        console.error(error)
+        console.error('登出失敗', error)
     }
 }
 </script>

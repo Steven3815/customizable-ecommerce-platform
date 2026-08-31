@@ -22,7 +22,7 @@ async function logout() {
         router.push(`/store-${storeId}`)
 
     } catch (error) {
-        console.error(error)
+        console.error('登出失敗:', error)
     }
 }
 </script>

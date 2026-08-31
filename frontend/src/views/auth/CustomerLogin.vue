@@ -20,13 +20,9 @@
         <p v-if="error">{{ error }}</p>
     </form>
 
-    <router-link to="`/store-${storeId}/register`">還沒有帳號？點此註冊</router-link>
+    <router-link :to="`/store-${storeId}/register`">還沒有帳號？點此註冊</router-link>
   </div>
 
-  <div v-else-if="storeError">
-    <p> {{ storeError }}</p>
-  </div>
-  
   <div v-else>
     <p>載入商店資料中...</p>
   </div>
@@ -44,7 +40,6 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const store = ref(null)
-const storeError = ref('')
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +50,8 @@ onMounted(async () => {
         const data = await getStore(storeId)
         store.value = data.store
     } catch (e) {
-        storeError.value = e.message
+        console.error('取得商店資料失敗:', e)
+        router.push('/404')
     }
 })
 
