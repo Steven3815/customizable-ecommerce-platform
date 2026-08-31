@@ -47,7 +47,7 @@
                         required
                       />
 
-                      <CInputGroupText>
+                      <CInputGroupText class="password-eye">
                         <CButton
                           type="button"
                           color="link"
@@ -135,6 +135,21 @@ async function login() {
 </script>
 
 <style scoped>
+.password-eye .btn {
+    color: #6c757d !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.password-eye .btn:hover,
+.password-eye .btn:focus,
+.password-eye .btn:active {
+    color: #222 !important;
+}
+
 :deep(.form-control) {
     font-size: 14px;
 }

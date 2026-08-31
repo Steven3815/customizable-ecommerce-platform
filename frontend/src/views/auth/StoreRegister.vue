@@ -222,7 +222,7 @@ async function register() {
 
                   <!-- Store Mode -->
                   <CCol :xs="12">
-                    <CFormLabel for="mode">
+                    <CFormLabel for="mode" class="mt-3">
                       商店模式
                     </CFormLabel>
 
@@ -247,7 +247,7 @@ async function register() {
                       </option>
                     </CFormSelect>
 
-                    <div class="text-body-secondary small mt-2">
+                    <div class="text-body-secondary small mt-4">
                       <div>
                         <strong>購物模式：</strong>
                         商店可以正常販售商品，顧客可以瀏覽商品、加入購物車並進行結帳。
@@ -344,7 +344,9 @@ async function register() {
 :deep(.form-control) {
     font-size: 14px;
 }
-
+:deep(.form-select) {
+    font-size: 14px;
+}
 .text-error{
     color: rgb(255, 73, 73);
 }
