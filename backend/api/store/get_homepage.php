@@ -4,8 +4,8 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once "../../../config/cors.php";
-require_once "../../../middleware/store_auth.php";
+require_once "../../config/cors.php";
+require_once "../../middleware/store_auth.php";
 
 // 取得 Store
 $sql = "

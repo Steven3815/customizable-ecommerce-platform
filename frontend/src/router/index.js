@@ -78,14 +78,9 @@ const router = createRouter({
 
     // Store
     {
-      path: '/store-:storeId/admin/dashboard',
+      path: '/store/admin/dashboard',
       name: 'StoreDashboard',
       component: StoreDashboard,
-      beforeEnter: (to) => {
-        if (!/^[1-9]\d*$/.test(to.params.storeId)) {
-          return '/404'
-        }
-      },
     },
 
     {
@@ -109,7 +104,7 @@ const router = createRouter({
           return '/404'
         }
       },
-    },
+    }
   ],
 })
 
