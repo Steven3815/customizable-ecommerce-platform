@@ -1,5 +1,4 @@
 export async function getStore(storeId) {
-    try {
         const response = await fetch(
             `http://localhost/ecommerce-platform/backend/api/customer/get_store.php?store_id=${storeId}`
         )
@@ -12,8 +11,4 @@ export async function getStore(storeId) {
 
         return data
 
-    } catch (error) {
-        console.error('Get store error:', error)
-        throw error
-    }
 }

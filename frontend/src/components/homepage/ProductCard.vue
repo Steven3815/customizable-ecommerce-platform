@@ -41,7 +41,7 @@
         <span class="input-group-btn">
           <button
             type="button"
-            class="quantity-left-minus btn btn-danger btn-number"
+            class="quantity-left-minus btn btn-number foodmart-quantity-minus-button"
             data-type="minus"
           >
             <svg width="16" height="16" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
         <span class="input-group-btn">
           <button
             type="button"
-            class="quantity-right-plus btn btn-success btn-number"
+            class="quantity-right-plus btn btn-number foodmart-quantity-plus-button"
             data-type="plus"
           >
             <svg width="16" height="16" viewBox="0 0 24 24">
@@ -141,4 +141,57 @@ defineProps({
     color: #999;
     font-size: 14px;
   }
+.foodmart-quantity-button.btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+
+  color: #222;
+  background-color: #fff;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  /* CoreUI */
+  --cui-btn-color: #222;
+  --cui-btn-bg: #fff;
+  --cui-btn-border-color: #e2e2e2;
+
+  --cui-btn-hover-color: #222;
+  --cui-btn-hover-bg: #ffc43f;
+  --cui-btn-hover-border-color: #ffc43f;
+
+  --cui-btn-active-color: #222;
+  --cui-btn-active-bg: #fff;
+  --cui-btn-active-border-color: #e2e2e2;
+  --cui-btn-active-shadow: none;
+
+  --cui-btn-disabled-color: #222;
+  --cui-btn-disabled-bg: #fff;
+  --cui-btn-disabled-border-color: #e2e2e2;
+}
+
+.foodmart-quantity-plus-button.btn:hover {
+  color: #222;
+  background-color: #9de3c2;
+  border-color: #9de3c2;
+}
+
+.foodmart-quantity-minus-button.btn:hover {
+  color: #222;
+  background-color: #FFEADA;
+  border-color: #ffdcc2;
+}
+
+.foodmart-quantity-button.btn:active {
+  color: #222;
+  background-color: #9de3c2;
+  border-color: #e2e2e2;
+  box-shadow: none;
+}
 </style>

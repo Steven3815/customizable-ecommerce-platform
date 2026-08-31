@@ -28,7 +28,7 @@
 
                   <button
                     type="button"
-                    class="swiper-prev products-carousel-prev btn btn-primary"
+                    class="swiper-prev products-carousel-prev btn btn-primary foodmart-swiper-button"
                     @click="swiper?.slidePrev()"
                   >
                     ❮
@@ -36,7 +36,7 @@
 
                   <button
                     type="button"
-                    class="swiper-next products-carousel-next btn btn-primary"
+                    class="swiper-next products-carousel-next btn btn-primary foodmart-swiper-button"
                     @click="swiper?.slideNext()"
                   >
                     ❯
@@ -78,7 +78,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Swiper from 'swiper'
 
 import { getStore } from '../../api/store.js'
@@ -97,6 +97,7 @@ const swiperElement = ref(null)
 const swiper = ref(null)
 
 const route = useRoute()
+const router = useRouter()
 
 const store = ref(null)
 
@@ -140,7 +141,6 @@ const products = [
   }
 ]
 
-
 onMounted(async() => {
   
   const storeId = route.params.storeId
@@ -152,6 +152,8 @@ onMounted(async() => {
 
   } catch (error) {
     console.error('取得商店資料失敗:', error)
+
+    router.push('/404')
   }
 
   swiper.value = new Swiper(swiperElement.value, {
@@ -184,3 +186,44 @@ onMounted(async() => {
 
 })
 </script>
+
+<style scoped>
+.foodmart-swiper-button.btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  line-height: 38px;
+  text-align: center;
+  color: #222;
+  background-color: #f1f1f1;
+  border-color: transparent;
+  border-radius: 10px;
+
+  /* 覆蓋 CoreUI 的按鈕變數 */
+  --cui-btn-color: #222;
+  --cui-btn-bg: #f1f1f1;
+  --cui-btn-border-color: transparent;
+  --cui-btn-hover-color: #fff;
+  --cui-btn-hover-bg: #ffc43f;
+  --cui-btn-hover-border-color: transparent;
+  --cui-btn-active-color: #fff;
+  --cui-btn-active-bg: #ec9b22;
+  --cui-btn-active-border-color: transparent;
+  --cui-btn-disabled-color: #ccc;
+  --cui-btn-disabled-bg: #eaeaea;
+  --cui-btn-disabled-border-color: #eaeaea;
+}
+
+.foodmart-swiper-button.btn:hover,
+.foodmart-swiper-button.btn:focus-visible {
+  color: #fff;
+  background-color: #ffc43f;
+  border-color: transparent;
+}
+
+.foodmart-swiper-button.btn:active {
+  color: #fff;
+  background-color: #ec9b22;
+  border-color: transparent;
+}
+</style>
