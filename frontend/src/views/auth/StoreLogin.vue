@@ -127,7 +127,7 @@ async function login() {
     const storeId = data.store.store_id
 
     // 登入成功
-    router.push(`/store-${storeId}/admin/dashboard`)
+    router.push('/store/admin/dashboard')
   } catch (e) {
     error.value = e.message
   }

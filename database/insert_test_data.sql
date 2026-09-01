@@ -48,7 +48,7 @@ INSERT INTO STORE (
 ) VALUES
 (
     '小明選物店',
-    'xiaoming-store',
+    'http://localhost:5173/store-1',
     'store@example.com',
     '$2y$10$B14L97nU6Pd2Q5dgdcmdZeaNQZ78Wt79CUSWPhWgdlykdh/UbjYry',
     '王小明',
@@ -64,7 +64,7 @@ INSERT INTO SUPER_ADMIN (
 (
     'admin',
     'admin@example.com',
-    '$$2y$10$B14L97nU6Pd2Q5dgdcmdZeaNQZ78Wt79CUSWPhWgdlykdh/UbjYry'
+    '$2y$10$B14L97nU6Pd2Q5dgdcmdZeaNQZ78Wt79CUSWPhWgdlykdh/UbjYry'
 );
 
 INSERT INTO CATEGORY (

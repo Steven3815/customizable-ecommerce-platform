@@ -44,7 +44,10 @@ onMounted(async () => {
 
             <div>
               <p>商店名稱：{{ store.store_name }}</p>
-              <p>商店網址：{{ store.store_url }}</p>
+              <p>商店網址：</p>
+              <RouterLink :to="`/store-${store.store_id}`">
+                {{ store.store_url }}
+              </RouterLink>
               <p>會員數：{{ summary.member_count }}</p>
             </div>
 

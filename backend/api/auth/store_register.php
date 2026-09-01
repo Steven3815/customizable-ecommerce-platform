@@ -208,7 +208,8 @@ try {
     $store_id = (int)$pdo->lastInsertId();
 
     // 自動產生 store_url
-    $store_url = "https://ecommerce.com/store-" . $store_id;
+    $base_url = "http://localhost:5173";
+    $store_url = $base_url . "/store-" . $store_id;
 
     // 更新 store_url
     $sql = "
