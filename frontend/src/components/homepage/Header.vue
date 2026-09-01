@@ -1,145 +1,262 @@
+```vue
 <template>
-  <header>
-      <div class="container-fluid">
-        <div class="row py-3 border-bottom">
+  <div>
+    <!-- Header -->
+    <CHeader>
+      <CContainer fluid>
 
-          <div class="col-sm-4 col-lg-3 text-center text-sm-start">
-            <div class="main-logo">
+        <!-- Logo -->
+        <CHeaderBrand>
+          <a v-if="storeLogo" href="#">
+            <img
+              :src="storeLogo"
+              alt="logo"
+              class="img-fluid"
+            >
+          </a>
 
-              <a v-if="storeLogo" href="#">
-                <img
-                  :src="storeLogo"
-                  alt="logo"
-                  class="img-fluid"
-                >
-              </a>
+          <div
+            v-else
+            class="logo-placeholder"
+          ></div>
+        </CHeaderBrand>
 
-              <div v-else class="logo-placeholder"></div>
+        <!-- Search -->
+        <div class="search-container d-none d-lg-block">
+          <CInputGroup>
 
-            </div>
-          </div>
+            <!-- Category -->
+            <CFormSelect
+              v-model="selectedCategory"
+              class="category-select"
+            >
+              <option value="">
+                All Categories
+              </option>
 
-          <div class="col-sm-6 offset-sm-2 offset-md-0 col-lg-5 d-none d-lg-block">
-            <div class="search-bar row bg-light p-2 my-2 rounded-4">
+              <option value="groceries">
+                Groceries
+              </option>
 
-              <div class="col-md-4 d-none d-md-block">
-                <select class="form-select border-0 bg-transparent">
-                  <option>All Categories</option>
-                  <option>Groceries</option>
-                  <option>Drinks</option>
-                  <option>Chocolates</option>
-                </select>
-              </div>
+              <option value="drinks">
+                Drinks
+              </option>
 
-              <div class="col-11 col-md-7">
-                <form
-                  id="search-form"
-                  class="text-center"
-                  action="index.html"
-                  method="post"
-                >
-                  <input
-                    type="text"
-                    class="form-control border-0 bg-transparent"
-                    placeholder="Search for more than 20,000 products"
-                  >
-                </form>
-              </div>
+              <option value="chocolates">
+                Chocolates
+              </option>
+            </CFormSelect>
 
-              <div class="col-1">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M21.71 20.29L18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 7-7a7 7 0 0 1-7 7Z"
-                  />
-                </svg>
-              </div>
+            <!-- Keyword -->
+            <CFormInput
+              v-model="searchKeyword"
+              type="search"
+              placeholder="Search for more than 20,000 products"
+            />
 
-            </div>
-          </div>
+            <!-- Search Button -->
+            <CButton
+              color="light"
+              @click="search"
+            >
+              <CIcon
+                icon="cil-magnifying-glass"
+              />
+            </CButton>
 
-          <div class="col-sm-8 col-lg-4 d-flex justify-content-end gap-5 align-items-center mt-4 mt-sm-0 justify-content-center justify-content-sm-end">
+          </CInputGroup>
+        </div>
 
-            <ul class="d-flex justify-content-end list-unstyled m-0">
+        <!-- Right Actions -->
+        <div class="header-actions">
 
-              <li>
-                <a href="#" class="rounded-circle bg-light p-2 mx-1">
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#user"></use>
-                  </svg>
-                </a>
-              </li>
+          <!-- Account -->
+          <CButton
+            color="light"
+            shape="rounded-circle"
+            class="header-icon"
+          >
+            <CIcon
+              icon="cil-user"
+            />
+          </CButton>
 
-              <li>
-                <a href="#" class="rounded-circle bg-light p-2 mx-1">
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#heart"></use>
-                  </svg>
-                </a>
-              </li>
+          <!-- Mobile Cart -->
+          <CButton
+            color="light"
+            shape="rounded-circle"
+            class="header-icon d-lg-none"
+            @click="openCart"
+          >
+            <CIcon
+              icon="cil-basket"
+            />
+          </CButton>
 
-              <li class="d-lg-none">
-                <a
-                  href="#"
-                  class="rounded-circle bg-light p-2 mx-1"
-                  data-bs-toggle="offcanvas"
-                  data-bs-target="#offcanvasCart"
-                  aria-controls="offcanvasCart"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#cart"></use>
-                  </svg>
-                </a>
-              </li>
+          <!-- Mobile Search -->
+          <CButton
+            color="light"
+            shape="rounded-circle"
+            class="header-icon d-lg-none"
+            @click="openSearch"
+          >
+            <CIcon
+              icon="cil-magnifying-glass"
+            />
+          </CButton>
 
-              <li class="d-lg-none">
-                <a
-                  href="#"
-                  class="rounded-circle bg-light p-2 mx-1"
-                  data-bs-toggle="offcanvas"
-                  data-bs-target="#offcanvasSearch"
-                  aria-controls="offcanvasSearch"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#search"></use>
-                  </svg>
-                </a>
-              </li>
+          <!-- Desktop Cart -->
+          <div class="cart-container d-none d-lg-block">
 
-            </ul>
+            <CButton
+              color="light"
+              variant="ghost"
+              class="cart-button"
+              @click="openCart"
+            >
 
-            <div class="cart text-end d-none d-lg-block dropdown">
-              <button
-                class="border-0 bg-transparent d-flex flex-column gap-2 lh-1"
-                type="button"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#offcanvasCart"
-                aria-controls="offcanvasCart"
-              >
-                <span class="fs-6 text-muted dropdown-toggle">Your Cart</span>
-                <span class="cart-total fs-5 fw-bold">$1290.00</span>
-              </button>
-            </div>
+              <span>
+                Your Cart
+              </span>
+
+              <strong>
+                $1290.00
+              </strong>
+
+            </CButton>
 
           </div>
 
         </div>
-      </div>
-    </header>
+
+      </CContainer>
+    </CHeader>
+
+    <!-- Cart Offcanvas -->
+    <CartOffcanvas
+      ref="cartOffcanvas"
+    />
+
+    <!-- Search Offcanvas -->
+    <SearchOffcanvas
+      ref="searchOffcanvas"
+    />
+
+  </div>
 </template>
 
+
 <script setup>
+import { ref } from 'vue'
+
+import CartOffcanvas from './CartOffcanvas.vue'
+import SearchOffcanvas from './SearchOffcanvas.vue'
+
+
+/* -------------------------
+   Store Logo
+------------------------- */
+
 const storeLogo = null
+
+
+/* -------------------------
+   Search
+------------------------- */
+
+const searchKeyword = ref('')
+const selectedCategory = ref('')
+
+
+const search = () => {
+  console.log('Search:', {
+    keyword: searchKeyword.value,
+    category: selectedCategory.value,
+  })
+}
+
+
+/* -------------------------
+   Offcanvas
+------------------------- */
+
+const cartOffcanvas = ref(null)
+const searchOffcanvas = ref(null)
+
+
+const openCart = () => {
+  cartOffcanvas.value?.open()
+}
+
+
+const openSearch = () => {
+  searchOffcanvas.value?.open()
+}
 </script>
 
-<style>
+
+<style scoped>
+
+/* Logo */
+
 .logo-placeholder {
   width: 150px;
   height: 50px;
 }
+
+
+/* Search */
+
+.search-container {
+  width: 45%;
+}
+
+.category-select {
+  max-width: 180px;
+}
+
+
+/* Header Actions */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+
+/* Header Icons */
+
+.header-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Desktop Cart */
+
+.cart-container {
+  margin-left: 0.5rem;
+}
+
+.cart-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  gap: 0.25rem;
+
+  line-height: 1.2;
+}
+
+.cart-button strong {
+  font-size: 1.1rem;
+}
+
 </style>

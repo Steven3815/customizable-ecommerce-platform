@@ -1,93 +1,77 @@
+```vue
 <template>
-  <div class="product-item swiper-slide">
+  <CCol>
+    <CCard class="h-100">
 
-    <!-- Wishlist -->
-    <a href="#" class="btn-wishlist">
-      <svg width="24" height="24" viewBox="0 0 24 24">
-        <use xlink:href="#heart"></use>
-      </svg>
-    </a>
-
-    <!-- Product Image -->
-  <figure class="product-image">
-    <a href="#" title="Product Title">
-      <img
+      <!-- Product Image -->
+      <CCardImage
         v-if="image"
         :src="image"
         :alt="name"
-        class="tab-image"
-      >
+        class="product-image"
+      />
 
       <div v-else class="image-placeholder">
         No Image
       </div>
-    </a>
-  </figure>
 
-    <!-- Product Name -->
-    <h3>{{ name }}</h3>
+      <CCardBody class="d-flex flex-column">
 
-    <!-- Product Price -->
-    <span class="price">
-      ${{ Number(price).toFixed(2) }}
-    </span>
+        <!-- Product Name -->
+        <CCardTitle>
+          {{ name }}
+        </CCardTitle>
 
-    <!-- Quantity + Add to Cart -->
-    <div class="d-flex align-items-center justify-content-between">
-
-      <div class="input-group product-qty">
-
-        <!-- Minus -->
-        <span class="input-group-btn">
-          <button
-            type="button"
-            class="quantity-left-minus btn btn-number foodmart-quantity-minus-button"
-            data-type="minus"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24">
-              <use xlink:href="#minus"></use>
-            </svg>
-          </button>
-        </span>
+        <!-- Product Price -->
+        <div class="price mb-3">
+          ${{ Number(price).toFixed(2) }}
+        </div>
 
         <!-- Quantity -->
-        <input
-          type="text"
-          :id="`quantity-${productId}`"
-          name="quantity"
-          class="form-control input-number"
-          value="1"
-        >
+        <CInputGroup class="mb-3">
 
-        <!-- Plus -->
-        <span class="input-group-btn">
-          <button
-            type="button"
-            class="quantity-right-plus btn btn-number foodmart-quantity-plus-button"
-            data-type="plus"
+          <CButton
+            color="light"
+            @click="decreaseQuantity"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24">
-              <use xlink:href="#plus"></use>
-            </svg>
-          </button>
-        </span>
+            −
+          </CButton>
 
-      </div>
+          <CFormInput
+            v-model.number="quantity"
+            type="number"
+            min="1"
+            class="text-center"
+          />
 
-      <!-- Add to Cart -->
-      <a href="#" class="nav-link">
-        Add to Cart
-        <iconify-icon icon="uil:shopping-cart"></iconify-icon>
-      </a>
+          <CButton
+            color="light"
+            @click="increaseQuantity"
+          >
+            +
+          </CButton>
 
-    </div>
+        </CInputGroup>
 
-  </div>
+        <!-- Add to Cart -->
+        <CButton
+          color="primary"
+          class="w-100 mt-auto"
+          @click="addToCart"
+        >
+          Add to Cart
+        </CButton>
+
+      </CCardBody>
+
+    </CCard>
+  </CCol>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 
-defineProps({
+const props = defineProps({
   productId: {
     type: Number,
     default: null
@@ -107,91 +91,49 @@ defineProps({
     type: [Number, String],
     required: true
   }
-
 })
 
+const quantity = ref(1)
+
+const decreaseQuantity = () => {
+  if (quantity.value > 1) {
+    quantity.value--
+  }
+}
+
+const increaseQuantity = () => {
+  quantity.value++
+}
+
+const addToCart = () => {
+  console.log('Add to cart:', {
+    productId: props.productId,
+    quantity: quantity.value
+  })
+}
 </script>
 
-<style>
-  .product-image {
+<style scoped>
+.product-image {
   width: 100%;
   aspect-ratio: 1 / 1;
-  margin: 0;
-  }
+  object-fit: contain;
+}
 
-  .product-image a {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-
-  .product-image .tab-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .image-placeholder {
-    width: 100%;
-    height: 100%;
-    background-color: #f1f1f1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    font-size: 14px;
-  }
-.foodmart-quantity-button.btn {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  line-height: 1;
-  text-align: center;
-
-  color: #222;
-  background-color: #fff;
-  border: 1px solid #e2e2e2;
-  border-radius: 6px;
-
-  display: inline-flex;
+.image-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-
-  /* CoreUI */
-  --cui-btn-color: #222;
-  --cui-btn-bg: #fff;
-  --cui-btn-border-color: #e2e2e2;
-
-  --cui-btn-hover-color: #222;
-  --cui-btn-hover-bg: #ffc43f;
-  --cui-btn-hover-border-color: #ffc43f;
-
-  --cui-btn-active-color: #222;
-  --cui-btn-active-bg: #fff;
-  --cui-btn-active-border-color: #e2e2e2;
-  --cui-btn-active-shadow: none;
-
-  --cui-btn-disabled-color: #222;
-  --cui-btn-disabled-bg: #fff;
-  --cui-btn-disabled-border-color: #e2e2e2;
+  background-color: var(--cui-tertiary-bg);
+  color: var(--cui-secondary-color);
+  font-size: 14px;
 }
 
-.foodmart-quantity-plus-button.btn:hover {
-  color: #222;
-  background-color: #9de3c2;
-  border-color: #9de3c2;
-}
-
-.foodmart-quantity-minus-button.btn:hover {
-  color: #222;
-  background-color: #FFEADA;
-  border-color: #ffdcc2;
-}
-
-.foodmart-quantity-button.btn:active {
-  color: #222;
-  background-color: #9de3c2;
-  border-color: #e2e2e2;
-  box-shadow: none;
+.price {
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 </style>
+```

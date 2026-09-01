@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import CustomerLayout from '../layouts/CustomerLayout.vue'
 import StoreLayout from '../layouts/StoreLayout.vue'
 
 import Page404 from '@/views/error/Page404.vue'
@@ -28,19 +27,13 @@ const router = createRouter({
     // Customer
     {
       path: '/store-:storeId',
-      component: CustomerLayout,
+      name: 'CustomerHome',
+      component: Home,
       beforeEnter: (to) => {
         if (!/^[1-9]\d*$/.test(to.params.storeId)) {
           return '/404'
         }
       },
-      children: [
-        {
-          path: '',
-          name: 'CustomerHome',
-          component: Home,
-        },
-      ],
     },
 
     {

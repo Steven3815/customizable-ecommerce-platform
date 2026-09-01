@@ -1,76 +1,141 @@
+```vue
 <template>
-  <div
-      class="offcanvas offcanvas-end"
-      data-bs-scroll="true"
-      tabindex="-1"
-      id="offcanvasCart"
-      aria-labelledby="My Cart"
-    >
-      <div class="offcanvas-header justify-content-center">
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="offcanvas"
-          aria-label="Close"
-        ></button>
+  <COffcanvas
+    placement="end"
+    :scroll="true"
+    :visible="visible"
+    @close="close"
+  >
+    <COffcanvasHeader>
+      <COffcanvasTitle>
+        購物車
+      </COffcanvasTitle>
+
+      <CCloseButton
+        class="text-reset"
+        @click="close"
+      />
+    </COffcanvasHeader>
+
+    <COffcanvasBody>
+
+      <!-- Cart Header -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+          <span class="text-primary">
+            Your cart
+          </span>
+        </h4>
+
+        <CBadge
+          color="primary"
+          shape="rounded-pill"
+        >
+          3
+        </CBadge>
       </div>
 
-      <div class="offcanvas-body">
-        <div class="order-md-last">
+      <!-- Cart Items -->
+      <CListGroup class="mb-3">
 
-          <h4 class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-primary">Your cart</span>
-            <span class="badge bg-primary rounded-pill">3</span>
-          </h4>
+        <CListGroupItem
+          class="d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <h6 class="mb-1">
+              Growers cider
+            </h6>
 
-          <ul class="list-group mb-3">
+            <small class="text-body-secondary">
+              Brief description
+            </small>
+          </div>
 
-            <li class="list-group-item d-flex justify-content-between lh-sm">
-              <div>
-                <h6 class="my-0">Growers cider</h6>
-                <small class="text-body-secondary">Brief description</small>
-              </div>
-              <span class="text-body-secondary">$12</span>
-            </li>
+          <span>
+            $12
+          </span>
+        </CListGroupItem>
 
-            <li class="list-group-item d-flex justify-content-between lh-sm">
-              <div>
-                <h6 class="my-0">Fresh grapes</h6>
-                <small class="text-body-secondary">Brief description</small>
-              </div>
-              <span class="text-body-secondary">$8</span>
-            </li>
+        <CListGroupItem
+          class="d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <h6 class="mb-1">
+              Fresh grapes
+            </h6>
 
-            <li class="list-group-item d-flex justify-content-between lh-sm">
-              <div>
-                <h6 class="my-0">Heinz tomato ketchup</h6>
-                <small class="text-body-secondary">Brief description</small>
-              </div>
-              <span class="text-body-secondary">$5</span>
-            </li>
+            <small class="text-body-secondary">
+              Brief description
+            </small>
+          </div>
 
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Total (USD)</span>
-              <strong>$20</strong>
-            </li>
+          <span>
+            $8
+          </span>
+        </CListGroupItem>
 
-          </ul>
+        <CListGroupItem
+          class="d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <h6 class="mb-1">
+              Heinz tomato ketchup
+            </h6>
 
-          <button class="w-100 btn btn-primary btn-lg" type="submit">
-            Continue to checkout
-          </button>
+            <small class="text-body-secondary">
+              Brief description
+            </small>
+          </div>
 
-        </div>
-      </div>
-    </div>
+          <span>
+            $5
+          </span>
+        </CListGroupItem>
+
+        <!-- Total -->
+        <CListGroupItem
+          class="d-flex justify-content-between align-items-center"
+        >
+          <span>
+            Total (USD)
+          </span>
+
+          <strong>
+            $25
+          </strong>
+        </CListGroupItem>
+
+      </CListGroup>
+
+      <!-- Checkout -->
+      <CButton
+        color="primary"
+        size="lg"
+        class="w-100"
+      >
+        繼續結帳
+      </CButton>
+
+    </COffcanvasBody>
+  </COffcanvas>
 </template>
 
-<script>
-export default {
+<script setup>
+import { ref } from 'vue'
 
+const visible = ref(false)
+
+const open = () => {
+  visible.value = true
 }
+
+const close = () => {
+  visible.value = false
+}
+
+defineExpose({
+  open,
+  close,
+})
 </script>
-
-<style>
-
-</style>
+```

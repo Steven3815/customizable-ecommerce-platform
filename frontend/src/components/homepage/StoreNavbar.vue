@@ -1,206 +1,230 @@
 <template>
-  <div class="container-fluid">
-    <div class="row py-3">
+  <CHeader>
+    <CContainer fluid>
 
-      <div class="d-flex justify-content-center justify-content-sm-between align-items-center">
+      <!-- Mobile Menu Button -->
+      <CButton
+        class="d-lg-none p-0 border-0"
+        color="light"
+        @click="visible = true"
+        aria-label="Open menu"
+      >
+        <CIcon
+          icon="cilMenu"
+          size="lg"
+        />
+      </CButton>
 
-        <nav class="main-menu d-flex navbar navbar-expand-lg">
 
-          <!-- Mobile Menu Button -->
-          <button
-            class="navbar-toggler"
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#offcanvasNavbar"
-            aria-controls="offcanvasNavbar"
+      <!-- Desktop Navigation -->
+      <CNavbar
+        expand="lg"
+        class="d-none d-lg-flex w-100"
+      >
+        <CNavbarNav class="align-items-center gap-3">
+
+          <!-- Categories -->
+          <CNavItem>
+            <CFormSelect
+              v-model="selectedCategory"
+              class="category-select"
+            >
+              <option value="">
+                Shop by Departments
+              </option>
+
+              <option value="groceries">
+                Groceries
+              </option>
+
+              <option value="drinks">
+                Drinks
+              </option>
+
+              <option value="chocolates">
+                Chocolates
+              </option>
+            </CFormSelect>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#women">
+              Women
+            </CNavLink>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#men">
+              Men
+            </CNavLink>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#kids">
+              Kids
+            </CNavLink>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#accessories">
+              Accessories
+            </CNavLink>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#brand">
+              Brand
+            </CNavLink>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#sale">
+              Sale
+            </CNavLink>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#blog">
+              Blog
+            </CNavLink>
+          </CNavItem>
+
+        </CNavbarNav>
+      </CNavbar>
+
+
+      <!-- Mobile Offcanvas -->
+      <COffcanvas
+        placement="start"
+        :visible="visible"
+        @visible-change="(value) => visible = value"
+      >
+
+        <COffcanvasHeader class="border-bottom">
+
+          <COffcanvasTitle>
+            Menu
+          </COffcanvasTitle>
+
+          <CCloseButton
+            @click="visible = false"
+          />
+
+        </COffcanvasHeader>
+
+
+        <COffcanvasBody>
+
+          <!-- Categories -->
+          <CFormSelect
+            v-model="selectedCategory"
+            class="mb-4"
           >
-            <span class="navbar-toggler-icon"></span>
-          </button>
+            <option value="">
+              Shop by Departments
+            </option>
 
-          <!-- Offcanvas Menu -->
-          <div
-            class="offcanvas offcanvas-end"
-            tabindex="-1"
-            id="offcanvasNavbar"
-            aria-labelledby="offcanvasNavbarLabel"
-          >
+            <option value="groceries">
+              Groceries
+            </option>
 
-            <div class="offcanvas-header justify-content-center">
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="offcanvas"
-                aria-label="Close"
-              ></button>
-            </div>
+            <option value="drinks">
+              Drinks
+            </option>
 
-            <div class="offcanvas-body">
+            <option value="chocolates">
+              Chocolates
+            </option>
+          </CFormSelect>
 
-              <!-- Categories -->
-              <select class="filter-categories border-0 mb-0 me-5">
-                <option>Shop by Departments</option>
-                <option>Groceries</option>
-                <option>Drinks</option>
-                <option>Chocolates</option>
-              </select>
 
-              <!-- Menu -->
-              <ul
-                class="navbar-nav justify-content-end menu-list list-unstyled d-flex gap-md-3 mb-0"
+          <!-- Mobile Navigation -->
+          <CNav class="flex-column">
+
+            <CNavItem>
+              <CNavLink
+                href="#women"
+                @click="visible = false"
               >
+                Women
+              </CNavLink>
+            </CNavItem>
 
-                <li class="nav-item active">
-                  <a href="#women" class="nav-link">
-                    Women
-                  </a>
-                </li>
+            <CNavItem>
+              <CNavLink
+                href="#men"
+                @click="visible = false"
+              >
+                Men
+              </CNavLink>
+            </CNavItem>
 
-                <li class="nav-item dropdown">
-                  <a href="#men" class="nav-link">
-                    Men
-                  </a>
-                </li>
+            <CNavItem>
+              <CNavLink
+                href="#kids"
+                @click="visible = false"
+              >
+                Kids
+              </CNavLink>
+            </CNavItem>
 
-                <li class="nav-item">
-                  <a href="#kids" class="nav-link">
-                    Kids
-                  </a>
-                </li>
+            <CNavItem>
+              <CNavLink
+                href="#accessories"
+                @click="visible = false"
+              >
+                Accessories
+              </CNavLink>
+            </CNavItem>
 
-                <li class="nav-item">
-                  <a href="#accessories" class="nav-link">
-                    Accessories
-                  </a>
-                </li>
+            <CNavItem>
+              <CNavLink
+                href="#brand"
+                @click="visible = false"
+              >
+                Brand
+              </CNavLink>
+            </CNavItem>
 
-                <!-- Pages Dropdown -->
-                <li class="nav-item dropdown">
+            <CNavItem>
+              <CNavLink
+                href="#sale"
+                @click="visible = false"
+              >
+                Sale
+              </CNavLink>
+            </CNavItem>
 
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="#"
-                    role="button"
-                    id="pages"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    Pages
-                  </a>
+            <CNavItem>
+              <CNavLink
+                href="#blog"
+                @click="visible = false"
+              >
+                Blog
+              </CNavLink>
+            </CNavItem>
 
-                  <ul
-                    class="dropdown-menu"
-                    aria-labelledby="pages"
-                  >
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        About Us
-                      </a>
-                    </li>
+          </CNav>
 
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Shop
-                      </a>
-                    </li>
+        </COffcanvasBody>
 
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Single Product
-                      </a>
-                    </li>
+      </COffcanvas>
 
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Cart
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Checkout
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Blog
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Single Post
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Styles
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Contact
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        Thank You
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        My Account
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="#" class="dropdown-item">
-                        404 Error
-                      </a>
-                    </li>
-                  </ul>
-
-                </li>
-
-                <li class="nav-item">
-                  <a href="#brand" class="nav-link">
-                    Brand
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a href="#sale" class="nav-link">
-                    Sale
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a href="#blog" class="nav-link">
-                    Blog
-                  </a>
-                </li>
-
-              </ul>
-
-            </div>
-          </div>
-
-        </nav>
-
-      </div>
-
-    </div>
-  </div>
+    </CContainer>
+  </CHeader>
 </template>
 
-<script>
 
+<script setup>
+import { ref } from 'vue'
+
+const visible = ref(false)
+const selectedCategory = ref('')
 </script>
 
-<style>
 
+<style scoped>
+.category-select {
+  width: 200px;
+}
 </style>

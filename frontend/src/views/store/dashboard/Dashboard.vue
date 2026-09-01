@@ -56,7 +56,7 @@ onMounted(async () => {
                 <CCard>
                   <CCardBody class="text-center">
                     <h4 class="mt-2">今日訂單</h4>
-                    <h3>{{ summary.today_orders }}</h3>
+                    <h3>{{ summary.today_orders }}份</h3>
                   </CCardBody>
                 </CCard>
               </CCol>
@@ -65,7 +65,7 @@ onMounted(async () => {
                 <CCard>
                   <CCardBody class="text-center">
                     <h4 class="mt-2">今日營收</h4>
-                    <h3>{{ summary.today_revenue }}</h3>
+                    <h3>${{ summary.today_revenue }}</h3>
                   </CCardBody>
                 </CCard>
               </CCol>
@@ -74,7 +74,7 @@ onMounted(async () => {
                 <CCard>
                   <CCardBody class="text-center">
                     <h4 class="mt-2">本月營收</h4>
-                    <h3>{{ summary.monthly_revenue }}</h3>
+                    <h3>${{ summary.monthly_revenue }}</h3>
                   </CCardBody>
                 </CCard>
               </CCol>
@@ -102,7 +102,7 @@ onMounted(async () => {
                     <td>{{ order.order_number }}</td>
                     <td>{{ order.created_at }}</td>
                     <td>{{ order.customer_name }}</td>
-                    <td>{{ order.total_amount }}</td>
+                    <td>${{ order.total_amount }}</td>
                     <td>
                       {{
                         {

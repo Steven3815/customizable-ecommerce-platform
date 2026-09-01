@@ -1,56 +1,65 @@
 <template>
-  <div
-      class="offcanvas offcanvas-end"
-      data-bs-scroll="true"
-      tabindex="-1"
-      id="offcanvasSearch"
-      aria-labelledby="Search"
-    >
-      <div class="offcanvas-header justify-content-center">
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="offcanvas"
-          aria-label="Close"
-        ></button>
-      </div>
+  <COffcanvas
+    placement="end"
+    :visible="visible"
+    @close="visible = false"
+    scroll
+  >
 
-      <div class="offcanvas-body">
-        <div class="order-md-last">
+    <!-- Header -->
+    <COffcanvasHeader>
 
-          <h4 class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-primary">Search</span>
-          </h4>
+      <COffcanvasTitle>
+        Search
+      </COffcanvasTitle>
 
-          <form
-            role="search"
-            action="index.html"
-            method="get"
-            class="d-flex mt-3 gap-0"
+      <CCloseButton
+        class="text-reset"
+        @click="visible = false"
+      />
+
+    </COffcanvasHeader>
+
+
+    <!-- Body -->
+    <COffcanvasBody>
+
+      <CForm @submit.prevent="search">
+
+        <CInputGroup>
+
+          <CFormInput
+            v-model="keyword"
+            type="search"
+            placeholder="What are you looking for?"
+            aria-label="What are you looking for?"
+          />
+
+          <CButton
+            type="submit"
+            color="primary"
           >
-            <input
-              class="form-control rounded-start rounded-0 bg-light"
-              type="email"
-              placeholder="What are you looking for?"
-              aria-label="What are you looking for?"
-            >
+            Search
+          </CButton>
 
-            <button class="btn btn-dark rounded-end rounded-0" type="submit">
-              Search
-            </button>
-          </form>
+        </CInputGroup>
 
-        </div>
-      </div>
-    </div>
+      </CForm>
+
+    </COffcanvasBody>
+
+  </COffcanvas>
 </template>
 
-<script>
-export default {
 
+<script setup>
+import { ref } from 'vue'
+
+const visible = ref(false)
+
+const keyword = ref('')
+
+const search = () => {
+  console.log('Search:', keyword.value)
 }
 </script>
-
-<style>
-
-</style>
