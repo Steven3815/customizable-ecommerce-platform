@@ -43,11 +43,11 @@ onMounted(async () => {
 
             <div>
               <p>商店名稱：{{ store.store_name }}</p>
-              <p>商店網址：</p>
+              <span>商店網址：</span>
               <RouterLink :to="`/store-${store.store_id}`">
                 {{ store.store_url }}
               </RouterLink>
-              <p>會員數：{{ summary.member_count }}</p>
+              <p  class="mt-3">會員數：{{ summary.member_count }}</p>
             </div>
 
             <CRow>
@@ -82,40 +82,41 @@ onMounted(async () => {
             <div class="mt-5">
               <h4>最近訂單</h4>
 
-              <table v-if="recentOrders.length" class="table">
-                <thead>
-                  <tr>
-                    <th>訂單編號</th>
-                    <th>訂購時間</th>
-                    <th style="min-width: 120px;">會員</th>
-                    <th style="min-width: 120px;">訂單金額</th>
-                    <th>配送狀態</th>
-                  </tr>
-                </thead>
+            <CTable v-if="recentOrders.length">
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell class="text-center px-1">訂單編號</CTableHeaderCell>
+                  <CTableHeaderCell class="text-center" style="max-width:200px;">訂購時間</CTableHeaderCell>
+                  <CTableHeaderCell class="text-center">會員</CTableHeaderCell>
+                  <CTableHeaderCell style="text-align: right;">訂單金額</CTableHeaderCell>
+                  <CTableHeaderCell class="text-center">配送狀態</CTableHeaderCell>
+                  <CTableHeaderCell class="text-center">操作</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
 
-                <tbody>
-                  <tr
-                    v-for="order in recentOrders"
-                    :key="order.order_number"
-                  >
-                    <td>{{ order.order_number }}</td>
-                    <td>{{ order.created_at }}</td>
-                    <td>{{ order.customer_name }}</td>
-                    <td>${{ order.total_amount }}</td>
-                    <td>
-                      {{
-                        {
-                          pending: '待出貨',
-                          shipping: '配送中',
-                          completed: '已完成'
-                        }[order.delivery_status]
-                      }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <CTableBody>
+                <CTableRow
+                  v-for="order in recentOrders"
+                  :key="order.order_number"
+                >
+                  <CTableDataCell class="text-center">{{ order.order_number }}</CTableDataCell>
+                  <CTableDataCell class="text-center">{{ order.created_at }}</CTableDataCell>
+                  <CTableDataCell class="text-center">{{ order.customer_name }}</CTableDataCell>
+                  <CTableDataCell style="text-align: right;">${{ order.total_amount }}</CTableDataCell>
+                  <CTableDataCell class="text-center">
+                    {{
+                      {
+                        pending: '待出貨',
+                        shipping: '配送中',
+                        completed: '已完成'
+                      }[order.delivery_status]
+                    }}
+                  </CTableDataCell>
+                </CTableRow>
+              </CTableBody>
+            </CTable>
 
-              <p v-else>目前沒有訂單</p>
+            <p v-else>目前沒有訂單</p>
             </div>
 
             <div v-if="notifications" class="mt-4">
