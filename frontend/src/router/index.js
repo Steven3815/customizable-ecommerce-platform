@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import StoreLayout from '../layouts/StoreLayout.vue'
 
 import Page404 from '@/views/error/Page404.vue'
+import Page401 from '@/views/error/Page401.vue'
 
 import CustomerLogin from '../views/auth/CustomerLogin.vue'
 import CustomerRegister from '../views/auth/CustomerRegister.vue'
@@ -13,6 +14,11 @@ import StoreLogout from '../views/auth/StoreLogout.vue'
 
 import Home from '../views/customer/Home.vue'
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
+
+import { checkStoreAuth } from '@/api/store.js'
+
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
 
@@ -22,6 +28,11 @@ const router = createRouter({
       path: '/404',
       name: 'Page404',
       component: Page404,
+    },
+    {
+      path: '/401',
+      name: 'Page401',
+      component: Page401,
     },
 
     // Customer
@@ -74,6 +85,9 @@ const router = createRouter({
       path: '/store/admin/dashboard',
       name: 'StoreDashboard',
       component: StoreDashboard,
+      meta: {
+        requiresStoreAuth: true
+      }
     },
 
     {
@@ -89,16 +103,32 @@ const router = createRouter({
     },
 
     {
-      path: '/store-:storeId/admin/logout',
+      path: '/store/logout',
       name: 'StoreLogout',
       component: StoreLogout,
-      beforeEnter: (to) => {
-        if (!/^[1-9]\d*$/.test(to.params.storeId)) {
-          return '/404'
-        }
-      },
+    },
+
+    // 檢查不存在頁面 
+    {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: Page404,
     }
   ],
+})
+
+router.beforeEach(async (to) => {
+  if (!to.meta.requiresStoreAuth) {
+    return true
+  }
+
+  const isAuthenticated = await checkStoreAuth()
+
+  if (!isAuthenticated) {
+    return '/401'
+  }
+
+  return true
 })
 
 export default router

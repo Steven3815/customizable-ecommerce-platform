@@ -1,21 +1,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import {useRouter } from 'vue-router'
 import { CContainer, CRow, CCol, CCard, CCardBody } from '@coreui/vue'
 import AppFooter from '../../../components/store/AppFooter.vue'
 import AppHeader from '../../../components/store/AppHeader.vue'
 import AppSidebar from '../../../components/store/AppSidebar.vue'
 
-import { getStore, getStoreDashboard } from '@/api/store.js'
+import { getStoreDashboard } from '@/api/store.js'
 
-const router = useRouter()
 const summary = ref(null)
 const recentOrders = ref([])
 const notifications = ref(null)
 const store = ref(null)
 
 onMounted(async () => {
-
   try {
     const data = await getStoreDashboard()
 
@@ -23,8 +20,10 @@ onMounted(async () => {
     summary.value = data.summary
     recentOrders.value = data.recent_orders
     notifications.value = data.notifications
+
   } catch (e) {
     console.error('取得 Dashboard 資料失敗:', e)
+
   }
 })
 </script>

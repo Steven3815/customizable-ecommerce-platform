@@ -10,6 +10,7 @@ if (
     !isset($_SESSION["role"]) ||
     $_SESSION["role"] !== "store"
 ) {
+    http_response_code(401);
     echo json_encode([
         "error" => "Unauthorized"
     ], JSON_UNESCAPED_UNICODE);
@@ -41,6 +42,7 @@ $stmt->execute([$store_id]);
 $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$store) {
+    http_response_code(404);
     echo json_encode([
         "error" => "Store not found"
     ], JSON_UNESCAPED_UNICODE);

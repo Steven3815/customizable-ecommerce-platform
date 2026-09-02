@@ -4,10 +4,10 @@
       <CRow class="justify-content-center">
         <CCol :md="6">
           <div class="clearfix">
-            <h1 class="float-start display-3 me-4">404</h1>
-            <h4 class="pt-4">找不到頁面</h4>
+            <h1 class="float-start display-3 me-4">401</h1>
+            <h4 class="pt-2">需要登入</h4>
             <p class="text-body-secondary float-start">
-              您要找的頁面不存在或已被移除
+              請先登入後再存取此頁面
             </p>
           </div>
         </CCol>
