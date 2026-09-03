@@ -503,7 +503,7 @@ async function removeBanner() {
                 :visible="showDescription"
               >
                 <small class="d-block text-body-secondary">
-                  用於設定首頁顯示的主要橫幅圖片，可選擇預設橫幅或上傳自訂圖片。
+                  用於設定首頁顯示的主要橫幅圖片，可選擇預設橫幅或上傳自訂圖片
                 </small>
               </CCollapse>
             </div>
@@ -629,7 +629,7 @@ async function removeBanner() {
 
                     <small class="text-body-secondary">
                       建議圖片比例為
-                      1920 × 600（16:5）。
+                      1920 × 600（16:5）
                     </small>
                   </CCol>
                 </CRow>

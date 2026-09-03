@@ -270,7 +270,7 @@ async function saveFooter() {
                 :visible="showDescription"
               >
                 <small class="d-block text-body-secondary">
-                  管理網站頁尾顯示的聯絡資訊與服務電話。
+                  管理網站頁尾顯示的聯絡資訊與服務電話
                 </small>
               </CCollapse>
             </div>

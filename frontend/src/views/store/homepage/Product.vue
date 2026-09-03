@@ -453,8 +453,7 @@ async function removeProduct(
                 :visible="showDescription"
               >
                 <small class="d-block text-body-secondary">
-                  管理網站首頁顯示的商品。
-                  可以選擇商品類別、編輯商品。
+                  管理網站首頁顯示的商品，可以選擇商品類別、編輯商品
                 </small>
               </CCollapse>
             </div>
@@ -491,7 +490,7 @@ async function removeProduct(
 
                 <small class="d-block mt-3">
                   <b>說明：</b>
-                  選擇商品類別後，可管理該類別的首頁商品。
+                  選擇商品類別後，可管理該類別的首頁商品
                 </small>
               </CCardBody>
             </CCard>
@@ -641,9 +640,11 @@ async function removeProduct(
 
                 <small>
                   <b>說明：</b>
-                  商品會按照目前的順序顯示於首頁。
-                  可使用上移與下移調整商品順序。
-                </small>
+                  商品會按照目前的順序顯示於首頁
+                  可使用上移與下移調整商品順序
+                </small> <br>
+                <small><b>更多操作: </b>可至「網站首頁管理」新增商品類別，或至「商品管理」編輯詳細商品資訊</small>
+
 
                 <!-- 儲存 / 取消修改 -->
                 <div

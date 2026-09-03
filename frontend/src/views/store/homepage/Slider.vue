@@ -324,9 +324,9 @@ onMounted(() => {
 
             <CCollapse :visible="showDescription">
               <small class="d-block text-body-secondary">
-                管理網站首頁的輪播圖片。
+                管理網站首頁的輪播圖片
                 最多可以設定 5 張圖片，
-                並可以調整圖片順序、標題及刪除圖片。
+                並可以調整圖片順序、標題及刪除圖片
               </small>
             </CCollapse>
           </div>
@@ -413,7 +413,7 @@ onMounted(() => {
                       <small class="d-block mt-2 text-body-secondary">
                         建議圖片比例為
                         1920 × 600，
-                        系統會保留原始圖片尺寸。
+                        系統會保留原始圖片尺寸
                       </small>
 
                       <!-- 新圖片預覽 -->
@@ -470,7 +470,7 @@ onMounted(() => {
                       />
 
                       <small class="d-block mt-2 text-body-secondary">
-                        選填，最多 200 個字元。
+                        選填，最多 200 個字元
                       </small>
                     </CCol>
                   </CRow>
@@ -510,7 +510,7 @@ onMounted(() => {
                 "
                 class="d-block mb-3 text-body-secondary"
               >
-                輪播最多只能設定 5 張圖片。
+                輪播最多只能設定 5 張圖片
               </small>
 
               <!-- 載入中 -->
