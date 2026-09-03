@@ -735,3 +735,73 @@ export async function reorderHomepageProducts(categoryId, productIds) {
     throw error
   }
 }
+
+// Homepage Settings Footer
+
+export async function getFooterSettings() {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/homepage/footer/get_footer.php',
+      {
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得 Footer 設定失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得 Footer 設定失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function updateFooterSettings(formData) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/homepage/footer/update_footer.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '更新 Footer 設定失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '更新 Footer 設定失敗:',
+      error
+    )
+
+    throw error
+  }
+}

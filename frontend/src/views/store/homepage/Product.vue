@@ -79,9 +79,7 @@ async function loadCategories() {
     } else if (e.status === 404) {
       error.value = '找不到首頁設定'
     } else {
-      error.value =
-        e.message ||
-        '取得商品類別失敗'
+      error.value = e.message || '取得商品類別失敗'
     }
   }
 }
@@ -101,10 +99,7 @@ async function loadProducts() {
     products.value =
       data.category?.products || []
   } catch (e) {
-    console.error(
-      '取得商品資料失敗:',
-      e
-    )
+    console.error('取得商品資料失敗:', e)
 
     products.value = []
 
@@ -113,9 +108,7 @@ async function loadProducts() {
     } else if (e.status === 404) {
       error.value = '找不到商品類別'
     } else {
-      error.value =
-        e.message ||
-        '取得商品資料失敗'
+      error.value = e.message || '取得商品資料失敗'
     }
   }
 }
@@ -140,14 +133,9 @@ async function loadPage() {
   try {
     await loadCategories()
   } catch (e) {
-    console.error(
-      '載入首頁商品管理失敗:',
-      e
-    )
+    console.error('載入首頁商品管理失敗:', e)
 
-    error.value =
-      e.message ||
-      '載入首頁商品管理失敗'
+    error.value = e.message || '載入首頁商品管理失敗'
   } finally {
     loading.value = false
   }
@@ -233,10 +221,7 @@ async function createNewProduct() {
 
     await loadProducts()
   } catch (e) {
-    console.error(
-      '新增商品失敗:',
-      e
-    )
+    console.error('新增商品失敗:', e)
 
     if (e.status === 403) {
       productError.value =
@@ -263,9 +248,7 @@ async function saveProduct(product) {
     product.product_name.trim()
 
   if (!productName) {
-    showError(
-      '商品名稱不可為空白'
-    )
+    showError('商品名稱不可為空白')
     return
   }
 
@@ -283,26 +266,16 @@ async function saveProduct(product) {
 
     await loadProducts()
   } catch (e) {
-    console.error(
-      '更新商品失敗:',
-      e
-    )
+    console.error('更新商品失敗:', e)
 
     if (e.status === 403) {
-      showError(
-        '您沒有權限執行此操作'
-      )
+      showError('您沒有權限執行此操作')
     } else if (e.status === 404) {
       showError('找不到商品')
     } else if (e.status === 409) {
-      showError(
-        '商品名稱已存在'
-      )
+      showError('商品名稱已存在')
     } else {
-      showError(
-        e.message ||
-        '更新商品失敗'
-      )
+      showError(e.message || '更新商品失敗')
     }
   } finally {
     saving.value = false
@@ -330,7 +303,7 @@ async function moveProduct(
 
   const oldProducts = [...products.value]
   const newProducts = [...products.value]
-  
+
   const temp = newProducts[index]
   newProducts[index] = newProducts[newIndex]
   newProducts[newIndex] = temp
@@ -351,26 +324,18 @@ async function moveProduct(
       productIds
     )
   } catch (e) {
-    console.error(
-      '重新排列商品失敗:',
-      e
-    )
+    console.error('重新排列商品失敗:', e)
 
     // API 失敗時還原畫面
     products.value =
       oldProducts
 
     if (e.status === 403) {
-      showError(
-        '您沒有權限執行此操作'
-      )
+      showError('您沒有權限執行此操作')
     } else if (e.status === 404) {
       showError('找不到商品')
     } else {
-      showError(
-        e.message ||
-        '重新排列商品失敗'
-      )
+      showError(e.message || '重新排列商品失敗')
     }
   }
 }
@@ -394,22 +359,14 @@ async function removeProduct(
 
     await loadProducts()
   } catch (e) {
-    console.error(
-      '刪除商品失敗:',
-      e
-    )
+    console.error('刪除商品失敗:', e)
 
     if (e.status === 403) {
-      showError(
-        '您沒有權限執行此操作'
-      )
+      showError('您沒有權限執行此操作')
     } else if (e.status === 404) {
       showError('找不到商品')
     } else {
-      showError(
-        e.message ||
-        '刪除商品失敗'
-      )
+      showError(e.message || '刪除商品失敗')
     }
   }
 }

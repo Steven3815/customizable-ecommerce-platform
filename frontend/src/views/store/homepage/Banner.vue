@@ -161,23 +161,14 @@ async function loadBanner() {
     }
 
   } catch (e) {
-    console.error(
-      '取得首頁橫幅資料失敗:',
-      e
-    )
+    console.error('取得首頁橫幅資料失敗:', e)
 
     if (e.status === 403) {
-      showError(
-        `您沒有權限存取此頁面：${e.message || 'Forbidden'}`
-      )
+      showError(`您沒有權限存取此頁面：${e.message || 'Forbidden'}`)
     } else if (e.status === 404) {
-      showError(
-        `找不到橫幅資料：${e.message || 'Not Found'}`
-      )
+      showError(`找不到橫幅資料：${e.message || 'Not Found'}`)
     } else {
-      showError(
-        `取得橫幅資料失敗：${e.message || '未知錯誤'}`
-      )
+      showError(`取得橫幅資料失敗：${e.message || '未知錯誤'}`)
     }
   } finally {
     loading.value = false
@@ -337,41 +328,21 @@ async function saveBanner() {
         )
     }
 
-    showError(
-      data.message ||
-      (
-        isUpdate
-          ? '橫幅更新成功'
-          : '橫幅新增成功'
-      )
-    )
+    showError((isUpdate ? '橫幅更新成功' : '橫幅新增成功' || data.message))
 
   } catch (e) {
-    console.error(
-      '儲存首頁橫幅失敗:',
-      e
-    )
+    console.error('儲存首頁橫幅失敗:', e)
 
     if (e.status === 400) {
-      showError(
-        `橫幅資料格式錯誤：${e.message || 'Bad Request'}`
-      )
+      showError(`橫幅資料格式錯誤：${e.message || 'Bad Request'}`)
     } else if (e.status === 403) {
-      showError(
-        `您沒有權限執行此操作：${e.message || 'Forbidden'}`
-      )
+      showError(`您沒有權限執行此操作：${e.message || 'Forbidden'}`)
     } else if (e.status === 404) {
-      showError(
-        `找不到橫幅：${e.message || 'Not Found'}`
-      )
+      showError(`找不到橫幅：${e.message || 'Not Found'}`)
     } else if (e.status === 409) {
-      showError(
-        `橫幅已存在：${e.message || 'Conflict'}`
-      )
+      showError(`橫幅已存在：${e.message || 'Conflict'}`)
     } else {
-      showError(
-        `儲存橫幅失敗：${e.message || '未知錯誤'}`
-      )
+      showError(`儲存橫幅失敗：${e.message || '未知錯誤'}`)
     }
   } finally {
     saving.value = false
@@ -415,33 +386,19 @@ async function removeBannerImage() {
     imageSource.value = 'upload'
     defaultBannerId.value = ''
 
-    showError(
-      data.message ||
-      '橫幅圖片刪除成功'
-    )
+    showError('橫幅圖片刪除成功' || data.message)
 
   } catch (e) {
-    console.error(
-      '刪除橫幅圖片失敗:',
-      e
-    )
+    console.error('刪除橫幅圖片失敗:', e)
 
     if (e.status === 400) {
-      showError(
-        `無法刪除橫幅圖片：${e.message || 'Bad Request'}`
-      )
+      showError(`無法刪除橫幅圖片：${e.message || 'Bad Request'}`)
     } else if (e.status === 403) {
-      showError(
-        `您沒有權限執行此操作：${e.message || 'Forbidden'}`
-      )
+      showError(`您沒有權限執行此操作：${e.message || 'Forbidden'}`)
     } else if (e.status === 404) {
-      showError(
-        `找不到橫幅圖片：${e.message || 'Not Found'}`
-      )
+      showError(`找不到橫幅圖片：${e.message || 'Not Found'}`)
     } else {
-      showError(
-        `刪除橫幅圖片失敗：${e.message || '未知錯誤'}`
-      )
+      showError(`刪除橫幅圖片失敗：${e.message || '未知錯誤'}`)
     }
   } finally {
     saving.value = false
@@ -479,31 +436,19 @@ async function removeBanner() {
 
     showDeleteModal.value = false
 
-    showError(
-      data.message ||
-      '橫幅刪除成功'
-    )
+    showError('橫幅刪除成功' || data.message)
 
   } catch (e) {
-    console.error(
-      '刪除首頁橫幅失敗:',
-      e
-    )
+    console.error('刪除首頁橫幅失敗:', e)
 
     showDeleteModal.value = false
 
     if (e.status === 403) {
-      showError(
-        `您沒有權限執行此操作：${e.message || 'Forbidden'}`
-      )
+      showError(`您沒有權限執行此操作：${e.message || 'Forbidden'}`)
     } else if (e.status === 404) {
-      showError(
-        `找不到橫幅：${e.message || 'Not Found'}`
-      )
+      showError(`找不到橫幅：${e.message || 'Not Found'}`)
     } else {
-      showError(
-        `刪除橫幅失敗：${e.message || '未知錯誤'}`
-      )
+      showError(`刪除橫幅失敗：${e.message || '未知錯誤'}`)
     }
   } finally {
     saving.value = false
