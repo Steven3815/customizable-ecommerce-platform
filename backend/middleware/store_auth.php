@@ -32,7 +32,9 @@ if ($store_id <= 0) {
 // 檢查 Store 是否存在
 $sql = "
 SELECT
-    store_id
+    store_id,
+    store_name,
+    status
 FROM STORE
 WHERE store_id = ?
 ";

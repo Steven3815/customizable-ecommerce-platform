@@ -805,3 +805,57 @@ export async function updateFooterSettings(formData) {
     throw error
   }
 }
+
+// Store Order List
+
+export async function getStoreOrders({
+  search = '',
+  status = 'all',
+  refundStatus = 'all',
+  paymentConfirmStatus = 'all',
+  sort = 'newest',
+  page = 1
+} = {}) {
+  try {
+    const params = new URLSearchParams()
+
+    if (search) {
+      params.append('search', search)
+    }
+
+    params.append('status', status)
+    params.append('refund_status', refundStatus)
+    params.append(
+      'payment_confirm_status',
+      paymentConfirmStatus
+    )
+    params.append('sort', sort)
+    params.append('page', page)
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/order/get_orders.php?${params.toString()}`,
+      {
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得訂單資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得訂單資料失敗:', error)
+
+    throw error
+  }
+}

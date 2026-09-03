@@ -19,6 +19,7 @@ import HomepageSettingsBanner from '../views/store/homepage/Banner.vue'
 import HomepageSettingsSlider from '../views/store/homepage/Slider.vue'
 import HomepageSettingsProduct from '../views/store/homepage/Product.vue'
 import HomepageSettingsFooter from '../views/store/homepage/Footer.vue'
+import OrderList from '../views/store/order/OrderList.vue'
 
 
 import { checkStoreAuth } from '@/api/store.js'
@@ -131,6 +132,14 @@ const router = createRouter({
       path: '/store/admin/homepage_settings/footer',
       name: 'HomepageSettingsFooter',
       component: HomepageSettingsFooter,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+    {
+      path: '/store/admin/order_list',
+      name: 'OrderList',
+      component: OrderList,
       meta: {
         requiresStoreAuth: true
       }
