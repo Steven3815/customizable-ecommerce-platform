@@ -92,9 +92,7 @@ try {
     // 上傳圖片
     $image_url = uploadImage(
         $_FILES["image"],
-        "sliders",
-        1920,
-        600
+        "sliders"
     );
 
     // 新增 Slider Image

@@ -28,8 +28,25 @@ $banner_id = (int)$banner_id;
 
 if ($banner_id <= 0) {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Invalid banner ID"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得圖片來源
+$image_source = $_POST["image_source"] ?? null;
+
+// 圖片來源只能是 default 或 upload
+if (
+    $image_source !== "default" &&
+    $image_source !== "upload"
+) {
+    http_response_code(400);
+    echo json_encode([
+        "error" => "Invalid image source"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -54,7 +71,6 @@ $new_uploaded_image_url = null;
 $old_image_url = null;
 
 try {
-
     $pdo->beginTransaction();
 
     // 取得目前 Banner
@@ -83,48 +99,48 @@ try {
     $banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$banner) {
-        throw new Exception("Banner not found", 404);
+        throw new Exception(
+            "Banner not found",
+            404
+        );
     }
 
     $old_image_url = $banner["image_url"];
 
-    // 判斷圖片來源
-    $has_default_banner =
-        isset($_POST["default_banner_id"]) &&
-        $_POST["default_banner_id"] !== "";
-
-    $has_upload_image =
-        isset($_FILES["image"]) &&
-        is_array($_FILES["image"]) &&
-        isset($_FILES["image"]["error"]) &&
-        $_FILES["image"]["error"] !== UPLOAD_ERR_NO_FILE;
-
-    // 圖片來源必須二選一
-    if (
-        $has_default_banner &&
-        $has_upload_image
-    ) {
-        throw new Exception("Choose either default banner or uploaded image", 400);
-    }
-
     // 使用預設 Banner
-    if ($has_default_banner) {
+    if ($image_source === "default") {
+        $default_banner_id =
+            $_POST["default_banner_id"] ?? null;
 
-        $default_banner_id = $_POST["default_banner_id"];
+        if (
+            $default_banner_id === null ||
+            $default_banner_id === ""
+        ) {
+            throw new Exception(
+                "Default banner ID is required",
+                400
+            );
+        }
 
         // 驗證 ID
         if (
             !is_numeric($default_banner_id) ||
             floor((float)$default_banner_id)
-                != (float)$default_banner_id
+            != (float)$default_banner_id
         ) {
-            throw new Exception("Invalid default banner ID", 400);
+            throw new Exception(
+                "Invalid default banner ID",
+                400
+            );
         }
 
         $default_banner_id = (int)$default_banner_id;
 
         if ($default_banner_id <= 0) {
-            throw new Exception("Invalid default banner ID", 400);
+            throw new Exception(
+                "Invalid default banner ID",
+                400
+            );
         }
 
         // 確認預設 Banner 存在
@@ -141,7 +157,10 @@ try {
         $default_banner = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$default_banner) {
-            throw new Exception("Default banner not found", 404);
+            throw new Exception(
+                "Default banner not found",
+                404
+            );
         }
 
         $new_default_banner_id = $default_banner_id;
@@ -149,62 +168,73 @@ try {
     }
 
     // 使用 Store 上傳圖片
-    elseif ($has_upload_image) {
-
+    elseif ($image_source === "upload") {
         $new_default_banner_id = null;
 
-        $new_uploaded_image_url =
-            uploadImage(
+        // 有重新選擇圖片
+        if (
+            isset($_FILES["image"]) &&
+            is_array($_FILES["image"]) &&
+            isset($_FILES["image"]["error"]) &&
+            $_FILES["image"]["error"] === UPLOAD_ERR_OK
+        ) {
+            $new_uploaded_image_url = uploadImage(
                 $_FILES["image"],
-                "banners",
-                1920,
-                600
+                "banners"
             );
 
-        $new_image_url = $new_uploaded_image_url;
-    }
+            $new_image_url = $new_uploaded_image_url;
+        }
 
-    // 沒有修改圖片
-    else {
+        // 沒有重新選擇圖片
+        else {
+            // 原本就是 Store 上傳的圖片
+            if (
+                $banner["default_banner_id"] === null &&
+                $banner["image_url"] !== null
+            ) {
+                $new_image_url =
+                    $banner["image_url"];
+            }
 
-        $new_default_banner_id = $banner["default_banner_id"];
-        $new_image_url = $banner["image_url"];
+            // 原本是預設 Banner
+            // 現在要改成 Store 上傳
+            else {
+                throw new Exception(
+                    "Image is required",
+                    400
+                );
+            }
+        }
     }
 
     // 更新標題
     if (isset($_POST["title"])) {
-
         $title = trim($_POST["title"]);
 
-        // 空字串轉成 NULL
         if ($title === "") {
             $title = null;
         }
 
-        // 有標題時最多 20 字
         if (
             $title !== null &&
             mb_strlen($title) > 20
         ) {
             throw new Exception("Title is too long", 400);
         }
-
     } else {
-
         $title = $banner["title"];
     }
 
     // 更新描述
     if (isset($_POST["description"])) {
-
-        $description = trim($_POST["description"]);
+        $description =
+            trim($_POST["description"]);
 
         if (mb_strlen($description) > 80) {
             throw new Exception("Description is too long", 400);
         }
-
     } else {
-
         $description = $banner["description"];
     }
 
@@ -223,6 +253,7 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $new_default_banner_id,
         $new_image_url,
@@ -232,9 +263,15 @@ try {
         $store_id
     ]);
 
+    // 確認確實更新
+    if ($stmt->rowCount() === 0) {
+        throw new Exception("Banner update failed",500);
+    }
+
     $pdo->commit();
 
-    // 刪除舊的 Store 上傳圖片
+    // 如果原本是 Store 上傳圖片，
+    // 而且這次換成其他圖片，刪除舊圖片
     if (
         $banner["default_banner_id"] === null &&
         $old_image_url !== null &&
@@ -243,39 +280,49 @@ try {
         deleteImage($old_image_url);
     }
 
-    // 回傳
     echo json_encode([
         "message" => "Banner updated successfully",
         "banner" => [
             "banner_id" => $banner_id,
             "store_id" => $store_id,
-            "default_banner_id" => $new_default_banner_id !== null
-                ? (int)$new_default_banner_id
-                : null,
+            "default_banner_id" =>
+                $new_default_banner_id !== null
+                    ? (int)$new_default_banner_id
+                    : null,
+            "image_source" => $image_source,
             "image_url" => $new_image_url,
             "title" => $title,
             "description" => $description,
-            "sort_order" => $banner["sort_order"] !== null
-                ? (int)$banner["sort_order"]
-                : null,
+            "sort_order" =>
+                $banner["sort_order"] !== null
+                    ? (int)$banner["sort_order"]
+                    : null,
             "status" => $banner["status"]
         ]
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
-
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    // DB 更新失敗 只有這次真的上傳的新圖片才刪除
+
+    // DB 更新失敗時，
+    // 刪除這次新上傳的圖片
     if ($new_uploaded_image_url !== null) {
         deleteImage($new_uploaded_image_url);
     }
+
     $status_code = $e->getCode();
-    if ($status_code < 400 || $status_code > 599) {
+
+    if (
+        $status_code < 400 ||
+        $status_code > 599
+    ) {
         $status_code = 500;
     }
+
     http_response_code($status_code);
+
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

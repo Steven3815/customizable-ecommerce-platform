@@ -16,6 +16,7 @@ if (
     $image_id === ""
 ) {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Image ID is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -30,6 +31,7 @@ if (
     (int)$image_id <= 0
 ) {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Invalid image ID"
     ], JSON_UNESCAPED_UNICODE);
@@ -54,14 +56,17 @@ AND store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
+
 $stmt->execute([
     $image_id,
     $store_id
 ]);
+
 $slider = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$slider) {
     http_response_code(404);
+
     echo json_encode([
         "error" => "Slider image not found"
     ], JSON_UNESCAPED_UNICODE);
@@ -72,6 +77,7 @@ if (!$slider) {
 // deleted Slider 禁止操作
 if ($slider["status"] === "deleted") {
     http_response_code(409);
+
     echo json_encode([
         "error" => "Deleted slider image cannot be modified"
     ], JSON_UNESCAPED_UNICODE);
@@ -85,6 +91,7 @@ if (
     $slider["image_url"] === ""
 ) {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Slider image does not exist"
     ], JSON_UNESCAPED_UNICODE);
@@ -100,6 +107,7 @@ if (
     strpos($image_url, "/uploads/") !== 0
 ) {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Invalid image path"
     ], JSON_UNESCAPED_UNICODE);
@@ -125,13 +133,16 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $image_id,
         $store_id
     ]);
 
     if ($stmt->rowCount() !== 1) {
-        throw new Exception("Failed to delete slider image");
+        throw new Exception(
+            "Failed to delete slider image"
+        );
     }
 
     // 取得剩餘圖片
@@ -220,13 +231,23 @@ ORDER BY sort_order ASC, image_id ASC
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
-$slider_images = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$stmt->execute([
+    $store_id
+]);
+
+$slider_images =
+    $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理資料
 foreach ($slider_images as &$image) {
-    $image["image_id"] = (int)$image["image_id"];
-    $image["store_id"] = (int)$image["store_id"];
+
+    $image["image_id"] =
+        (int)$image["image_id"];
+
+    $image["store_id"] =
+        (int)$image["store_id"];
+
     $image["sort_order"] =
         $image["sort_order"] !== null
             ? (int)$image["sort_order"]
@@ -237,12 +258,23 @@ unset($image);
 
 // 回傳
 echo json_encode([
-    "message" => "Slider image deleted successfully",
-    "store_id" => $store_id,
-    "image_id" => $image_id,
-    "image_url" => $image_url,
-    "deleted_physical_image" => $deleted_physical_image,
-    "slider_images" => $slider_images
+    "message" =>
+        "Slider image deleted successfully",
+
+    "store_id" =>
+        $store_id,
+
+    "image_id" =>
+        $image_id,
+
+    "image_url" =>
+        $image_url,
+
+    "deleted_physical_image" =>
+        $deleted_physical_image,
+
+    "slider_images" =>
+        $slider_images
 
 ], JSON_UNESCAPED_UNICODE);
 

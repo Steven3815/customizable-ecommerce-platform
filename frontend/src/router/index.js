@@ -15,6 +15,8 @@ import StoreLogout from '../views/auth/StoreLogout.vue'
 import Home from '../views/customer/Home.vue'
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import HomepageSettings from '../views/store/homepage/Settings.vue'
+import HomepageSettingsBanner from '../views/store/homepage/Banner.vue'
+import HomepageSettingsSlider from '../views/store/homepage/Slider.vue'
 
 import { checkStoreAuth } from '@/api/store.js'
 
@@ -94,6 +96,22 @@ const router = createRouter({
       path: '/store/admin/homepage_settings/settings',
       name: 'HomepageSettings',
       component: HomepageSettings,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+    {
+      path: '/store/admin/homepage_settings/banner',
+      name: 'HomepageSettingsBanner',
+      component: HomepageSettingsBanner,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+    {
+      path: '/store/admin/homepage_settings/slider',
+      name: 'HomepageSettingsSlider',
+      component: HomepageSettingsSlider,
       meta: {
         requiresStoreAuth: true
       }

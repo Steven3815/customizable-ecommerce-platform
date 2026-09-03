@@ -514,15 +514,6 @@ INSERT INTO PROMOTION_BANNER (
     '夏季飲品限時優惠活動',
     'active',
     1
-),
-(
-    1,
-    NULL,
-    '/uploads/banners/store-banner.jpg',
-    '新品上市',
-    '最新商品正式上市',
-    'active',
-    2
 );
 
 INSERT INTO SLIDER_IMAGE (

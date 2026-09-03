@@ -9,6 +9,22 @@ require_once "../../../../middleware/store_auth.php";
 
 
 try {
+    // 取得首頁輪播區塊是否啟用
+    $sql = "
+        SELECT intro_section_enable
+        FROM WEBSITE_SETTING
+        WHERE store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$store_id]);
+
+    $website_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $intro_section_enable =
+        $website_setting
+            ? (bool)$website_setting["intro_section_enable"]
+            : false;
 
     // 取得目前 Store 的輪播圖片
     $sql = "
@@ -46,6 +62,7 @@ try {
     // 回傳
     echo json_encode([
         "message" => "Slider images retrieved successfully",
+        "intro_section_enable" => $intro_section_enable,
         "store_id" => $store_id,
         "count" => count($slider_images),
         "max_count" => 5,

@@ -338,21 +338,21 @@ async function removeCategory(categoryId) {
 
                 <div>
                   <CFormCheck
-                    v-model="website.intro_section_enable"
-                    label="網頁介紹區塊"
-                    :true-value="1"
-                    :false-value="0"
-                  />
-                  
-                  <CFormCheck class="mb-4"
                     v-model="website.banner_section_enable"
                     label="橫幅區塊"
                     :true-value="1"
                     :false-value="0"
                   />
+                  
+                  <CFormCheck class="mb-4"
+                    v-model="website.intro_section_enable"
+                    label="輪播區塊"
+                    :true-value="1"
+                    :false-value="0"
+                  />
                   <small><b>說明:</b> 開啟後，首頁將顯示對應區塊</small> <br>
-                  <small><b>網頁介紹區塊:</b> 主要的橫幅圖片，用於呈現活動、優惠或重要資訊</small><br>
-                  <small><b>橫幅區塊:</b> 以輪播方式顯示多張圖片，可用於展示活動、商品或宣傳內容</small>
+                  <small><b>橫幅區塊:</b> 主要的橫幅圖片，用於呈現活動、優惠或重要資訊</small><br>
+                  <small><b>輪播區塊:</b> 以輪播方式顯示多張圖片，可用於展示活動、商品或宣傳內容</small>
                 </div>
               </CCardBody>
             </CCard>

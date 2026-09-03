@@ -9,6 +9,22 @@ require_once "../../../../middleware/store_auth.php";
 
 
 try {
+    // 取得首頁輪播區塊是否啟用
+    $sql = "
+        SELECT banner_section_enable
+        FROM WEBSITE_SETTING
+        WHERE store_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$store_id]);
+
+    $website_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $banner_section_enable =
+        $website_setting
+            ? (bool)$website_setting["banner_section_enable"]
+            : false;
 
     // 取得目前 Store 的 Banner
     $sql = "
@@ -105,6 +121,7 @@ try {
     // 回傳
     echo json_encode([
         "message" => "Banner management data retrieved successfully",
+        "banner_section_enable" => $banner_section_enable,
         "store_id" => $store_id,
         "banner" => $banner,
         "default_banners" => $default_banners

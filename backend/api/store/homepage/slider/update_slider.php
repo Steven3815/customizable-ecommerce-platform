@@ -117,9 +117,7 @@ try {
 
         $new_image_url = uploadImage(
             $_FILES["image"],
-            "sliders",
-            1920,
-            600
+            "sliders"
         );
 
         $image_url = $new_image_url;
