@@ -114,6 +114,10 @@ onMounted(() => {
   loadFooter()
 })
 
+function cancelChanges() {
+  window.location.reload()
+}
+
 // 儲存頁尾設定
 async function saveFooter() {
   if (saving.value) {
@@ -384,17 +388,26 @@ async function saveFooter() {
             <div
               class="d-flex justify-content-end mb-5"
             >
-              <CButton
-                color="primary"
-                :disabled="saving"
-                @click="saveFooter"
-              >
-                {{
-                  saving
-                    ? '儲存中...'
-                    : '儲存設定'
-                }}
-              </CButton>
+            <CButton
+              color="secondary"
+              class="me-2"
+              :disabled="saving"
+              @click="cancelChanges"
+            >
+              取消修改
+            </CButton>
+
+            <CButton
+              color="primary"
+              :disabled="saving"
+              @click="saveFooter"
+            >
+              {{
+                saving
+                  ? '儲存中...'
+                  : '儲存設定'
+              }}
+            </CButton>
             </div>
 
           </div>

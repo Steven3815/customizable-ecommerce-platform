@@ -179,6 +179,10 @@ onMounted(() => {
   loadBanner()
 })
 
+function cancelChanges() {
+  window.location.reload()
+}
+
 // 選擇圖片
 function handleImageChange(event) {
   const file = event.target.files[0]
@@ -722,6 +726,15 @@ async function removeBanner() {
                 @click="openDeleteModal"
               >
                 刪除橫幅
+              </CButton>
+
+              <CButton
+                color="secondary"
+                class="me-2"
+                :disabled="saving"
+                @click="cancelChanges"
+              >
+                取消修改
               </CButton>
 
               <CButton

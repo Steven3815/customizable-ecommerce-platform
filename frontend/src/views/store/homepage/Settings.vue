@@ -84,6 +84,10 @@ onMounted(() => {
   loadSettings()
 })
 
+function cancelChanges() {
+  window.location.reload()
+}
+
 // 顯示錯誤 Modal
 function showError(message) {
   errorModalMessage.value = message
@@ -534,13 +538,26 @@ async function removeCategory(categoryId) {
 
             <!-- 儲存 -->
             <div class="d-flex justify-content-end mb-5">
-              <CButton
-                color="primary"
-                :disabled="saving"
-                @click="saveSettings"
-              >
-                {{ saving ? '儲存中...' : '儲存設定' }}
-              </CButton>
+            <CButton
+              color="secondary"
+              class="me-2"
+              :disabled="saving"
+              @click="cancelChanges"
+            >
+              取消修改
+            </CButton>
+
+            <CButton
+              color="primary"
+              :disabled="saving"
+              @click="saveSettings"
+            >
+              {{
+                saving
+                  ? '儲存中...'
+                  : '儲存設定'
+              }}
+            </CButton>
             </div>
           </div>
 

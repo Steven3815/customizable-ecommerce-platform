@@ -145,6 +145,11 @@ onMounted(() => {
   loadPage()
 })
 
+// 取消修改
+function cancelChanges() {
+  window.location.reload()
+}
+
 // 顯示錯誤 Modal
 function showError(message) {
   errorModalMessage.value = message
@@ -234,51 +239,10 @@ async function createNewProduct() {
         '商品名稱已存在'
     } else {
       productError.value =
-        e.message ||
-        '新增商品失敗'
+        e.message || '新增商品失敗'
     }
   } finally {
     addingProduct.value = false
-  }
-}
-
-// 儲存商品名稱
-async function saveProduct(product) {
-  const productName =
-    product.product_name.trim()
-
-  if (!productName) {
-    showError('商品名稱不可為空白')
-    return
-  }
-
-  if (saving.value) {
-    return
-  }
-
-  saving.value = true
-
-  try {
-    await updateHomepageProduct(
-      product.product_id,
-      productName
-    )
-
-    await loadProducts()
-  } catch (e) {
-    console.error('更新商品失敗:', e)
-
-    if (e.status === 403) {
-      showError('您沒有權限執行此操作')
-    } else if (e.status === 404) {
-      showError('找不到商品')
-    } else if (e.status === 409) {
-      showError('商品名稱已存在')
-    } else {
-      showError(e.message || '更新商品失敗')
-    }
-  } finally {
-    saving.value = false
   }
 }
 
@@ -297,18 +261,28 @@ async function moveProduct(
     return
   }
 
-  if (!categoryId.value) {
+  if (
+    !categoryId.value ||
+    saving.value
+  ) {
     return
   }
 
-  const oldProducts = [...products.value]
-  const newProducts = [...products.value]
+  const oldProducts =
+    [...products.value]
 
-  const temp = newProducts[index]
-  newProducts[index] = newProducts[newIndex]
-  newProducts[newIndex] = temp
+  const newProducts =
+    [...products.value]
 
-  // 先更新畫面
+  const temp =
+    newProducts[index]
+
+  newProducts[index] =
+    newProducts[newIndex]
+
+  newProducts[newIndex] =
+    temp
+
   products.value =
     newProducts
 
@@ -326,7 +300,6 @@ async function moveProduct(
   } catch (e) {
     console.error('重新排列商品失敗:', e)
 
-    // API 失敗時還原畫面
     products.value =
       oldProducts
 
@@ -337,6 +310,60 @@ async function moveProduct(
     } else {
       showError(e.message || '重新排列商品失敗')
     }
+  }
+}
+
+// 儲存商品名稱
+async function saveProducts() {
+  if (saving.value) {
+    return
+  }
+
+  if (!categoryId.value) {
+    return
+  }
+
+  const hasEmptyProduct =
+    products.value.some(
+      product =>
+        !product.product_name.trim()
+    )
+
+  if (hasEmptyProduct) {
+    showError('商品名稱不可為空白')
+    return
+  }
+
+  saving.value = true
+  error.value = ''
+
+  try {
+    for (const product of products.value) {
+      await updateHomepageProduct(
+        product.product_id,
+        product.product_name.trim()
+      )
+    }
+
+    await loadProducts()
+
+    error.value = ''
+
+    showError('儲存成功')
+  } catch (e) {
+    console.error('儲存商品設定失敗:', e)
+
+    if (e.status === 403) {
+      showError('您沒有權限執行此操作')
+    } else if (e.status === 404) {
+      showError('找不到商品')
+    } else if (e.status === 409) {
+      showError('商品名稱已存在')
+    } else {
+      showError(e.message || '儲存商品設定失敗')
+    }
+  } finally {
+    saving.value = false
   }
 }
 
@@ -483,7 +510,10 @@ async function removeProduct(
 
                   <CButton
                     color="primary"
-                    :disabled="!categoryId"
+                    :disabled="
+                      !categoryId ||
+                      saving
+                    "
                     @click="addProduct"
                   >
                     新增商品
@@ -529,6 +559,7 @@ async function removeProduct(
                       <CTableDataCell>
                         <CFormInput
                           v-model="product.product_name"
+                          :disabled="saving"
                         />
                       </CTableDataCell>
 
@@ -543,7 +574,8 @@ async function removeProduct(
                           size="sm"
                           class="me-2"
                           :disabled="
-                            index === 0
+                            index === 0 ||
+                            saving
                           "
                           @click="
                             moveProduct(
@@ -561,7 +593,8 @@ async function removeProduct(
                           size="sm"
                           class="me-2"
                           :disabled="
-                            index === products.length - 1
+                            index === products.length - 1 ||
+                            saving
                           "
                           @click="
                             moveProduct(
@@ -573,25 +606,11 @@ async function removeProduct(
                           下移
                         </CButton>
 
-                        <!-- 儲存 -->
-                        <CButton
-                          color="primary"
-                          size="sm"
-                          class="me-2"
-                          :disabled="saving"
-                          @click="
-                            saveProduct(
-                              product
-                            )
-                          "
-                        >
-                          儲存
-                        </CButton>
-
                         <!-- 刪除 -->
                         <CButton
                           color="danger"
                           size="sm"
+                          :disabled="saving"
                           @click="
                             removeProduct(
                               product.product_id
@@ -600,6 +619,7 @@ async function removeProduct(
                         >
                           刪除
                         </CButton>
+
                       </CTableDataCell>
                     </CTableRow>
 
@@ -624,6 +644,36 @@ async function removeProduct(
                   商品會按照目前的順序顯示於首頁。
                   可使用上移與下移調整商品順序。
                 </small>
+
+                <!-- 儲存 / 取消修改 -->
+                <div
+                  class="d-flex justify-content-end mt-4"
+                >
+                  <CButton
+                    color="secondary"
+                    class="me-2"
+                    :disabled="saving"
+                    @click="cancelChanges"
+                  >
+                    取消修改
+                  </CButton>
+
+                  <CButton
+                    color="primary"
+                    :disabled="
+                      saving ||
+                      products.length === 0
+                    "
+                    @click="saveProducts"
+                  >
+                    {{
+                      saving
+                        ? '儲存中...'
+                        : '儲存設定'
+                    }}
+                  </CButton>
+                </div>
+
               </CCardBody>
             </CCard>
 
