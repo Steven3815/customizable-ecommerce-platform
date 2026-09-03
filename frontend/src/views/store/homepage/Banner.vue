@@ -62,12 +62,10 @@ function getImageUrl(url) {
     return null
   }
 
-  // Blob URL
   if (url.startsWith('blob:')) {
     return url
   }
 
-  // 完整網址
   if (
     url.startsWith('http://') ||
     url.startsWith('https://')
@@ -75,7 +73,6 @@ function getImageUrl(url) {
     return url
   }
 
-  // 後端相對路徑
   return `http://localhost/ecommerce-platform/backend${url}`
 }
 
@@ -138,7 +135,6 @@ async function loadBanner() {
       description.value =
         banner.value.description || ''
 
-      // 預設 Banner
       if (
         banner.value.image_source === 'default'
       ) {
@@ -148,7 +144,6 @@ async function loadBanner() {
           banner.value.default_banner_id || ''
       }
 
-      // Store 上傳圖片
       else {
         imageSource.value = 'upload'
         defaultBannerId.value = ''
@@ -197,14 +192,12 @@ onMounted(() => {
 function handleImageChange(event) {
   const file = event.target.files[0]
 
-  // 使用者取消選檔
   if (!file) {
     return
   }
 
   selectedImage.value = file
 
-  // 顯示新選擇的圖片
   imagePreview.value =
     URL.createObjectURL(file)
 }
@@ -215,17 +208,14 @@ function changeImageSource(source) {
 
   selectedImage.value = null
 
-  // 切換成預設 Banner
   if (source === 'default') {
     defaultBannerId.value = ''
     imagePreview.value = null
     return
   }
 
-  // 切換成上傳圖片
   defaultBannerId.value = ''
 
-  // 原本就是上傳圖片
   if (
     banner.value &&
     banner.value.image_source === 'upload' &&
@@ -246,7 +236,6 @@ async function saveBanner() {
     return
   }
 
-  // 預設 Banner 必須選擇預設圖片
   if (
     imageSource.value === 'default' &&
     !defaultBannerId.value
@@ -255,8 +244,6 @@ async function saveBanner() {
     return
   }
 
-  // 新增 Banner 時，
-  // 上傳模式必須選擇圖片
   if (
     imageSource.value === 'upload' &&
     !selectedImage.value &&
@@ -266,9 +253,6 @@ async function saveBanner() {
     return
   }
 
-  // 更新 Banner 時，
-  // 如果原本不是上傳圖片，
-  // 切換成上傳模式後必須選擇新圖片
   if (
     imageSource.value === 'upload' &&
     !selectedImage.value &&
@@ -285,7 +269,6 @@ async function saveBanner() {
     const isUpdate = !!banner.value
     const formData = new FormData()
 
-    // 更新時傳送 banner_id
     if (banner.value) {
       formData.append(
         'banner_id',
@@ -293,13 +276,11 @@ async function saveBanner() {
       )
     }
 
-    // 圖片來源
     formData.append(
       'image_source',
       imageSource.value
     )
 
-    // 預設 Banner
     if (imageSource.value === 'default') {
       formData.append(
         'default_banner_id',
@@ -307,7 +288,6 @@ async function saveBanner() {
       )
     }
 
-    // 上傳圖片
     if (
       imageSource.value === 'upload' &&
       selectedImage.value
@@ -318,13 +298,11 @@ async function saveBanner() {
       )
     }
 
-    // Banner 標題
     formData.append(
       'title',
       title.value
     )
 
-    // Banner 描述
     formData.append(
       'description',
       description.value
@@ -338,11 +316,9 @@ async function saveBanner() {
       data = await createHomepageBanner(formData)
     }
 
-    // 更新 Banner 狀態
     banner.value = data.banner
     selectedImage.value = null
 
-    // 更新圖片來源
     if (
       data.banner.image_source === 'default'
     ) {
@@ -412,12 +388,10 @@ async function removeBannerImage() {
     return
   }
 
-  // 必須是上傳圖片
   if (imageSource.value !== 'upload') {
     return
   }
 
-  // 預設圖片不可刪除
   if (
     banner.value.default_banner_id !== null
   ) {
@@ -479,7 +453,6 @@ function openDeleteModal() {
   showDeleteModal.value = true
 }
 
-// 關閉刪除橫幅確認
 function closeDeleteModal() {
   showDeleteModal.value = false
 }

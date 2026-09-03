@@ -539,3 +539,199 @@ export async function reorderHomepageSliders(imageIds) {
     throw error
   }
 }
+
+// Homepage Settings Product
+
+export async function getHomepageProducts(categoryId = null) {
+  try {
+    const url = categoryId
+      ? `http://localhost/ecommerce-platform/backend/api/store/homepage/product/get_products.php?category_id=${categoryId}`
+      : 'http://localhost/ecommerce-platform/backend/api/store/homepage/product/get_products.php'
+
+    const response = await fetch(
+      url,
+      {
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得商品資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得商品資料失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function createHomepageProduct(formData) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/homepage/product/add_product.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '新增商品失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '新增商品失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function updateHomepageProduct(productId, productName) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/homepage/product/update_product.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          product_name: productName
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '更新商品失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '更新商品失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function deleteHomepageProduct(productId) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/homepage/product/delete_product.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          product_id: productId
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '刪除商品失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '刪除商品失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function reorderHomepageProducts(categoryId, productIds) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/homepage/product/reorder_product.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          category_id: categoryId,
+          product_ids: productIds
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '調整商品順序失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '調整商品順序失敗:',
+      error
+    )
+
+    throw error
+  }
+}
