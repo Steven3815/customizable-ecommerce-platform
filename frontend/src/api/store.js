@@ -978,3 +978,62 @@ export async function confirmOrderPayment({
     throw error
   }
 }
+
+// Store Product List
+
+export async function getProducts({
+  page = 1,
+  keyword = null,
+  category_id = null,
+  status = null,
+  stock_status = null
+} = {}) {
+  try {
+    const params = new URLSearchParams()
+
+    params.append('page', page)
+
+    if (keyword !== null && keyword !== '') {
+      params.append('keyword', keyword)
+    }
+
+    if (category_id !== null) {
+      params.append('category_id', category_id)
+    }
+
+    if (status !== null) {
+      params.append('status', status)
+    }
+
+    if (stock_status !== null) {
+      params.append('stock_status', stock_status)
+    }
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/product/get_products.php?${params.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得商品管理資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得商品管理資料失敗:', error)
+
+    throw error
+  }
+}

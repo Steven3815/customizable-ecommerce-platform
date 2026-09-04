@@ -51,13 +51,20 @@ $stock_status =
         ? $_GET["stock_status"]
         : null;
 
+// 取得商品名稱關鍵字
+$keyword =
+    isset($_GET["keyword"]) &&
+    $_GET["keyword"] !== ""
+        ? trim($_GET["keyword"])
+        : null;
+
 // 檢查 Category ID
 if ($category_id !== null) {
 
     if (
         !is_numeric($category_id) ||
-        floor((float)$category_id)
-            != (float)$category_id
+        floor((float)$category_id) != (float)$category_id ||
+        (int)$category_id < 1
     ) {
         http_response_code(400);
         echo json_encode([
@@ -68,15 +75,6 @@ if ($category_id !== null) {
     }
 
     $category_id = (int)$category_id;
-
-    if ($category_id <= 0) {
-        http_response_code(400);
-        echo json_encode([
-            "error" => "Invalid category ID"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
 
     // 確認 Category 屬於目前 Store
     $sql = "
@@ -140,6 +138,28 @@ if ($stock_status !== null) {
 
 try {
 
+    // 取得目前 Store 所有商品分類
+    $sql = "
+    SELECT
+        category_id,
+        category_name
+    FROM CATEGORY
+    WHERE store_id = ?
+    ORDER BY
+        category_id ASC
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$store_id]);
+    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($categories as &$category) {
+        $category["category_id"] =
+            (int)$category["category_id"];
+    }
+
+    unset($category);
+
     // 取得 Store 庫存預警門檻
     $sql = "
     SELECT
@@ -180,6 +200,13 @@ try {
     ];
 
     $params = [$store_id];
+
+    // 商品名稱關鍵字搜尋
+    if ($keyword !== null) {
+
+        $where[] = "p.product_name LIKE ?";
+        $params[] = "%" . $keyword . "%";
+    }
 
     // Category 篩選
     if ($category_id !== null) {
@@ -312,7 +339,7 @@ try {
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$product_id]);
-        $specs =$stmt->fetchAll(PDO::FETCH_ASSOC);
+        $specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // 沒有規格資料
         if (!$specs) {
@@ -404,6 +431,9 @@ try {
             "category_id" => $category_id,
             "status" => $status,
             "stock_status" => $stock_status,
+            "keyword" => $keyword,
+
+            "categories" => $categories,
 
             "pagination" => [
                 "current_page" => $page,
@@ -426,7 +456,8 @@ try {
         http_response_code(409);
         echo json_encode([
             "error" => "Page out of range",
-            "total_pages" => $total_pages
+            "total_pages" => $total_pages,
+            "categories" => $categories
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -450,6 +481,9 @@ try {
         "category_id" => $category_id,
         "status" => $status,
         "stock_status" => $stock_status,
+        "keyword" => $keyword,
+
+        "categories" => $categories,
 
         "pagination" => [
             "current_page" => $page,
