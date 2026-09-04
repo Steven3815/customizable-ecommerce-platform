@@ -20,6 +20,7 @@ import HomepageSettingsSlider from '../views/store/homepage/Slider.vue'
 import HomepageSettingsProduct from '../views/store/homepage/Product.vue'
 import HomepageSettingsFooter from '../views/store/homepage/Footer.vue'
 import OrderList from '../views/store/order/OrderList.vue'
+import OrderDetail from '../views/store/order/OrderDetail.vue'
 
 
 import { checkStoreAuth } from '@/api/store.js'
@@ -144,7 +145,11 @@ const router = createRouter({
         requiresStoreAuth: true
       }
     },
-
+    {
+      path: '/store/admin/order/:orderId',
+      name: 'OrderDetail',
+      component: OrderDetail
+    },
     {
       path: '/store/login',
       name: 'StoreLogin',

@@ -1,4 +1,3 @@
-```php
 <?php
 
 // Store 取得單筆訂單詳細資料
@@ -81,6 +80,7 @@ SELECT
     o.customer_id,
     c.name AS customer_name,
     c.phone AS customer_phone,
+    c.email AS customer_email,
     o.receiver_name,
     o.receiver_phone,
     o.receiver_address,
@@ -123,9 +123,9 @@ SELECT
     payment_id,
     store_id,
     payment_method,
+    amount,
     payment_status,
     payment_confirm_status,
-    payment_note,
     payment_proof_image,
     paid_at,
     confirmed_at
@@ -214,6 +214,8 @@ unset($item);
 if ($payment) {
     $payment["payment_id"] = (int)$payment["payment_id"];
     $payment["store_id"] = (int)$payment["store_id"];
+    $payment["amount"] = (float)$payment["amount"]; 
+
 }
 
 // 整理 Refund
@@ -250,7 +252,8 @@ echo json_encode([
         "customer" => [
             "customer_id" => $order["customer_id"],
             "name" => $order["customer_name"],
-            "phone" => $order["customer_phone"]
+            "phone" => $order["customer_phone"],
+            "email" => $order["customer_email"],
         ],
 
         "receiver" => [

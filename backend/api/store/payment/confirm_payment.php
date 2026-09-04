@@ -1,289 +1,337 @@
-<?php
-
-// Store 確認付款
-
-header("Content-Type: application/json; charset=UTF-8");
-
-require_once "../../../config/cors.php";
-require_once "../../../middleware/store_auth.php";
-
-// 檢查 Store 是否存在
-$sql = "
-SELECT
-    store_id,
-    store_name,
-    status
-FROM STORE
-WHERE store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
-$store = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$store) {
-    http_response_code(404);
-    echo json_encode([
-        "error" => "Store not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查 Store 是否啟用
-if ($store["status"] !== "active") {
-    http_response_code(403);
-    echo json_encode([
-        "error" => "Store is inactive"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 取得 JSON 資料
-$data = json_decode(
-    file_get_contents("php://input"),
-    true
-);
-
-if (!is_array($data)) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Invalid JSON format"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查 Order ID
-if (
-    !isset($data["order_id"]) ||
-    $data["order_id"] === ""
-) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Order ID is required"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$order_id = $data["order_id"];
-
-// 驗證 Order ID
-if (
-    !is_numeric($order_id) ||
-    floor((float)$order_id) != (float)$order_id ||
-    (int)$order_id <= 0
-) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Invalid order ID"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-$order_id = (int)$order_id;
-
-// 取得付款資料
-$sql = "
-SELECT
-    p.payment_id,
-    p.order_id,
-    o.order_number,
-    p.store_id,
-    p.payment_method,
-    p.payment_status,
-    p.payment_confirm_status,
-
-    o.customer_id,
-    o.product_amount,
-    o.shipping_fee,
-    o.total_amount,
-
-    c.name AS customer_name,
-    c.email AS customer_email
-
-FROM PAYMENT p
-
-JOIN ORDERS o
-    ON p.order_id = o.order_id
-    AND p.store_id = o.store_id
-
-JOIN CUSTOMER c
-    ON o.customer_id = c.customer_id
-
-WHERE p.order_id = ?
-AND p.store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $order_id,
-    $store_id
-]);
-$payment = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$payment) {
-    http_response_code(404);
-    echo json_encode([
-        "error" => "Payment not found"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 只有 ATM 與郵局轉帳需要 Store 手動確認
-if (
-    $payment["payment_method"] !== "atm" &&
-    $payment["payment_method"] !== "post_office"
-) {
-    http_response_code(403);
-    echo json_encode([
-        "error" => "Only ATM or post office transfer can be confirmed manually"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查付款是否已確認
-if ($payment["payment_status"] === "paid") {
-    http_response_code(409);
-    echo json_encode([
-        "error" => "Payment has already been confirmed"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查付款狀態
-if ($payment["payment_status"] !== "processing") {
-    http_response_code(409);
-    echo json_encode([
-        "error" => "Payment is not waiting for confirmation"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
+<?php 
+ 
+// Store 確認付款 
+ 
+header("Content-Type: application/json; charset=UTF-8"); 
+ 
+require_once "../../../config/cors.php"; 
+require_once "../../../middleware/store_auth.php"; 
+ 
+// 檢查 Store 是否存在 
+$sql = " 
+SELECT 
+    store_id, 
+    store_name, 
+    status 
+FROM STORE 
+WHERE store_id = ? 
+"; 
+ 
+$stmt = $pdo->prepare($sql); 
+$stmt->execute([$store_id]); 
+$store = $stmt->fetch(PDO::FETCH_ASSOC); 
+ 
+if (!$store) { 
+    http_response_code(404); 
+    echo json_encode([ 
+        "error" => "Store not found" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 檢查 Store 是否啟用 
+if ($store["status"] !== "active") { 
+    http_response_code(403); 
+    echo json_encode([ 
+        "error" => "Store is inactive" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 取得 JSON 資料 
+$data = json_decode( 
+    file_get_contents("php://input"), 
+    true 
+); 
+ 
+if (!is_array($data)) { 
+    http_response_code(400); 
+    echo json_encode([ 
+        "error" => "Invalid JSON format" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 檢查 Order ID 
+if ( 
+    !isset($data["order_id"]) || 
+    $data["order_id"] === "" 
+) { 
+    http_response_code(400); 
+    echo json_encode([ 
+        "error" => "Order ID is required" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+$order_id = $data["order_id"]; 
+ 
+// 驗證 Order ID 
+if ( 
+    !is_numeric($order_id) || 
+    floor((float)$order_id) != (float)$order_id || 
+    (int)$order_id <= 0 
+) { 
+    http_response_code(400); 
+    echo json_encode([ 
+        "error" => "Invalid order ID" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+$order_id = (int)$order_id; 
 
 // 檢查付款確認狀態
-if ($payment["payment_confirm_status"] !== "waiting") {
-    http_response_code(409);
+if (
+    !isset($data["payment_confirm_status"]) ||
+    !in_array($data["payment_confirm_status"], ["confirmed", "rejected"], true)
+) {
+    http_response_code(400);
     echo json_encode([
-        "error" => "Payment is not waiting for confirmation"
+        "error" => "Invalid payment confirm status"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
-try {
+$payment_confirm_status = $data["payment_confirm_status"];
 
-    $pdo->beginTransaction();
-
-    // 確認付款
-    $sql = "
-    UPDATE PAYMENT
-    SET
-        payment_status = 'paid',
-        payment_confirm_status = 'confirmed',
-        paid_at = NOW(),
-        confirmed_at = NOW(),
-        updated_at = NOW()
-    WHERE payment_id = ?
-    AND order_id = ?
-    AND store_id = ?
-    AND payment_status = 'processing'
-    AND payment_confirm_status = 'waiting'
-    ";
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
+$payment_status = $payment_confirm_status === "confirmed"
+    ? "paid"
+    : "failed";
+ 
+// 檢查付款備註 
+if ( 
+    !isset($data["payment_note"]) || 
+    trim($data["payment_note"]) === "" 
+) { 
+    http_response_code(400); 
+    echo json_encode([ 
+        "error" => "Payment note is required" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+$payment_note = trim($data["payment_note"]); 
+ 
+// 取得付款資料 
+$sql = " 
+SELECT 
+    p.payment_id, 
+    p.order_id, 
+    o.order_number, 
+    p.store_id, 
+    p.payment_method, 
+    p.payment_status, 
+    p.payment_confirm_status, 
+ 
+    o.customer_id, 
+    o.product_amount, 
+    o.shipping_fee, 
+    o.total_amount, 
+ 
+    c.name AS customer_name, 
+    c.email AS customer_email 
+ 
+FROM PAYMENT p 
+ 
+JOIN ORDERS o 
+    ON p.order_id = o.order_id 
+    AND p.store_id = o.store_id 
+ 
+JOIN CUSTOMER c 
+    ON o.customer_id = c.customer_id 
+ 
+WHERE p.order_id = ? 
+AND p.store_id = ? 
+"; 
+ 
+$stmt = $pdo->prepare($sql); 
+$stmt->execute([ 
+    $order_id, 
+    $store_id 
+]); 
+$payment = $stmt->fetch(PDO::FETCH_ASSOC); 
+ 
+if (!$payment) { 
+    http_response_code(404); 
+    echo json_encode([ 
+        "error" => "Payment not found" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 只有 ATM 與郵局轉帳需要 Store 手動確認 
+if ( 
+    $payment["payment_method"] !== "atm" && 
+    $payment["payment_method"] !== "post_office" 
+) { 
+    http_response_code(403); 
+    echo json_encode([ 
+        "error" => "Only ATM or post office transfer can be confirmed manually" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 檢查付款是否已確認 
+if ($payment["payment_status"] === "paid") { 
+    http_response_code(409); 
+    echo json_encode([ 
+        "error" => "Payment has already been confirmed" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 檢查付款狀態 
+if ($payment["payment_status"] !== "processing") { 
+    http_response_code(409); 
+    echo json_encode([ 
+        "error" => "Payment is not waiting for confirmation" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 檢查付款確認狀態 
+if ($payment["payment_confirm_status"] !== "waiting") { 
+    http_response_code(409); 
+    echo json_encode([ 
+        "error" => "Payment is not waiting for confirmation" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+try { 
+ 
+    $pdo->beginTransaction(); 
+ 
+    // 更新付款結果 
+    $sql = " 
+    UPDATE PAYMENT 
+    SET 
+        payment_status = ?, 
+        payment_confirm_status = ?, 
+        payment_note = ?, 
+        paid_at = CASE 
+            WHEN ? = 'confirmed' THEN NOW() 
+            ELSE paid_at 
+        END, 
+        confirmed_at = NOW(), 
+        updated_at = NOW() 
+    WHERE payment_id = ? 
+    AND order_id = ? 
+    AND store_id = ? 
+    AND payment_status = 'processing' 
+    AND payment_confirm_status = 'waiting' 
+    "; 
+ 
+    $stmt = $pdo->prepare($sql); 
+    $stmt->execute([ 
+        $payment_status,
+        $payment_confirm_status,
+        $payment_note,
+        $payment_confirm_status,
         $payment["payment_id"],
         $order_id,
         $store_id
-    ]);
-
-    // 確認是否更新成功
-    if ($stmt->rowCount() !== 1) {
-
-        throw new Exception("Payment confirmation failed");
-    }
-
-    $pdo->commit();
-
-} catch (Exception $e) {
-
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-
-    $status_code = $e->getCode();
-    if ($status_code < 400 || $status_code > 599) {
-        $status_code = 500;
-    }
-    http_response_code($status_code);
-    echo json_encode([
-        "error" => "Payment confirmation failed"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 取得付款確認時間
-$sql = "
-SELECT
-    paid_at,
-    confirmed_at
-FROM PAYMENT
-WHERE payment_id = ?
-AND order_id = ?
-AND store_id = ?
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $payment["payment_id"],
-    $order_id,
-    $store_id
-]);
-$payment_time = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// 回傳結果
-echo json_encode([
-    "message" => "Payment confirmed successfully",
-
-    "payment" => [
-        "payment_id" => (int)$payment["payment_id"],
-        "order_id" => (int)$payment["order_id"],
-        "order_number" => $payment["order_number"],
-        "store_id" => $store_id,
-        "payment_method" => $payment["payment_method"],
-        "payment_status" => "paid",
-        "payment_confirm_status" => "confirmed",
-        "paid_at" => $payment_time["paid_at"],
-        "confirmed_at" => $payment_time["confirmed_at"]
-    ],
-
-    "order" => [
-        "order_id" => (int)$payment["order_id"],
-        "order_number" => $payment["order_number"],
-        "store_id" => $store_id,
-        "product_amount" => (float)$payment["product_amount"],
-        "shipping_fee" => (float)$payment["shipping_fee"],
-        "total_amount" => (float)$payment["total_amount"]
-    ],
-
-    "customer" => [
-        "customer_id" => (int)$payment["customer_id"],
-        "name" => $payment["customer_name"],
-        "email" => $payment["customer_email"]
-    ],
-
-    "store" => [
-        "store_id" => $store_id,
-        "store_name" => $store["store_name"]
-    ]
-], JSON_UNESCAPED_UNICODE);
-
+    ]); 
+ 
+    // 確認是否更新成功 
+    if ($stmt->rowCount() !== 1) { 
+ 
+        throw new Exception("Payment confirmation failed"); 
+    } 
+ 
+    $pdo->commit(); 
+ 
+} catch (Exception $e) { 
+ 
+    if ($pdo->inTransaction()) { 
+        $pdo->rollBack(); 
+    } 
+ 
+    $status_code = $e->getCode(); 
+ 
+    if ($status_code < 400 || $status_code > 599) { 
+        $status_code = 500; 
+    } 
+ 
+    http_response_code($status_code); 
+ 
+    echo json_encode([ 
+        "error" => "Payment confirmation failed" 
+    ], JSON_UNESCAPED_UNICODE); 
+ 
+    exit; 
+} 
+ 
+// 取得付款確認時間 
+$sql = " 
+SELECT 
+    paid_at, 
+    confirmed_at 
+FROM PAYMENT 
+WHERE payment_id = ? 
+AND order_id = ? 
+AND store_id = ? 
+"; 
+ 
+$stmt = $pdo->prepare($sql); 
+$stmt->execute([ 
+    $payment["payment_id"], 
+    $order_id, 
+    $store_id 
+]); 
+$payment_time = $stmt->fetch(PDO::FETCH_ASSOC); 
+ 
+// 回傳結果 
+echo json_encode([ 
+    "message" => $payment_confirm_status === "confirmed" 
+        ? "Payment confirmed successfully" 
+        : "Payment rejected successfully", 
+ 
+    "payment" => [ 
+        "payment_id" => (int)$payment["payment_id"], 
+        "order_id" => (int)$payment["order_id"], 
+        "order_number" => $payment["order_number"], 
+        "store_id" => $store_id, 
+        "payment_method" => $payment["payment_method"], 
+        "payment_status" => $payment_status, 
+        "payment_confirm_status" => $payment_confirm_status, 
+        "payment_note" => $payment_note, 
+        "paid_at" => $payment_time["paid_at"], 
+        "confirmed_at" => $payment_time["confirmed_at"] 
+    ], 
+ 
+    "order" => [ 
+        "order_id" => (int)$payment["order_id"], 
+        "order_number" => $payment["order_number"], 
+        "store_id" => $store_id, 
+        "product_amount" => (float)$payment["product_amount"], 
+        "shipping_fee" => (float)$payment["shipping_fee"], 
+        "total_amount" => (float)$payment["total_amount"] 
+    ], 
+ 
+    "customer" => [ 
+        "customer_id" => (int)$payment["customer_id"], 
+        "name" => $payment["customer_name"], 
+        "email" => $payment["customer_email"] 
+    ], 
+ 
+    "store" => [ 
+        "store_id" => $store_id, 
+        "store_name" => $store["store_name"] 
+    ] 
+], JSON_UNESCAPED_UNICODE); 
+ 
 ?>

@@ -808,7 +808,7 @@ export async function updateFooterSettings(formData) {
 
 // Store Order List
 
-export async function getStoreOrders({
+export async function getOrders({
   search = '',
   status = 'all',
   refundStatus = 'all',
@@ -855,6 +855,125 @@ export async function getStoreOrders({
 
   } catch (error) {
     console.error('取得訂單資料失敗:', error)
+
+    throw error
+  }
+}
+
+// Store Order
+
+export async function getOrder(orderId) {
+  try {
+    const params = new URLSearchParams()
+
+    params.append('order_id', orderId)
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/order/get_order.php?${params.toString()}`,
+      {
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得訂單詳細資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得訂單詳細資料失敗:', error)
+
+    throw error
+  }
+}
+
+export async function updateOrderDelivery({
+  order_id,
+  delivery_status
+} = {}) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/order/update_order.php',
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          order_id,
+          delivery_status
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '更新訂單配送狀態失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('更新訂單配送狀態失敗:', error)
+
+    throw error
+  }
+}
+export async function confirmOrderPayment({
+  order_id,
+  payment_confirm_status,
+  payment_note
+} = {}) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/payment/confirm_payment.php',
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          order_id,
+          payment_confirm_status,
+          payment_note
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '確認訂單付款失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('確認訂單付款失敗:', error)
 
     throw error
   }

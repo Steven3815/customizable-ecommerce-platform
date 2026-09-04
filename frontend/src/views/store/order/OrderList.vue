@@ -30,9 +30,13 @@ import AppFooter from '../../../components/store/AppFooter.vue'
 import AppHeader from '../../../components/store/AppHeader.vue'
 import AppSidebar from '../../../components/store/AppSidebar.vue'
 
+import { useRouter } from 'vue-router'
+
 import {
-  getStoreOrders
+  getOrders
 } from '@/api/store.js'
+
+const router = useRouter()
 
 const orders = ref([])
 
@@ -71,7 +75,7 @@ async function loadOrders() {
   error.value = ''
 
   try {
-    const data = await getStoreOrders({
+    const data = await getOrders({
       search: search.value.trim(),
       status: status.value,
       refundStatus: refundStatus.value,
@@ -147,6 +151,16 @@ function changePage(newPage) {
   loadOrders()
 }
 
+// 前往訂單詳細
+function goToOrderDetail(orderId) {
+  router.push({
+    name: 'OrderDetail',
+    params: {
+      orderId
+    }
+  })
+}
+
 // 配送狀態
 function getDeliveryStatus(status) {
   const statusMap = {
@@ -173,7 +187,7 @@ function getPaymentStatus(status) {
 function getRefundStatus(status) {
   const statusMap = {
     none: '無退款',
-    pending: '退款申請中',
+    pending: '申請中',
     approved: '退款已核准',
     rejected: '退款已拒絕'
   }
@@ -309,6 +323,7 @@ onMounted(() => {
                       </option>
                     </CFormSelect>
                   </CCol>
+
                   <CCol :md="2">
                     <CFormLabel>
                       退款狀態
@@ -326,7 +341,7 @@ onMounted(() => {
                       </option>
 
                       <option value="pending">
-                        退款申請中
+                        申請中
                       </option>
 
                       <option value="approved">
@@ -417,7 +432,10 @@ onMounted(() => {
                           電話
                         </CTableHeaderCell>
 
-                        <CTableHeaderCell style="text-align: right;" class="pe-4">
+                        <CTableHeaderCell
+                          style="text-align: right;"
+                          class="pe-4"
+                        >
                           訂單金額
                         </CTableHeaderCell>
 
@@ -463,31 +481,56 @@ onMounted(() => {
                           {{ order.customer.phone }}
                         </CTableDataCell>
 
-                        <CTableDataCell style="text-align: right;" class="pe-4">
+                        <CTableDataCell
+                          style="text-align: right;"
+                          class="pe-4"
+                        >
                           {{ formatAmount(order.total_amount) }}
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ getDeliveryStatus(order.delivery_status) }}
+                          <span
+                            :class="{ 'text-danger': order.delivery_status === 'pending' }"
+                          >
+                            {{ getDeliveryStatus(order.delivery_status) }}
+                          </span>
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ getPaymentStatus(order.payment_confirm_status) }}
+                          <span
+                            :class="{ 'text-danger': order.payment_confirm_status === 'waiting' }"
+                          >
+                            {{ getPaymentStatus(order.payment_confirm_status) }}
+                          </span>
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ getRefundStatus(order.refund_status) }}
+                          <span
+                            :class="{ 'text-danger': order.refund_status === 'pending' }"
+                          >
+                            {{ getRefundStatus(order.refund_status) }}
+                          </span>
                         </CTableDataCell>
 
                         <CTableDataCell>
                           {{ formatDate(order.created_at) }}
                         </CTableDataCell>
 
+                        <CTableDataCell>
+                          <CButton
+                            color="primary"
+                            size="sm"
+                            @click="goToOrderDetail(order.order_id)"
+                          >
+                            查看
+                          </CButton>
+                        </CTableDataCell>
+
                       </CTableRow>
 
                       <CTableRow v-if="orders.length === 0">
                         <CTableDataCell
-                          colspan="8"
+                          colspan="9"
                           class="text-center text-body-secondary"
                         >
                           目前沒有訂單
