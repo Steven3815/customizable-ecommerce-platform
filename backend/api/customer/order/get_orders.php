@@ -298,6 +298,7 @@ foreach ($orders as $order) {
         amount,
         payment_status,
         payment_confirm_status,
+        payment_note,
         payment_proof_image,
         paid_at,
         confirmed_at,
