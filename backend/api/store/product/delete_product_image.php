@@ -98,15 +98,6 @@ $stmt->execute([
 ]);
 $image_count = (int)$stmt->fetchColumn();
 
-if ($image_count <= 1) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Product must have at least one image"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
 // 檢查圖片路徑
 $image_url = $image["image_url"];
 

@@ -108,7 +108,7 @@ if ($status !== null) {
 
     if (
         $status !== "active" &&
-        $status !== "inactive"
+        $status !== "hidden"
     ) {
         http_response_code(400);
         echo json_encode([

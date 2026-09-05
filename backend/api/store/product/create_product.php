@@ -470,8 +470,6 @@ try {
             uploadImage(
                 $file,
                 "products",
-                1000,
-                1000
             );
 
         // 記錄已上傳圖片

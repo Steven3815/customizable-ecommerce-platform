@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   CContainer,
@@ -33,6 +34,8 @@ import AppSidebar from '../../../components/store/AppSidebar.vue'
 import {
   getProducts
 } from '@/api/store.js'
+
+const router = useRouter()
 
 const products = ref([])
 const categories = ref([])
@@ -157,7 +160,7 @@ function changePage(newPage) {
 function getProductStatus(status) {
   const statusMap = {
     active: '上架',
-    inactive: '下架'
+    hidden: '下架'
   }
 
   return statusMap[status] || status
@@ -181,7 +184,12 @@ function formatAmount(amount) {
 
 // 商品詳細
 function goToProductDetail(productId) {
-  console.log('商品 ID:', productId)
+  router.push({
+    name: 'ProductDetail',
+    params: {
+      productId
+    }
+  })
 }
 
 onMounted(() => {
@@ -278,7 +286,7 @@ onMounted(() => {
                         上架
                       </option>
 
-                      <option value="inactive">
+                      <option value="hidden">
                         下架
                       </option>
                     </CFormSelect>
@@ -456,7 +464,7 @@ onMounted(() => {
                               )
                             "
                           >
-                            查看
+                            編輯
                           </CButton>
                         </CTableDataCell>
 

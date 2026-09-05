@@ -6,6 +6,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
+require_once "../../../helpers/upload_image.php";
 
 // 檢查 product_id
 $product_id = $_POST["product_id"] ?? null;
@@ -201,7 +202,7 @@ if ($has_spec === 1) {
 
     if (
         !isset($_POST["specs"]) ||
-        !is_array($_POST["specs"])
+        $_POST["specs"] === ""
     ) {
         http_response_code(400);
         echo json_encode([
@@ -211,8 +212,20 @@ if ($has_spec === 1) {
         exit;
     }
 
-    $specs = $_POST["specs"];
+    $specs = json_decode(
+        $_POST["specs"],
+        true
+    );
 
+    if (!is_array($specs)) {
+        http_response_code(400);
+        echo json_encode([
+            "error" => "Invalid specification data"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+    
     // 至少一個規格
     if (count($specs) < 1) {
         http_response_code(400);
@@ -664,8 +677,6 @@ try {
                 uploadImage(
                     $file,
                     "products",
-                    1000,
-                    1000
                 );
 
             $relative_path = ltrim($image_url, "/");

@@ -860,7 +860,7 @@ export async function getOrders({
   }
 }
 
-// Store Order
+// Store Order Detail
 
 export async function getOrder(orderId) {
   try {
@@ -1033,6 +1033,217 @@ export async function getProducts({
 
   } catch (error) {
     console.error('取得商品管理資料失敗:', error)
+
+    throw error
+  }
+}
+
+// Store Product Detail
+
+export async function getProduct(productId) {
+  try {
+    const params = new URLSearchParams()
+
+    params.append('product_id', productId)
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/product/get_product.php?${params.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得商品資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得商品資料失敗:', error)
+
+    throw error
+  }
+}
+
+export async function createProduct(formData) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/product/create_product.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '建立商品失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('建立商品失敗:', error)
+
+    throw error
+  }
+}
+
+export async function updateProduct(formData) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/product/update_product.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '更新商品失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('更新商品失敗:', error)
+
+    throw error
+  }
+}
+
+export async function deleteProductImage(imageId) {
+  try {
+    const formData = new FormData()
+
+    formData.append('image_id', imageId)
+
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/product/delete_product_image.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '刪除商品圖片失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('刪除商品圖片失敗:', error)
+
+    throw error
+  }
+}
+
+export async function deleteProduct(productId) {
+  try {
+    const formData = new FormData()
+
+    formData.append('product_id', productId)
+
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/product/delete_product.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '刪除商品失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('刪除商品失敗:', error)
+
+    throw error
+  }
+}
+
+export async function reorderProductImages(productId, imageIds) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/product/reorder_product_image.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          image_ids: imageIds
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '重新排列商品圖片失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('重新排列商品圖片失敗:', error)
 
     throw error
   }

@@ -52,6 +52,7 @@ SELECT
     p.price,
     p.stock,
     p.has_spec,
+    p.spec_name,
     p.status,
     p.created_at,
     p.updated_at
@@ -92,11 +93,15 @@ $product["has_spec"] = (bool)$product["has_spec"];
 
 // 處理商品價格與庫存
 // 沒有規格：PRODUCT.price & PRODUCT.stock
-// 有規格：實際價格與庫存由 PRODUCT_SPEC 管理
+// 有規格：PRODUCT.price & PRODUCT_SPEC.stock
 
 if ($product["has_spec"]) {
 
-    $product["price"] = null;
+    $product["price"] =
+        $product["price"] !== null
+            ? (float)$product["price"]
+            : null;
+
     $product["stock"] = null;
 
 } else {
@@ -187,6 +192,7 @@ echo json_encode([
         "price" => $product["price"],
         "stock" => $product["stock"],
         "has_spec" => $product["has_spec"],
+        "spec_name" => $product["spec_name"],
         "specs" => $specs,
         "images" => $images,
         "status" => $product["status"],

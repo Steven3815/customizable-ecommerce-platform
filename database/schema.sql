@@ -59,7 +59,7 @@ CREATE TABLE PRODUCT (
     has_spec BOOLEAN DEFAULT FALSE,
     spec_name VARCHAR(100), -- 規格名稱，例如：尺寸、顏色
     sort_order INT NULL DEFAULT 1,
-    status ENUM('active', 'inactive', 'deleted') DEFAULT 'active',
+    status ENUM('active', 'inactive', 'hidden', 'deleted') DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE(store_id, product_id),
