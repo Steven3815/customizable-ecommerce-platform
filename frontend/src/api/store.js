@@ -1248,3 +1248,52 @@ export async function reorderProductImages(productId, imageIds) {
     throw error
   }
 }
+
+// Store Product List
+
+export async function getCustomers({
+  page = 1,
+  search = null,
+  sort = 'created_at_desc'
+} = {}) {
+  try {
+    const params = new URLSearchParams()
+
+    params.append('page', page)
+
+    if (search !== null && search !== '') {
+      params.append('search', search)
+    }
+
+    if (sort !== null && sort !== '') {
+      params.append('sort', sort)
+    }
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/customer/get_customers.php?${params.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得客戶管理資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得客戶管理資料失敗:', error)
+
+    throw error
+  }
+}
