@@ -490,7 +490,7 @@ async function removeCategory(categoryId) {
                   </CTableBody>
                 </CTable>
                 <small><b>說明:</b> 用於將商品依照不同類型進行分類，方便顧客瀏覽與尋找商品</small><br>
-                <small><b>更多操作: </b>可至「首頁商品管理」調整商品順序和名稱，或至「商品管理」編輯詳細商品資訊</small>
+                <small><b>更多操作: </b>可至「首頁商品管理」新增商品、調整名稱，或至「商品管理」編輯詳細商品資訊</small>
               </CCardBody>
             </CCard>
 

@@ -26,7 +26,8 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CModalFooter
+  CModalFooter,
+  CCollapse
 } from '@coreui/vue'
 
 import AppSidebar from '../../../components/store/AppSidebar.vue'
@@ -72,6 +73,8 @@ const reorderingImage = ref(false)
 
 const showErrorModal = ref(false)
 const errorMessage = ref('')
+
+const showDescription = ref(false)
 
 const showDeleteModal = ref(false)
 
@@ -672,9 +675,42 @@ function cancelChanges() {
 
             <!-- 頁面標題 -->
             <div class="position-relative mb-4">
-              <h2 class="mt-2 mb-3">
+              <h2 class="mt-2 mb-2">
                 商品詳細
               </h2>
+
+              <CButton
+                color="link"
+                class="text-decoration-none p-0"
+                @click="showDescription = !showDescription"
+              >
+                <CIcon
+                  :icon="
+                    showDescription
+                      ? 'cilChevronTop'
+                      : 'cilChevronBottom'
+                  "
+                  class="me-1"
+                />
+                說明
+              </CButton>
+
+              <CCollapse :visible="showDescription">
+                <small class="d-block mt-2 text-body-secondary">
+                  <strong>商品狀態：</strong>
+                  上架後商品會顯示於商店，顧客可以瀏覽及購買；下架後會對顧客隱藏
+                  <br>
+
+                  <strong>是否啟用規格：</strong>
+                  不使用規格時，直接填價格及庫存；使用規格時，可設定規格名稱及各規格的庫存
+                  <br>
+
+                  <strong>商品分類：</strong>
+                  恕不開放更改商品類別，建議直接至對應類別新增商品
+                  <br>
+
+                </small>
+              </CCollapse>
 
               <CButton
                 color="secondary"
@@ -772,7 +808,12 @@ function cancelChanges() {
                     />
                   </CCol>
                 </CRow>
-
+                <small class="text-body-secondary">
+                  <br>
+                  <strong>更多操作：</strong>
+                  可至「首頁商品管理」新增商品
+                </small>
+                 
               </CCardBody>
             </CCard>
 
@@ -1065,7 +1106,7 @@ function cancelChanges() {
                   />
 
                   <small class="d-block mt-2 text-body-secondary">
-                    一次選擇一張圖片
+                    建議圖片比例為 1200 × 800（3 : 2）
                   </small>
 
                   <!-- 待確認圖片 -->
