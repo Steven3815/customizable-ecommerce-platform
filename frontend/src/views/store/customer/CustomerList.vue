@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import {
   CContainer,
@@ -446,12 +447,12 @@ onMounted(() => {
 
                         <!-- 操作 -->
                         <CTableDataCell>
-                          <CButton
-                            color="primary"
-                            size="sm"
-                          >
-                            查看
-                          </CButton>
+                            <RouterLink
+                                :to="`/store/admin/customer/${customer.customer_id}`"
+                                class="btn btn-primary btn-sm"
+                            >
+                                查看
+                            </RouterLink>
                         </CTableDataCell>
 
                       </CTableRow>

@@ -24,6 +24,7 @@ import OrderDetail from '../views/store/order/OrderDetail.vue'
 import ProductList from '../views/store/product/ProductList.vue'
 import ProductDetail from '../views/store/product/ProductDetail.vue'
 import CustomerList from '../views/store/customer/CustomerList.vue'
+import CustomerDetail from '../views/store/customer/CustomerDetail.vue'
 
 
 import { checkStoreAuth } from '@/api/store.js'
@@ -173,6 +174,14 @@ const router = createRouter({
       path: '/store/admin/customer_list',
       name: 'CustomerList',
       component: CustomerList,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+    {
+      path: '/store/admin/customer/:customerId',
+      name: 'CustomerDetail',
+      component: CustomerDetail,
       meta: {
         requiresStoreAuth: true
       }

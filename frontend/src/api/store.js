@@ -1249,7 +1249,7 @@ export async function reorderProductImages(productId, imageIds) {
   }
 }
 
-// Store Product List
+// Store Customer List
 
 export async function getCustomers({
   page = 1,
@@ -1293,6 +1293,49 @@ export async function getCustomers({
 
   } catch (error) {
     console.error('取得客戶管理資料失敗:', error)
+
+    throw error
+  }
+}
+
+// Store Customer Detail
+
+export async function getCustomer({
+  customerId,
+  page = 1,
+  sort = 'created_at_desc'
+} = {}) {
+  try {
+    const params = new URLSearchParams()
+
+    params.append('customer_id', customerId)
+    params.append('page', page)
+    params.append('sort', sort)
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/customer/get_customer.php?${params.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得客戶詳細資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得客戶詳細資料失敗:', error)
 
     throw error
   }
