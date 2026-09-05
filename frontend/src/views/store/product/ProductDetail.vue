@@ -427,6 +427,11 @@ async function saveProduct() {
 
 // 開啟刪除圖片確認
 function confirmDeleteImage(image) {
+  if (images.value.length <= 1) {
+    showError('商品至少需要保留 1 張圖片')
+    return
+  }
+
   deletingImage.value = image
   showDeleteImageModal.value = true
 }
