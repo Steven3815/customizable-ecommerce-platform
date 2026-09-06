@@ -397,9 +397,9 @@ onMounted(() => {
 
                 <hr>
 
-                <h5 class="mb-3">
+                <h4 class="mb-3">
                   顧客資訊
-                </h5>
+                </h4>
 
                 <div class="mb-3">
                   <strong>姓名</strong>
@@ -427,9 +427,9 @@ onMounted(() => {
 
                 <hr>
 
-                <h5 class="mb-3">
+                <h4 class="mb-3">
                   收件資訊
-                </h5>
+                </h4>
 
                 <div class="mb-3">
                   <strong>收件人姓名</strong>
@@ -457,9 +457,9 @@ onMounted(() => {
 
                 <hr>
 
-                <h5 class="mb-3">
+                <h4 class="mb-3">
                   訂單金額
-                </h5>
+                </h4>
 
                 <div class="mb-3">
                   <strong>商品金額</strong>
@@ -611,9 +611,9 @@ onMounted(() => {
 
                     <hr>
 
-                    <h5 class="mb-3">
+                    <h4 class="mb-3">
                       付款確認
-                    </h5>
+                    </h4>
 
                     <div class="mb-3">
                       <strong>付款時間</strong>

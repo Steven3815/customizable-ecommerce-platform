@@ -12,19 +12,20 @@ import StoreLogin from '../views/auth/StoreLogin.vue'
 import StoreRegister from '../views/auth/StoreRegister.vue'
 import StoreLogout from '../views/auth/StoreLogout.vue'
 
-import Home from '../views/customer/Home.vue'
+import CustomerHome from '../views/customer/Home.vue'
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
-import HomepageSettings from '../views/store/homepage/Settings.vue'
-import HomepageSettingsBanner from '../views/store/homepage/Banner.vue'
-import HomepageSettingsSlider from '../views/store/homepage/Slider.vue'
-import HomepageSettingsProduct from '../views/store/homepage/Product.vue'
-import HomepageSettingsFooter from '../views/store/homepage/Footer.vue'
-import OrderList from '../views/store/order/OrderList.vue'
-import OrderDetail from '../views/store/order/OrderDetail.vue'
-import ProductList from '../views/store/product/ProductList.vue'
-import ProductDetail from '../views/store/product/ProductDetail.vue'
-import CustomerList from '../views/store/customer/CustomerList.vue'
-import CustomerDetail from '../views/store/customer/CustomerDetail.vue'
+import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
+import StoreHomepageSettingsBanner from '../views/store/homepage/Banner.vue'
+import StoreHomepageSettingsSlider from '../views/store/homepage/Slider.vue'
+import StoreHomepageSettingsProduct from '../views/store/homepage/Product.vue'
+import StoreHomepageSettingsFooter from '../views/store/homepage/Footer.vue'
+import StoreOrderList from '../views/store/order/OrderList.vue'
+import StoreOrderDetail from '../views/store/order/OrderDetail.vue'
+import StoreProductList from '../views/store/product/ProductList.vue'
+import StoreProductDetail from '../views/store/product/ProductDetail.vue'
+import StoreCustomerList from '../views/store/customer/CustomerList.vue'
+import StoreCustomerDetail from '../views/store/customer/CustomerDetail.vue'
+import StoreSettings from '../views/store/settings/StoreSettings.vue'
 
 
 import { checkStoreAuth } from '@/api/store.js'
@@ -51,7 +52,7 @@ const router = createRouter({
     {
       path: '/store-:storeId',
       name: 'CustomerHome',
-      component: Home,
+      component: CustomerHome,
       beforeEnter: (to) => {
         if (!/^[1-9]\d*$/.test(to.params.storeId)) {
           return '/404'
@@ -103,85 +104,93 @@ const router = createRouter({
     },
     {
       path: '/store/admin/homepage_settings/settings',
-      name: 'HomepageSettings',
-      component: HomepageSettings,
+      name: 'StoreHomepageSettings',
+      component: StoreHomepageSettings,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/homepage_settings/banner',
-      name: 'HomepageSettingsBanner',
-      component: HomepageSettingsBanner,
+      name: 'StoreHomepageSettingsBanner',
+      component: StoreHomepageSettingsBanner,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/homepage_settings/slider',
-      name: 'HomepageSettingsSlider',
-      component: HomepageSettingsSlider,
+      name: 'StoreHomepageSettingsSlider',
+      component: StoreHomepageSettingsSlider,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/homepage_settings/product',
-      name: 'HomepageSettingsProduct',
-      component: HomepageSettingsProduct,
+      name: 'StoreHomepageSettingsProduct',
+      component: StoreHomepageSettingsProduct,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/homepage_settings/footer',
-      name: 'HomepageSettingsFooter',
-      component: HomepageSettingsFooter,
+      name: 'StoreHomepageSettingsFooter',
+      component: StoreHomepageSettingsFooter,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/order_list',
-      name: 'OrderList',
-      component: OrderList,
+      name: 'StoreOrderList',
+      component: StoreOrderList,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/order/:orderId',
-      name: 'OrderDetail',
-      component: OrderDetail
+      name: 'StoreOrderDetail',
+      component: StoreOrderDetail
     },
     {
       path: '/store/admin/product_list',
-      name: 'ProductList',
-      component: ProductList,
+      name: 'StoreProductList',
+      component: StoreProductList,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/product/:productId',
-      name: 'ProductDetail',
-      component: ProductDetail,
+      name: 'StoreProductDetail',
+      component: StoreProductDetail,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/customer_list',
-      name: 'CustomerList',
-      component: CustomerList,
+      name: 'StoreCustomerList',
+      component: StoreCustomerList,
       meta: {
         requiresStoreAuth: true
       }
     },
     {
       path: '/store/admin/customer/:customerId',
-      name: 'CustomerDetail',
-      component: CustomerDetail,
+      name: 'StoreCustomerDetail',
+      component: StoreCustomerDetail,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+    {
+      path: '/store/admin/settings',
+      name: 'StoreSettings',
+      component: StoreSettings,
       meta: {
         requiresStoreAuth: true
       }

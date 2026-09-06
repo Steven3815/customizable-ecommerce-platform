@@ -1340,3 +1340,88 @@ export async function getCustomer({
     throw error
   }
 }
+
+
+export async function getSettings(storeId) {
+    const response = await fetch(
+        `http://localhost/ecommerce-platform/backend/api/customer/get_store.php?store_id=${storeId}`
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+        throw new Error(data.error || '取得商店資料失敗')
+    }
+
+    return data
+
+}
+
+// Store Settings 
+
+export async function getStoreSettings() {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/setting/get_settings.php',
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得商店設定失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得商店設定失敗:', error)
+
+    throw error
+  }
+}
+
+// 更新商店設定
+export async function updateStoreSettings(settings) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/setting/update_settings.php',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(settings)
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '更新商店設定失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('更新商店設定失敗:', error)
+
+    throw error
+  }
+}

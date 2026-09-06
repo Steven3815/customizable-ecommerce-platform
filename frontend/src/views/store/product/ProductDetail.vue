@@ -725,9 +725,9 @@ function cancelChanges() {
             <CCard class="mb-4">
               <CCardBody>
 
-                <h5 class="mb-4">
+                <h4 class="mb-4">
                   商品資訊
-                </h5>
+                </h4>
 
                 <!-- 商品狀態 -->
                 <CRow class="mb-4">
@@ -821,9 +821,9 @@ function cancelChanges() {
             <CCard class="mb-4">
               <CCardBody>
 
-                <h5 class="mb-4">
+                <h4 class="mb-4">
                   商品規格
-                </h5>
+                </h4>
 
                 <!-- 是否啟用規格 -->
                 <CRow class="mb-4">
@@ -995,9 +995,9 @@ function cancelChanges() {
             <CCard class="mb-4">
               <CCardBody>
 
-                <h5 class="mb-4">
+                <h4 class="mb-4">
                   商品圖片
-                </h5>
+                </h4>
 
                 <!-- 圖片表格 -->
                 <div

@@ -515,9 +515,9 @@ async function removeBanner() {
                   class="d-flex justify-content-between align-items-center"
                 >
                   <div>
-                    <h5 class="mb-1">
+                    <h4 class="mb-1">
                       橫幅區塊
-                    </h5>
+                    </h4>
 
                     <small class="text-body-secondary">
                       首頁目前的橫幅區塊狀態

@@ -336,9 +336,9 @@ onMounted(() => {
             <CCardBody>
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h5 class="mb-1">
+                  <h4 class="mb-1">
                     輪播區塊
-                  </h5>
+                  </h4>
 
                   <small class="text-body-secondary">
                     首頁目前的輪播區塊狀態
@@ -368,9 +368,9 @@ onMounted(() => {
 
               <!-- 標題 + 新增 -->
               <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="mb-0">
+                <h4 class="mb-0">
                   輪播圖片
-                </h5>
+                </h4>
 
                 <CButton
                   v-if="!showAddForm"
