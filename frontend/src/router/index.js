@@ -28,6 +28,7 @@ import StoreCustomerDetail from '../views/store/customer/CustomerDetail.vue'
 import StoreSettings from '../views/store/settings/StoreSettings.vue'
 import StoreProfile from '../views/store/profile/StoreProfile.vue'
 import StoreCustomerServiceList from '../views/store/customer_service/CustomerServiceList.vue'
+import StoreCustomerServiceDetail from '../views/store/customer_service/CustomerServiceDetail.vue'
 import StoreRefundList from '../views/store/refund/RefundList.vue'
 
 
@@ -210,6 +211,14 @@ const router = createRouter({
       path: '/store/admin/customer_service_list',
       name: 'StoreCustomerServiceList',
       component: StoreCustomerServiceList,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+    {
+      path: '/store/admin/customer_service/:serviceId',
+      name: 'StoreCustomerServiceDetail',
+      component: StoreCustomerServiceDetail,
       meta: {
         requiresStoreAuth: true
       }

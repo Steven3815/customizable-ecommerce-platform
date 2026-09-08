@@ -14,6 +14,7 @@ CREATE TABLE CUSTOMER (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- status: super admin 可控制商店啟用或停用
 CREATE TABLE STORE (
     store_id INT AUTO_INCREMENT PRIMARY KEY,
     store_name VARCHAR(100) NOT NULL,
@@ -196,6 +197,7 @@ CREATE TABLE WEBSITE_SETTING (
     FOREIGN KEY(store_id) REFERENCES STORE(store_id)
 );
 
+-- store_status closed: 關閉 create_order, update_order, all_payment
 CREATE TABLE STORE_SETTING (
     setting_id INT AUTO_INCREMENT PRIMARY KEY,
     store_id INT UNIQUE NOT NULL,

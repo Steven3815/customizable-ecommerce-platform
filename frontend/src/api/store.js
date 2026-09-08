@@ -1561,6 +1561,79 @@ export async function getCustomerServices(page = 1, status = 'all', sort = 'newe
   }
 }
 
+export async function getCustomerService(serviceId) {
+  try {
+    const params = new URLSearchParams()
+
+    params.append('service_id', serviceId)
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/service/get_service.php?${params.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得客服案件資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得客服案件資料失敗:', error)
+
+    throw error
+  }
+}
+
+export async function replyCustomerService(serviceId, adminReply) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/service/reply_service.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service_id: serviceId,
+          admin_reply: adminReply
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '回覆客服案件失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('回覆客服案件失敗:', error)
+
+    throw error
+  }
+}
+
 // Store Refund
 
 export async function getRefunds(

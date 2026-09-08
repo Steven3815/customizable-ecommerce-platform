@@ -29,7 +29,13 @@ import AppFooter from '../../../components/store/AppFooter.vue'
 import AppHeader from '../../../components/store/AppHeader.vue'
 import AppSidebar from '../../../components/store/AppSidebar.vue'
 
+import {
+  useRouter
+} from 'vue-router'
+
 import { getCustomerServices } from '@/api/store.js'
+
+const router = useRouter()
 
 const services = ref([])
 
@@ -114,6 +120,16 @@ function changePage(newPage) {
 
   page.value = newPage
   loadServices()
+}
+
+// 查看客服案件詳細
+function goToCustomerServiceDetail(serviceId) {
+  router.push({
+    name: 'StoreCustomerServiceDetail',
+    params: {
+      serviceId
+    }
+  })
 }
 
 // 客服狀態
@@ -314,7 +330,8 @@ onMounted(() => {
                         <CTableDataCell>
                           <span
                             :class="{
-                              'text-danger': service.status === 'pending'
+                              'text-danger': service.status === 'pending',
+                              'text-success': service.status === 'resolved'
                             }"
                           >
                             {{ getServiceStatus(service.status) }}
@@ -329,6 +346,7 @@ onMounted(() => {
                           <CButton
                             color="primary"
                             size="sm"
+                            @click="goToCustomerServiceDetail(service.service_id)"
                           >
                             查看
                           </CButton>
@@ -377,7 +395,6 @@ onMounted(() => {
                     <CPaginationItem
                       :disabled="page === totalPages"
                       @click="changePage(page + 1)"
-                      style="cursor: pointer;"
                     >
                       下一頁
                     </CPaginationItem>
