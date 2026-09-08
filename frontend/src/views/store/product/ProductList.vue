@@ -185,7 +185,7 @@ function formatAmount(amount) {
 // 商品詳細
 function goToProductDetail(productId) {
   router.push({
-    name: 'ProductDetail',
+    name: 'StoreProductDetail',
     params: {
       productId
     }

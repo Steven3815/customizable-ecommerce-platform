@@ -8,7 +8,6 @@ import {
   CRow,
   CCol,
   CFormLabel,
-  CFormInput,
   CFormSelect,
   CButton,
   CTable,
@@ -30,28 +29,18 @@ import AppFooter from '../../../components/store/AppFooter.vue'
 import AppHeader from '../../../components/store/AppHeader.vue'
 import AppSidebar from '../../../components/store/AppSidebar.vue'
 
-import { useRouter } from 'vue-router'
+import { getRefunds } from '@/api/store.js'
 
-import {
-  getOrders
-} from '@/api/store.js'
+const refunds = ref([])
 
-const router = useRouter()
-
-const orders = ref([])
-
-const search = ref('')
-const status = ref('all')
-const refundStatus = ref('all')
-const paymentConfirmStatus = ref('all')
-const sort = ref('newest')
+const dateSort = ref('newest')
+const priceSort = ref('none')
 
 const page = ref(1)
 const totalPages = ref(0)
 const total = ref(0)
 
 const loading = ref(true)
-const searching = ref(false)
 const error = ref('')
 
 const showErrorModal = ref(false)
@@ -69,29 +58,26 @@ function closeErrorModal() {
   errorModalMessage.value = ''
 }
 
-// 取得訂單
-async function loadOrders() {
+// 取得退款列表
+async function loadRefunds() {
   loading.value = true
   error.value = ''
 
   try {
-    const data = await getOrders({
-      search: search.value.trim(),
-      status: status.value,
-      refundStatus: refundStatus.value,
-      paymentConfirmStatus: paymentConfirmStatus.value,
-      sort: sort.value,
-      page: page.value
-    })
+    const data = await getRefunds(
+      page.value,
+      dateSort.value,
+      priceSort.value
+    )
 
-    orders.value = data.orders || []
+    refunds.value = data.refunds || []
     totalPages.value = data.total_pages || 0
     total.value = data.total || 0
 
   } catch (e) {
-    console.error('取得訂單資料失敗:', e)
+    console.error('取得退款列表失敗:', e)
 
-    orders.value = []
+    refunds.value = []
     totalPages.value = 0
     total.value = 0
 
@@ -100,42 +86,21 @@ async function loadOrders() {
     } else if (e.status === 400) {
       error.value = e.message || '查詢條件錯誤'
     } else {
-      error.value = '取得訂單資料失敗'
+      error.value = '取得退款列表失敗'
     }
   } finally {
     loading.value = false
   }
 }
 
-// 監聽篩選與排序
+// 監聽退款排序
 watch(
-  [
-    status,
-    refundStatus,
-    paymentConfirmStatus,
-    sort
-  ],
+  [dateSort, priceSort],
   () => {
     page.value = 1
-    loadOrders()
+    loadRefunds()
   }
 )
-
-// 搜尋訂單
-async function searchOrders() {
-  if (searching.value) {
-    return
-  }
-
-  page.value = 1
-  searching.value = true
-
-  try {
-    await loadOrders()
-  } finally {
-    searching.value = false
-  }
-}
 
 // 切換頁面
 function changePage(newPage) {
@@ -148,48 +113,15 @@ function changePage(newPage) {
   }
 
   page.value = newPage
-  loadOrders()
-}
-
-// 前往訂單詳細
-function goToOrderDetail(orderId) {
-  router.push({
-    name: 'StoreOrderDetail',
-    params: {
-      orderId
-    }
-  })
-}
-
-// 配送狀態
-function getDeliveryStatus(status) {
-  const statusMap = {
-    pending: '待處理',
-    shipping: '配送中',
-    completed: '已完成'
-  }
-
-  return statusMap[status] || status
-}
-
-// 付款確認狀態
-function getPaymentStatus(status) {
-  const statusMap = {
-    waiting: '待確認',
-    confirmed: '已確認',
-    rejected: '已拒絕'
-  }
-
-  return statusMap[status] || status
+  loadRefunds()
 }
 
 // 退款狀態
 function getRefundStatus(status) {
   const statusMap = {
-    none: '無退款',
-    pending: '申請中',
-    approved: '退款已核准',
-    rejected: '退款已拒絕'
+    pending: '待處理',
+    approved: '已核准',
+    rejected: '已拒絕'
   }
 
   return statusMap[status] || status
@@ -197,7 +129,10 @@ function getRefundStatus(status) {
 
 // 格式化金額
 function formatAmount(amount) {
-  return `$ ${Number(amount).toLocaleString()}`
+  return Number(amount).toLocaleString('zh-TW', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })
 }
 
 // 格式化日期
@@ -216,7 +151,7 @@ function formatDate(date) {
 }
 
 onMounted(() => {
-  loadOrders()
+  loadRefunds()
 })
 </script>
 
@@ -247,155 +182,66 @@ onMounted(() => {
 
             <div class="position-relative mb-4">
               <h2 class="mt-2 mb-3">
-                訂單管理
+                退款管理
               </h2>
             </div>
 
-            <!-- 訂單搜尋 -->
+            <!-- 退款搜尋 -->
             <CCard class="mb-4">
               <CCardBody>
+
                 <h4 class="mb-4">
-                  訂單搜尋
+                  退款搜尋
                 </h4>
 
                 <CRow class="g-3">
 
-                  <CCol :md="4">
+                  <CCol :md="3">
                     <CFormLabel>
-                      搜尋
-                    </CFormLabel>
-
-                    <CFormInput
-                      v-model="search"
-                      placeholder="訂單編號、客戶姓名或電話"
-                      @keyup.enter="searchOrders"
-                    />
-                  </CCol>
-
-                  <CCol :md="2">
-                    <CFormLabel>
-                      配送狀態
+                      申請時間
                     </CFormLabel>
 
                     <CFormSelect
-                      v-model="status"
-                    >
-                      <option value="all">
-                        全部
-                      </option>
-
-                      <option value="pending">
-                        待處理
-                      </option>
-
-                      <option value="shipping">
-                        配送中
-                      </option>
-
-                      <option value="completed">
-                        已完成
-                      </option>
-                    </CFormSelect>
-                  </CCol>
-
-                  <CCol :md="2">
-                    <CFormLabel>
-                      付款確認
-                    </CFormLabel>
-
-                    <CFormSelect
-                      v-model="paymentConfirmStatus"
-                    >
-                      <option value="all">
-                        全部
-                      </option>
-
-                      <option value="waiting">
-                        待確認
-                      </option>
-
-                      <option value="confirmed">
-                        已確認
-                      </option>
-
-                      <option value="rejected">
-                        已拒絕
-                      </option>
-                    </CFormSelect>
-                  </CCol>
-
-                  <CCol :md="2">
-                    <CFormLabel>
-                      退款狀態
-                    </CFormLabel>
-
-                    <CFormSelect
-                      v-model="refundStatus"
-                    >
-                      <option value="all">
-                        全部
-                      </option>
-
-                      <option value="none">
-                        無退款
-                      </option>
-
-                      <option value="pending">
-                        申請中
-                      </option>
-
-                      <option value="approved">
-                        退款已核准
-                      </option>
-
-                      <option value="rejected">
-                        退款已拒絕
-                      </option>
-                    </CFormSelect>
-                  </CCol>
-
-                  <CCol :md="2">
-                    <CFormLabel>
-                      排序
-                    </CFormLabel>
-
-                    <CFormSelect
-                      v-model="sort"
+                      v-model="dateSort"
                     >
                       <option value="newest">
-                        最新訂單
+                        最新退款
                       </option>
 
                       <option value="oldest">
-                        最舊訂單
+                        最舊退款
+                      </option>
+                    </CFormSelect>
+                  </CCol>
+
+                  <CCol :md="3">
+                    <CFormLabel>
+                      退款金額
+                    </CFormLabel>
+
+                    <CFormSelect
+                      v-model="priceSort"
+                    >
+                      <option value="none">
+                        預設
                       </option>
 
-                      <option value="price_high">
-                        金額高到低
+                      <option value="high">
+                        金額最高
                       </option>
 
-                      <option value="price_low">
-                        金額低到高
+                      <option value="low">
+                        金額最低
                       </option>
                     </CFormSelect>
                   </CCol>
 
                 </CRow>
 
-                <div class="mt-4">
-                  <CButton
-                    color="primary"
-                    :disabled="searching"
-                    @click="searchOrders"
-                  >
-                    {{ searching ? '搜尋中...' : '搜尋' }}
-                  </CButton>
-                </div>
-
               </CCardBody>
             </CCard>
 
-            <!-- 訂單列表 -->
+            <!-- 退款列表 -->
             <CCard class="mb-4">
               <CCardBody>
 
@@ -403,22 +249,26 @@ onMounted(() => {
                   class="d-flex justify-content-between align-items-center mb-4"
                 >
                   <h4 class="mb-0">
-                    訂單列表
+                    退款列表
                   </h4>
 
-                  <span class="text-body-secondary">
+                  <span class="text-body-secondary me-5">
                     第 {{ page }} 頁 / 共 {{ totalPages }} 頁
                   </span>
 
                   <span class="text-body-secondary">
-                    共 {{ total }} 筆訂單
+                    共 {{ total }} 筆退款
                   </span>
                 </div>
 
                 <div class="table-responsive">
-                  <CTable hover>
+                  <CTable hover class="text-center">
                     <CTableHead>
                       <CTableRow>
+
+                        <CTableHeaderCell>
+                          退款編號
+                        </CTableHeaderCell>
 
                         <CTableHeaderCell>
                           訂單編號
@@ -429,30 +279,22 @@ onMounted(() => {
                         </CTableHeaderCell>
 
                         <CTableHeaderCell>
-                          電話
+                          退款原因
                         </CTableHeaderCell>
 
                         <CTableHeaderCell
                           style="text-align: right;"
                           class="pe-4"
                         >
-                          訂單金額
+                          退款金額
                         </CTableHeaderCell>
 
                         <CTableHeaderCell>
-                          配送狀態
+                          狀態
                         </CTableHeaderCell>
 
                         <CTableHeaderCell>
-                          付款確認
-                        </CTableHeaderCell>
-
-                        <CTableHeaderCell>
-                          退款狀態
-                        </CTableHeaderCell>
-
-                        <CTableHeaderCell>
-                          建立時間
+                          申請時間
                         </CTableHeaderCell>
 
                         <CTableHeaderCell>
@@ -465,62 +307,51 @@ onMounted(() => {
                     <CTableBody>
 
                       <CTableRow
-                        v-for="order in orders"
-                        :key="order.order_id"
+                        v-for="refund in refunds"
+                        :key="refund.refund_id"
                       >
 
                         <CTableDataCell>
-                          {{ order.order_number }}
+                          {{ refund.refund_id }}
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ order.customer.name }}
+                          {{ refund.order_number || '-' }}
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ order.customer.phone }}
+                          {{ refund.customer_name }}
+                        </CTableDataCell>
+
+                        <CTableDataCell>
+                          {{ refund.refund_reason }}
                         </CTableDataCell>
 
                         <CTableDataCell
                           style="text-align: right;"
                           class="pe-4"
                         >
-                          {{ formatAmount(order.total_amount) }}
+                          ${{ formatAmount(refund.total_amount) }}
                         </CTableDataCell>
 
                         <CTableDataCell>
                           <span
-                            :class="{ 'text-danger': order.delivery_status === 'pending' }"
+                            :class="{
+                              'text-danger': refund.refund_status === 'pending'
+                            }"
                           >
-                            {{ getDeliveryStatus(order.delivery_status) }}
+                            {{ getRefundStatus(refund.refund_status) }}
                           </span>
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          <span
-                            :class="{ 'text-danger': order.payment_confirm_status === 'waiting' }"
-                          >
-                            {{ getPaymentStatus(order.payment_confirm_status) }}
-                          </span>
-                        </CTableDataCell>
-
-                        <CTableDataCell>
-                          <span
-                            :class="{ 'text-danger': order.refund_status === 'pending' }"
-                          >
-                            {{ getRefundStatus(order.refund_status) }}
-                          </span>
-                        </CTableDataCell>
-
-                        <CTableDataCell>
-                          {{ formatDate(order.created_at) }}
+                          {{ formatDate(refund.requested_at) }}
                         </CTableDataCell>
 
                         <CTableDataCell>
                           <CButton
                             color="primary"
                             size="sm"
-                            @click="goToOrderDetail(order.order_id)"
                           >
                             查看
                           </CButton>
@@ -528,12 +359,12 @@ onMounted(() => {
 
                       </CTableRow>
 
-                      <CTableRow v-if="orders.length === 0">
+                      <CTableRow v-if="refunds.length === 0">
                         <CTableDataCell
-                          colspan="9"
+                          colspan="8"
                           class="text-center text-body-secondary"
                         >
-                          目前沒有訂單
+                          目前沒有退款案件
                         </CTableDataCell>
                       </CTableRow>
 

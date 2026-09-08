@@ -27,7 +27,8 @@ import StoreCustomerList from '../views/store/customer/CustomerList.vue'
 import StoreCustomerDetail from '../views/store/customer/CustomerDetail.vue'
 import StoreSettings from '../views/store/settings/StoreSettings.vue'
 import StoreProfile from '../views/store/profile/StoreProfile.vue'
-import CustomerServiceList from '../views/store/customer_service/CustomerServiceList.vue'
+import StoreCustomerServiceList from '../views/store/customer_service/CustomerServiceList.vue'
+import StoreRefundList from '../views/store/refund/RefundList.vue'
 
 
 import { checkStoreAuth } from '@/api/store.js'
@@ -207,8 +208,16 @@ const router = createRouter({
     },
     {
       path: '/store/admin/customer_service_list',
-      name: 'CustomerServiceList',
-      component: CustomerServiceList,
+      name: 'StoreCustomerServiceList',
+      component: StoreCustomerServiceList,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+    {
+      path: '/store/admin/refund_list',
+      name: 'StoreRefundList',
+      component: StoreRefundList,
       meta: {
         requiresStoreAuth: true
       }

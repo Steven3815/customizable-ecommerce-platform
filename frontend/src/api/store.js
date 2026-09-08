@@ -1560,3 +1560,40 @@ export async function getCustomerServices(page = 1, status = 'all', sort = 'newe
     throw error
   }
 }
+
+// Store Refund
+
+export async function getRefunds(
+  page = 1,
+  dateSort = 'newest',
+  priceSort = 'none'
+) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/refund/get_refunds.php?page=${page}&date_sort=${dateSort}&price_sort=${priceSort}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得退款列表失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得退款列表失敗:', error)
+
+    throw error
+  }
+}
