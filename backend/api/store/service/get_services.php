@@ -10,6 +10,7 @@ require_once "../../../middleware/store_auth.php";
 // 取得頁數與狀態篩選
 $page = $_GET["page"] ?? 1;
 $status = $_GET["status"] ?? "all";
+$sort = $_GET["sort"] ?? "newest";
 
 // 檢查頁數
 if (
@@ -38,6 +39,23 @@ if (
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+// 檢查建立時間排序
+if (
+    $sort !== "newest" &&
+    $sort !== "oldest"
+) {
+    http_response_code(400);
+    echo json_encode([
+        "error" => "Invalid sort"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// 設定排序方向
+$order = $sort === "newest"
+    ? "DESC"
+    : "ASC";
 
 // 每頁 30 筆
 $limit = 30;
@@ -110,7 +128,7 @@ if ($status !== "all") {
 
 // 按建立時間由新到舊排列
 $sql .= "
-ORDER BY cs.created_at DESC
+ORDER BY cs.created_at $order
 LIMIT $limit OFFSET $offset
 ";
 
@@ -144,6 +162,7 @@ echo json_encode([
     "total" => $total,
     "total_pages" => $total_pages,
     "status_filter" => $status,
+    "sort" => $sort,
     "services" => $result
 ], JSON_UNESCAPED_UNICODE);
 

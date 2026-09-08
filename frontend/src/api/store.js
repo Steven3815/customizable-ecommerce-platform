@@ -1527,3 +1527,36 @@ export async function changeStorePassword(passwordData) {
     throw error
   }
 }
+
+// Store Customer Service
+
+export async function getCustomerServices(page = 1, status = 'all', sort = 'newest') {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/service/get_services.php?page=${page}&status=${status}&sort=${sort}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得客服案件失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得客服案件失敗:', error)
+
+    throw error
+  }
+}
