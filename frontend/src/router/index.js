@@ -26,6 +26,7 @@ import StoreProductDetail from '../views/store/product/ProductDetail.vue'
 import StoreCustomerList from '../views/store/customer/CustomerList.vue'
 import StoreCustomerDetail from '../views/store/customer/CustomerDetail.vue'
 import StoreSettings from '../views/store/settings/StoreSettings.vue'
+import StoreProfile from '../views/store/profile/StoreProfile.vue'
 
 
 import { checkStoreAuth } from '@/api/store.js'
@@ -195,6 +196,15 @@ const router = createRouter({
         requiresStoreAuth: true
       }
     },
+    {
+      path: '/store/admin/profile',
+      name: 'StoreProfile',
+      component: StoreProfile,
+      meta: {
+        requiresStoreAuth: true
+      }
+    },
+
 
     {
       path: '/store/login',

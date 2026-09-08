@@ -1390,7 +1390,6 @@ export async function getStoreSettings() {
   }
 }
 
-// 更新商店設定
 export async function updateStoreSettings(settings) {
   try {
     const response = await fetch(
@@ -1421,6 +1420,109 @@ export async function updateStoreSettings(settings) {
 
   } catch (error) {
     console.error('更新商店設定失敗:', error)
+
+    throw error
+  }
+}
+
+// Store Profile
+
+export async function getProfile() {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/profile/get_profile.php',
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得商家資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得商家資料失敗:', error)
+
+    throw error
+  }
+}
+
+export async function updateProfile(profile) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/profile/update_profile.php',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(profile)
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '更新商家資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('更新商家資料失敗:', error)
+
+    throw error
+  }
+}
+
+export async function changeStorePassword(passwordData) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/profile/update_password.php',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(passwordData)
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '修改密碼失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('修改密碼失敗:', error)
 
     throw error
   }

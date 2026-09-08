@@ -142,11 +142,22 @@ SET
 WHERE store_id = ?
 ";
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $new_password_hash,
-    $store_id
-]);
+try {
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $new_password_hash,
+        $store_id
+    ]);
+
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode([
+        "error" => "Password update failed"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
 
 // 更新成功
 echo json_encode([
