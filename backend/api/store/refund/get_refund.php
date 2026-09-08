@@ -49,7 +49,11 @@ SELECT
     r.requested_at,
     r.processed_at,
     o.order_number,
+    o.product_amount,
+    o.shipping_fee,
     o.customer_id,
+    c.name AS customer_name,
+    c.email,
     o.total_amount,
 
     p.paid_at
@@ -59,6 +63,9 @@ FROM REFUND r
 INNER JOIN ORDERS o
     ON r.order_id = o.order_id
     AND r.store_id = o.store_id
+
+INNER JOIN CUSTOMER c
+    ON o.customer_id = c.customer_id
 
 LEFT JOIN PAYMENT p
     ON r.order_id = p.order_id
@@ -90,6 +97,8 @@ $refund["refund_id"] = (int)$refund["refund_id"];
 $refund["order_id"] = (int)$refund["order_id"];
 $refund["store_id"] = (int)$refund["store_id"];
 $refund["customer_id"] = (int)$refund["customer_id"];
+$refund["product_amount"] = (float)$refund["product_amount"];
+$refund["shipping_fee"] = (float)$refund["shipping_fee"];
 $refund["total_amount"] = (float)$refund["total_amount"];
 
 // 取得商品明細
@@ -141,8 +150,12 @@ echo json_encode([
         "refund_id" => $refund["refund_id"],
         "order_id" => $refund["order_id"],
         "order_number" => $refund["order_number"],
+        "product_amount" => $refund["product_amount"],
+        "shipping_fee" => $refund["shipping_fee"],
         "store_id" => $refund["store_id"],
         "customer_id" => $refund["customer_id"],
+        "customer_name" => $refund["customer_name"],
+        "email" => $refund["email"],
         "payment" => [
             "paid_at" => $refund["paid_at"]
         ],

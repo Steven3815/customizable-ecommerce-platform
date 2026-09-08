@@ -1670,3 +1670,72 @@ export async function getRefunds(
     throw error
   }
 }
+
+export async function getRefund(refundId) {
+  try {
+    const params = new URLSearchParams()
+    params.append('refund_id', refundId)
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/store/refund/get_refund.php?${params.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得退款資料失敗'
+      )
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error('取得退款資料失敗:', error)
+    throw error
+  }
+}
+
+export async function updateRefund(
+  refundId,
+  refundStatus,
+  adminReply = null
+) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/store/refund/update_refund.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          refund_id: refundId,
+          refund_status: refundStatus,
+          admin_reply: adminReply
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '處理退款失敗'
+      )
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error('處理退款失敗:', error)
+    throw error
+  }
+}

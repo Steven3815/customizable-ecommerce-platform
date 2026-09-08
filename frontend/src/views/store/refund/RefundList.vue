@@ -29,7 +29,11 @@ import AppFooter from '../../../components/store/AppFooter.vue'
 import AppHeader from '../../../components/store/AppHeader.vue'
 import AppSidebar from '../../../components/store/AppSidebar.vue'
 
+import { useRouter } from 'vue-router'
+
 import { getRefunds } from '@/api/store.js'
+
+const router = useRouter()
 
 const refunds = ref([])
 
@@ -114,6 +118,16 @@ function changePage(newPage) {
 
   page.value = newPage
   loadRefunds()
+}
+
+// 前往退款詳細
+function goToRefundDetail(refundId) {
+  router.push({
+    name: 'StoreRefundDetail',
+    params: {
+      refundId
+    }
+  })
 }
 
 // 退款狀態
@@ -352,6 +366,7 @@ onMounted(() => {
                           <CButton
                             color="primary"
                             size="sm"
+                            @click="goToRefundDetail(refund.refund_id)"
                           >
                             查看
                           </CButton>
@@ -393,6 +408,13 @@ onMounted(() => {
                       :key="pageNumber"
                       :active="pageNumber === page"
                       @click="changePage(pageNumber)"
+                    >
+                      {{ pageNumber }}
+                    </CPaginationItem>
+
+                    <CPaginationItem
+                      :disabled="page === totalPages"
+                      @click="changePage(page + 1)"
                     >
                       {{ pageNumber }}
                     </CPaginationItem>
