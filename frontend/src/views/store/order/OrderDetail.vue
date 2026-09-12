@@ -100,7 +100,7 @@ async function loadOrder() {
 
 function goBack() {
   router.push({
-    name: 'OrderList'
+    name: 'StoreOrderList'
   })
 }
 

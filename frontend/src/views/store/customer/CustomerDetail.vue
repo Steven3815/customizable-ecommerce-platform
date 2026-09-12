@@ -130,7 +130,7 @@ function changePage(newPage) {
 // 返回客戶列表
 function goBack() {
   router.push({
-    name: 'CustomerList'
+    name: 'StoreCustomerList'
   })
 }
 

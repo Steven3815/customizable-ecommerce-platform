@@ -310,7 +310,7 @@ async function removeCategory(categoryId) {
           <div v-else>
             <div class="position-relative mb-4">
               <h2 class="mt-2 mb-3">
-                網站首頁管理
+                網站首頁設定
               </h2>
               <div class="mb-3">
                 <CButton

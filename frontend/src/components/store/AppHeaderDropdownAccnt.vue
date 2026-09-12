@@ -1,6 +1,19 @@
 <script setup>
+import { useRouter } from 'vue-router'
+import { storeLogout } from '../../api/auth.js'
+
+const router = useRouter()
 
 const itemsCount = 42
+
+async function logout() {
+  try {
+    await storeLogout()
+    router.push('/store/login')
+  } catch (error) {
+    console.error('登出失敗', error)
+  }
+}
 </script>
 
 <template>
@@ -8,48 +21,50 @@ const itemsCount = 42
     <CDropdownToggle class="auto" :caret="false">
       <CIcon icon="cil-user" size="lg" />
     </CDropdownToggle>
+
     <CDropdownMenu class="pt-0">
       <CDropdownHeader
         component="h6"
         class="bg-body-secondary text-body-secondary fw-semibold mb-2 rounded-top"
       >
-        Account
+        帳號管理
       </CDropdownHeader>
+
       <CDropdownItem>
-        <CIcon icon="cil-bell" /> Updates
+        <CIcon icon="cil-bell" />
+        通知
         <CBadge color="info" class="ms-auto">{{ itemsCount }}</CBadge>
       </CDropdownItem>
-      <CDropdownItem>
-        <CIcon icon="cil-envelope-open" /> Messages
-        <CBadge color="success" class="ms-auto">{{ itemsCount }}</CBadge>
-      </CDropdownItem>
-      <CDropdownItem>
-        <CIcon icon="cil-task" /> Tasks
-        <CBadge color="danger" class="ms-auto">{{ itemsCount }}</CBadge>
-      </CDropdownItem>
-      <CDropdownItem>
-        <CIcon icon="cil-comment-square" /> Comments
-        <CBadge color="warning" class="ms-auto">{{ itemsCount }}</CBadge>
-      </CDropdownItem>
+
       <CDropdownHeader
         component="h6"
         class="bg-body-secondary text-body-secondary fw-semibold my-2"
       >
-        Settings
+        設定
       </CDropdownHeader>
-      <CDropdownItem> <CIcon icon="cil-user" /> Profile </CDropdownItem>
-      <CDropdownItem> <CIcon icon="cil-settings" /> Settings </CDropdownItem>
-      <CDropdownItem>
-        <CIcon icon="cil-dollar" /> Payments
-        <CBadge color="secondary" class="ms-auto">{{ itemsCount }}</CBadge>
+
+      <CDropdownItem @click="router.push('/store/admin/profile')">
+        <CIcon icon="cil-user" />
+        基本資料
       </CDropdownItem>
-      <CDropdownItem>
-        <CIcon icon="cil-file" /> Projects
-        <CBadge color="primary" class="ms-auto">{{ itemsCount }}</CBadge>
+
+      <CDropdownItem @click="router.push('/store/admin/settings')">
+        <CIcon icon="cil-settings" />
+        商店設定
       </CDropdownItem>
+
       <CDropdownDivider />
-      <CDropdownItem> <CIcon icon="cil-shield-alt" /> Lock Account </CDropdownItem>
-      <CDropdownItem> <CIcon icon="cil-lock-locked" /> Logout </CDropdownItem>
+
+      <CDropdownItem @click="logout">
+        <CIcon icon="cil-lock-locked" />
+        登出
+      </CDropdownItem>
     </CDropdownMenu>
   </CDropdown>
 </template>
+
+<style scoped>
+:deep(.dropdown-item){
+  cursor: default;
+}
+</style>

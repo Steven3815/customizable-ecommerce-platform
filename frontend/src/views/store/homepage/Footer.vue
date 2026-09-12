@@ -7,8 +7,8 @@ import {
   CCardBody,
   CRow,
   CCol,
-  CFormInput,
   CFormCheck,
+  CFormInput,
   CButton,
   CModal,
   CModalHeader,
@@ -64,39 +64,32 @@ async function loadFooter() {
 
     const footer = data.footer
 
-    contactPhone.value =
-      footer.contact_phone || ''
+    contactPhone.value = footer.contact_phone || ''
 
     contactPhoneEnable.value =
       footer.contact_phone_enable === true ||
       footer.contact_phone_enable === 1
 
-    address.value =
-      footer.address || ''
+    address.value = footer.address || ''
 
     addressEnable.value =
       footer.address_enable === true ||
       footer.address_enable === 1
 
-    email.value =
-      footer.email || ''
+    email.value = footer.email || ''
 
     emailEnable.value =
       footer.email_enable === true ||
       footer.email_enable === 1
 
-    servicePhone.value =
-      footer.service_phone || ''
+    servicePhone.value = footer.service_phone || ''
 
     servicePhoneEnable.value =
       footer.service_phone_enable === true ||
       footer.service_phone_enable === 1
 
   } catch (e) {
-    console.error(
-      '取得頁尾設定失敗:',
-      e
-    )
+    console.error('取得頁尾設定失敗:', e)
 
     if (e.status === 403) {
       showError('您沒有權限存取此頁面：' + (e.message || 'Forbidden'))
@@ -129,74 +122,53 @@ async function saveFooter() {
   try {
     const formData = new FormData()
 
-    formData.append(
-      'contact_phone',
-      contactPhone.value
-    )
-
+    formData.append('contact_phone', contactPhone.value)
     formData.append(
       'contact_phone_enable',
       contactPhoneEnable.value ? 1 : 0
     )
 
-    formData.append(
-      'address',
-      address.value
-    )
-
+    formData.append('address', address.value)
     formData.append(
       'address_enable',
       addressEnable.value ? 1 : 0
     )
 
-    formData.append(
-      'email',
-      email.value
-    )
-
+    formData.append('email', email.value)
     formData.append(
       'email_enable',
       emailEnable.value ? 1 : 0
     )
 
-    formData.append(
-      'service_phone',
-      servicePhone.value
-    )
-
+    formData.append('service_phone', servicePhone.value)
     formData.append(
       'service_phone_enable',
       servicePhoneEnable.value ? 1 : 0
     )
 
-    const data =
-      await updateFooterSettings(formData)
+    const data = await updateFooterSettings(formData)
 
     const footer = data.footer
 
-    contactPhone.value =
-      footer.contact_phone || ''
+    contactPhone.value = footer.contact_phone || ''
 
     contactPhoneEnable.value =
       footer.contact_phone_enable === true ||
       footer.contact_phone_enable === 1
 
-    address.value =
-      footer.address || ''
+    address.value = footer.address || ''
 
     addressEnable.value =
       footer.address_enable === true ||
       footer.address_enable === 1
 
-    email.value =
-      footer.email || ''
+    email.value = footer.email || ''
 
     emailEnable.value =
       footer.email_enable === true ||
       footer.email_enable === 1
 
-    servicePhone.value =
-      footer.service_phone || ''
+    servicePhone.value = footer.service_phone || ''
 
     servicePhoneEnable.value =
       footer.service_phone_enable === true ||
@@ -205,10 +177,7 @@ async function saveFooter() {
     showError('頁尾設定更新成功' || data.message)
 
   } catch (e) {
-    console.error(
-      '更新頁尾設定失敗:',
-      e
-    )
+    console.error('更新頁尾設定失敗:', e)
 
     if (e.status === 400) {
       showError('頁尾資料格式錯誤：' + (e.message || 'Bad Request'))
@@ -235,182 +204,166 @@ async function saveFooter() {
       <div class="body flex-grow-1">
         <CContainer class="px-4" lg>
 
-          <div v-if="loading">
+          <!-- 標題 -->
+          <div class="position-relative mt-2 mb-4">
+            <h2 class="mb-0">
+              頁尾設定
+            </h2>
+
+            <CButton
+              color="link"
+              class="text-decoration-none position-absolute top-0 end-0 pe-2"
+              @click="showDescription = !showDescription"
+            >
+              <CIcon
+                :icon="
+                  showDescription
+                    ? 'cilChevronTop'
+                    : 'cilChevronBottom'
+                "
+                class="me-1"
+              />
+              說明
+            </CButton>
+
+            <CCollapse :visible="showDescription">
+              <small class="d-block text-body-secondary mt-3">
+                管理網站頁尾顯示的聯絡資訊與服務電話
+              </small>
+            </CCollapse>
+          </div>
+
+          <div
+            v-if="loading"
+            class="text-center py-5 text-body-secondary"
+          >
             載入中...
           </div>
 
-          <div v-else>
+          <template v-else>
 
-            <!-- 標題 -->
-            <div class="position-relative mb-4">
-              <h2 class="mt-2 mb-3">
-                頁尾設定
-              </h2>
+            <!-- 頁尾資訊 -->
+            <CCard class="mb-4">
+              <CCardBody>
 
-              <CButton
-                color="link"
-                class="text-decoration-none position-absolute top-0 end-0 pe-2"
-                @click="
-                  showDescription =
-                    !showDescription
-                "
-              >
-                <CIcon
-                  :icon="
-                    showDescription
-                      ? 'cilChevronTop'
-                      : 'cilChevronBottom'
-                  "
-                  class="me-1"
-                />
-                說明
-              </CButton>
+                <h4 class="mb-4">
+                  頁尾資訊
+                </h4>
 
-              <CCollapse
-                :visible="showDescription"
-              >
-                <small class="d-block text-body-secondary">
-                  管理網站頁尾顯示的聯絡資訊與服務電話
+                <!-- 聯絡電話 -->
+                <CRow class="mb-4">
+                  <CCol :md="6">
+                    <div class="profile-field">
+                      <CFormCheck
+                        v-model="contactPhoneEnable"
+                        label="聯絡電話"
+                        class="profile-check"
+                      />
+
+                      <CFormInput
+                        v-if="contactPhoneEnable"
+                        v-model="contactPhone"
+                        maxlength="30"
+                        placeholder="請輸入聯絡電話"
+                      />
+                    </div>
+                  </CCol>
+                </CRow>
+
+                <!-- 地址 -->
+                <CRow class="mb-4">
+                  <CCol :md="6">
+                    <div class="profile-field">
+                      <CFormCheck
+                        v-model="addressEnable"
+                        label="地址"
+                        class="profile-check"
+                      />
+
+                      <CFormInput
+                        v-if="addressEnable"
+                        v-model="address"
+                        maxlength="200"
+                        placeholder="請輸入地址"
+                      />
+                    </div>
+                  </CCol>
+                </CRow>
+
+                <!-- Email -->
+                <CRow class="mb-4">
+                  <CCol :md="6">
+                    <div class="profile-field">
+                      <CFormCheck
+                        v-model="emailEnable"
+                        label="Email"
+                        class="profile-check"
+                      />
+
+                      <CFormInput
+                        v-if="emailEnable"
+                        v-model="email"
+                        type="email"
+                        maxlength="200"
+                        placeholder="請輸入 Email"
+                      />
+                    </div>
+                  </CCol>
+                </CRow>
+
+                <!-- 客服電話 -->
+                <CRow>
+                  <CCol :md="6">
+                    <div class="profile-field">
+                      <CFormCheck
+                        v-model="servicePhoneEnable"
+                        label="客服電話"
+                        class="profile-check"
+                      />
+
+                      <CFormInput
+                        v-if="servicePhoneEnable"
+                        v-model="servicePhone"
+                        maxlength="30"
+                        placeholder="請輸入客服電話"
+                      />
+                    </div>
+                  </CCol>
+                </CRow>
+
+                <small class="text-body-secondary">
+                  <br>
+                  <strong>說明：</strong>
+                  可設定網站頁尾顯示的聯絡電話、地址、Email 與客服電話
                 </small>
-              </CCollapse>
-            </div>
 
-            <!-- 聯絡電話 -->
-            <CCard class="mb-4">
-              <CCardBody>
-                <CRow class="align-items-center">
+                <!-- 操作 -->
+                <div class="d-flex justify-content-end mt-4">
 
-                  <CCol :md="2">
-                    <CFormCheck
-                      v-model="contactPhoneEnable"
-                      label="聯絡電話"
-                    />
-                  </CCol>
-
-                  <CCol
-                    v-if="contactPhoneEnable"
-                    :md="5"
+                  <CButton
+                    color="secondary"
+                    class="me-2"
+                    :disabled="saving"
+                    @click="cancelChanges"
                   >
-                    <CFormInput
-                      v-model="contactPhone"
-                      maxlength="30"
-                      placeholder="請輸入聯絡電話"
-                    />
-                  </CCol>
+                    取消修改
+                  </CButton>
 
-                </CRow>
+                  <CButton
+                    color="primary"
+                    :disabled="saving"
+                    @click="saveFooter"
+                  >
+                    {{ saving ? '儲存中...' : '儲存設定' }}
+                  </CButton>
+
+                </div>
+
               </CCardBody>
             </CCard>
 
-            <!-- 地址 -->
-            <CCard class="mb-4">
-              <CCardBody>
-                <CRow class="align-items-center">
+          </template>
 
-                  <CCol :md="2">
-                    <CFormCheck
-                      v-model="addressEnable"
-                      label="地址"
-                    />
-                  </CCol>
-
-                  <CCol
-                    v-if="addressEnable"
-                    :md="5"
-                  >
-                    <CFormInput
-                      v-model="address"
-                      maxlength="200"
-                      placeholder="請輸入地址"
-                    />
-                  </CCol>
-
-                </CRow>
-              </CCardBody>
-            </CCard>
-
-            <!-- Email -->
-            <CCard class="mb-4">
-              <CCardBody>
-                <CRow class="align-items-center">
-
-                  <CCol :md="2">
-                    <CFormCheck
-                      v-model="emailEnable"
-                      label="Email"
-                    />
-                  </CCol>
-
-                  <CCol
-                    v-if="emailEnable"
-                    :md="5"
-                  >
-                    <CFormInput
-                      v-model="email"
-                      type="email"
-                      maxlength="200"
-                      placeholder="請輸入 Email"
-                    />
-                  </CCol>
-
-                </CRow>
-              </CCardBody>
-            </CCard>
-
-            <!-- 客服電話 -->
-            <CCard class="mb-4">
-              <CCardBody>
-                <CRow class="align-items-center">
-
-                  <CCol :md="2">
-                    <CFormCheck
-                      v-model="servicePhoneEnable"
-                      label="客服電話"
-                    />
-                  </CCol>
-
-                  <CCol
-                    v-if="servicePhoneEnable"
-                    :md="5"
-                  >
-                    <CFormInput
-                      v-model="servicePhone"
-                      maxlength="30"
-                      placeholder="請輸入客服電話"
-                    />
-                  </CCol>
-
-                </CRow>
-              </CCardBody>
-            </CCard>
-
-            <!-- 操作 -->
-            <div
-              class="d-flex justify-content-end mb-5"
-            >
-            <CButton
-              color="secondary"
-              class="me-2"
-              :disabled="saving"
-              @click="cancelChanges"
-            >
-              取消修改
-            </CButton>
-
-            <CButton
-              color="primary"
-              :disabled="saving"
-              @click="saveFooter"
-            >
-              {{
-                saving
-                  ? '儲存中...'
-                  : '儲存設定'
-              }}
-            </CButton>
-            </div>
-
-          </div>
         </CContainer>
       </div>
 
@@ -441,5 +394,23 @@ async function saveFooter() {
         </CButton>
       </CModalFooter>
     </CModal>
+
   </div>
 </template>
+
+<style scoped>
+.profile-field {
+  display: flex;
+  align-items: center;
+}
+
+.profile-check {
+  width: 90px;
+  flex-shrink: 0;
+  margin-right: 1rem;
+}
+
+:deep(.form-control) {
+  font-size: 14px;
+}
+</style>

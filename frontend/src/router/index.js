@@ -7,10 +7,8 @@ import Page401 from '@/views/error/Page401.vue'
 
 import CustomerLogin from '../views/auth/CustomerLogin.vue'
 import CustomerRegister from '../views/auth/CustomerRegister.vue'
-import CustomerLogout from '../views/auth/CustomerLogout.vue'
 import StoreLogin from '../views/auth/StoreLogin.vue'
 import StoreRegister from '../views/auth/StoreRegister.vue'
-import StoreLogout from '../views/auth/StoreLogout.vue'
 
 import CustomerHome from '../views/customer/Home.vue'
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
@@ -79,17 +77,6 @@ const router = createRouter({
       path: '/store-:storeId/register',
       name: 'CustomerRegister',
       component: CustomerRegister,
-      beforeEnter: (to) => {
-        if (!/^[1-9]\d*$/.test(to.params.storeId)) {
-          return '/404'
-        }
-      },
-    },
-
-    {
-      path: '/store-:storeId/logout',
-      name: 'CustomerLogout',
-      component: CustomerLogout,
       beforeEnter: (to) => {
         if (!/^[1-9]\d*$/.test(to.params.storeId)) {
           return '/404'
@@ -251,12 +238,6 @@ const router = createRouter({
       path: '/store/register',
       name: 'StoreRegister',
       component: StoreRegister,
-    },
-
-    {
-      path: '/store/logout',
-      name: 'StoreLogout',
-      component: StoreLogout,
     },
 
     // 檢查不存在頁面 

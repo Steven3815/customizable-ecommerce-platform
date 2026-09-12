@@ -181,7 +181,7 @@ onMounted(() => {
 
 function goBack() {
   router.push({
-    name: 'ProductList'
+    name: 'StoreProductList'
   })
 }
 

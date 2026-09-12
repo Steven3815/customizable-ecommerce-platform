@@ -39,7 +39,7 @@ onMounted(async () => {
         <CContainer class="px-4" lg>
 
           <div v-if="store && summary">
-            <h2  class="mt-2 mb-4">Dashboard</h2>
+            <h2  class="mt-2 mb-4">儀表板</h2>
 
             <div>
               <p>商店名稱：{{ store.store_name }}</p>

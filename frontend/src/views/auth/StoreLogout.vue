@@ -16,7 +16,7 @@ async function logout() {
 
         console.log(data)
 
-        router.push(`/store`)
+        router.push('/store/login')
 
     } catch (error) {
         console.error('登出失敗', error)
