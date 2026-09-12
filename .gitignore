@@ -3,3 +3,8 @@
 *.log
 *.db
 backend/uploads/
+
+node_modules/
+.env
+.env.*
+!.env.example

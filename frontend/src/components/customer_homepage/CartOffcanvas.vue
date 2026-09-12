@@ -7,9 +7,7 @@
     @close="close"
   >
     <COffcanvasHeader>
-      <COffcanvasTitle>
-        購物車
-      </COffcanvasTitle>
+
 
       <CCloseButton
         class="text-reset"
@@ -23,7 +21,7 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">
           <span class="text-primary">
-            Your cart
+            購物車
           </span>
         </h4>
 
