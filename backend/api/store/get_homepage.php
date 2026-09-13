@@ -233,10 +233,13 @@ if ($stock_alert_enable) {
         $store_id,
         $spec_stock_alert_threshold
     ]);
+
     $spec_stock_alert_count = (int)$stmt->fetchColumn();
 
     // 一般商品 + 有規格商品
-    $stock_alert_count = $product_stock_alert_count + $spec_stock_alert_count;
+    $stock_alert_count =
+        $product_stock_alert_count
+        + $spec_stock_alert_count;
 }
 
 // 庫存不足
@@ -284,6 +287,7 @@ $out_of_stock_count = $product_out_of_stock_count + $spec_out_of_stock_count;
 // 最多顯示 10 筆
 $sql = "
 SELECT
+    o.order_id,
     o.order_number,
     o.created_at,
     c.name AS customer_name,
@@ -305,11 +309,13 @@ $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理最近訂單資料
 foreach ($recent_orders as &$order) {
+    $order["order_id"] = (int)$order["order_id"];
     $order["total_amount"] = (float)$order["total_amount"];
 }
 
 unset($order);
 
+// 回傳 Dashboard 資料
 echo json_encode([
     "store" => [
         "store_id" => (int)$store["store_id"],

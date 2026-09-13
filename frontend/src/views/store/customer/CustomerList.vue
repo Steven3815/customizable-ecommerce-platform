@@ -70,6 +70,23 @@ function closeErrorModal() {
   errorModalMessage.value = ''
 }
 
+// 取得目前排序
+function getSort() {
+  if (orderCountSort.value) {
+    return `order_count_${orderCountSort.value}`
+  }
+
+  if (totalSpendingSort.value) {
+    return `total_spending_${totalSpendingSort.value}`
+  }
+
+  if (createdAtSort.value) {
+    return `created_at_${createdAtSort.value}`
+  }
+
+  return 'created_at_desc'
+}
+
 // 取得客戶
 async function loadCustomers() {
   loading.value = true
@@ -79,9 +96,7 @@ async function loadCustomers() {
     const data = await getCustomers({
       page: page.value,
       search: searchKeyword.value || null,
-      order_count_sort: orderCountSort.value || null,
-      total_spending_sort: totalSpendingSort.value || null,
-      created_at_sort: createdAtSort.value || null
+      sort: getSort()
     })
 
     customers.value = data.customers || []
@@ -116,7 +131,22 @@ watch(
     totalSpendingSort,
     createdAtSort
   ],
-  () => {
+  (newValues, oldValues) => {
+    if (newValues[0] !== oldValues[0] && newValues[0] !== '') {
+      totalSpendingSort.value = ''
+      createdAtSort.value = ''
+    }
+
+    if (newValues[1] !== oldValues[1] && newValues[1] !== '') {
+      orderCountSort.value = ''
+      createdAtSort.value = ''
+    }
+
+    if (newValues[2] !== oldValues[2] && newValues[2] !== '') {
+      orderCountSort.value = ''
+      totalSpendingSort.value = ''
+    }
+
     page.value = 1
     loadCustomers()
   }
@@ -212,10 +242,7 @@ onMounted(() => {
               <CButton
                 color="link"
                 class="text-decoration-none position-absolute top-0 end-0 pe-2"
-                @click="
-                  showDescription =
-                    !showDescription
-                "
+                @click="showDescription = !showDescription"
               >
                 <CIcon
                   :icon="
@@ -447,12 +474,12 @@ onMounted(() => {
 
                         <!-- 操作 -->
                         <CTableDataCell>
-                            <RouterLink
-                                :to="`/store/admin/customer/${customer.customer_id}`"
-                                class="btn btn-primary btn-sm"
-                            >
-                                查看
-                            </RouterLink>
+                          <RouterLink
+                            :to="`/store/admin/customer/${customer.customer_id}`"
+                            class="btn btn-primary btn-sm"
+                          >
+                            查看
+                          </RouterLink>
                         </CTableDataCell>
 
                       </CTableRow>
