@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 
 import { storeRegister } from '../../api/auth.js'
 
@@ -21,6 +21,12 @@ const confirmSuccess = ref(null)
 const success = ref('')
 const error = ref('')
 const newStoreId = ref(null)
+
+const router = useRouter()
+
+function changeMode(event) {
+  mode.value = event.target.value
+}
 
 async function register() {
   error.value = ''
@@ -205,7 +211,7 @@ async function register() {
                               v-on="on"
                               @click="showConfirmPassword = !showConfirmPassword"
                             >
-                              <CIcon :icon="eye" size="sm"/>
+                              <CIcon :icon="eye" size="sm" />
                             </CButton>
                           </template>
                         </CTooltip>
@@ -228,8 +234,9 @@ async function register() {
 
                     <CFormSelect
                       id="mode"
-                      v-model="mode"
+                      :value="mode"
                       required
+                      @change="changeMode"
                     >
                       <option
                         value=""
@@ -300,19 +307,19 @@ async function register() {
                   <CButton
                     color="primary"
                     class="w-100 mb-2"
-                    :href="`/store-${newStoreId}/login`"
+                    @click="router.push('/store/login')"
                   >
                     前往登入
                   </CButton>
                 </div>
 
-            <!-- Login -->
-            <div class="text-body-secondary">
-              已經有商家帳號？
-              <RouterLink to="/store/login">
-                登入
-              </RouterLink>
-            </div>
+                <!-- Login -->
+                <div class="text-body-secondary">
+                  已經有商家帳號？
+                  <RouterLink to="/store/login">
+                    登入
+                  </RouterLink>
+                </div>
               </CCardBody>
             </CCard>
 
@@ -347,7 +354,7 @@ async function register() {
 :deep(.form-select) {
     font-size: 14px;
 }
-.text-error{
+.text-error {
     color: rgb(255, 73, 73);
 }
 </style>

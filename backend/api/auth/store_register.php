@@ -280,6 +280,21 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$store_id]);
 
+    // 建立 FOOTER_SETTING
+    $sql = "
+    INSERT INTO FOOTER_SETTING
+    (
+        store_id
+    )
+    VALUES
+    (
+        ?
+    )
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$store_id]);
+
     // 每個 Store 固定建立 5 種付款方式
     $sql = "
     INSERT INTO STORE_PAYMENT_METHOD
