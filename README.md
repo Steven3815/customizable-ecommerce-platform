@@ -1,3 +1,9 @@
+## Demo
+
+> **Note:** This project is currently under development and is not yet complete.
+
+[Watch the Demo on YouTube] https://youtu.be/Sk9CP-9vndw
+
 ## Project Overview
 
 This project provides a customizable e-commerce platform
