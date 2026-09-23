@@ -1,4 +1,3 @@
-```vue
 <template>
   <CCol>
     <CCard class="h-100">
@@ -11,56 +10,59 @@
         class="product-image"
       />
 
-      <div v-else class="image-placeholder">
+      <div
+        v-else
+        class="image-placeholder"
+      >
         No Image
       </div>
 
       <CCardBody class="d-flex flex-column">
 
-        <!-- Product Name -->
         <CCardTitle>
           {{ name }}
         </CCardTitle>
 
-        <!-- Product Price -->
         <div class="price mb-3">
           ${{ Number(price).toFixed(2) }}
         </div>
 
-        <!-- Quantity -->
-        <CInputGroup class="mb-3">
+        <div class="d-flex gap-2 mt-auto">
+
+          <CInputGroup class="quantity-input">
+
+            <CButton
+              color="light"
+              @click="decreaseQuantity"
+            >
+              −
+            </CButton>
+
+            <CFormInput
+              v-model.number="quantity"
+              type="number"
+              min="1"
+              class="text-center"
+            />
+
+            <CButton
+              color="light"
+              @click="increaseQuantity"
+            >
+              +
+            </CButton>
+
+          </CInputGroup>
 
           <CButton
-            color="light"
-            @click="decreaseQuantity"
+            color="primary"
+            class="cart-btn"
+            @click="addToCart"
           >
-            −
+            購買
           </CButton>
 
-          <CFormInput
-            v-model.number="quantity"
-            type="number"
-            min="1"
-            class="text-center"
-          />
-
-          <CButton
-            color="light"
-            @click="increaseQuantity"
-          >
-            +
-          </CButton>
-
-        </CInputGroup>
-
-        <!-- Add to Cart -->
-        <CButton
-          color="primary"
-          class="w-100 mt-auto"
-          @click="addToCart"
-        >
-          Add to Cart
-        </CButton>
+        </div>
 
       </CCardBody>
 
@@ -115,25 +117,62 @@ const addToCart = () => {
 
 <style scoped>
 .product-image {
-  width: 100%;
+  width: calc(100% - 24px);
   aspect-ratio: 1 / 1;
-  object-fit: contain;
+  object-fit: cover;
+  display: block;
+  margin: 12px auto 0;
+  border-radius: 4px;
 }
 
 .image-placeholder {
   width: 100%;
   aspect-ratio: 1 / 1;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   background-color: var(--cui-tertiary-bg);
   color: var(--cui-secondary-color);
   font-size: 14px;
 }
 
 .price {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.card-title {
+  margin-top: 0.5rem;
+  font-size: 1.2rem;
+}
+
+:deep(input[type='number']::-webkit-inner-spin-button),
+:deep(input[type='number']::-webkit-outer-spin-button) {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+:deep(input[type='number']) {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+h2,
+.card-title,
+.price {
+  cursor: default;
+  text-align: center;
+}
+
+.quantity-input {
+  width: 60%;
+  margin-right: 3%;
+}
+
+.cart-btn {
+  width: 30%;
 }
 </style>
-```

@@ -4,65 +4,102 @@
 
     <div class="wrapper d-flex flex-column min-vh-100">
 
-      <Header />
+      <Header
+        :store="home?.store || {}"
+      />
 
       <div class="body flex-grow-1">
-        <Banner />
-        <Slider />
 
-        <section class="py-5">
+        <Banner
+          v-if="home?.website_setting?.banner_section_enable"
+          :banners="home?.banners || []"
+        />
+
+        <Slider
+          v-if="home?.website_setting?.intro_section_enable"
+          :sliders="home?.sliders || []"
+        />
+
+        <section
+          v-for="category in categories"
+          :key="category.category_id"
+          class="py-5"
+        >
           <CContainer fluid>
+
+            <!-- Category Header -->
             <CRow>
               <CCol :md="12">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-                  <h2 class="mb-0">
-                    A類商品
-                  </h2>
 
-                  <div class="d-flex align-items-center gap-2">
+                <div class="category-header">
+
+                  <div class="category-title-wrapper">
+
+                    <h1>
+                      {{ category.category_name }}
+                    </h1>
+
+                  </div>
+
+                  <div class="category-action">
                     <CButton
                       color="link"
                       class="text-decoration-none"
                     >
                       查看類別商品 →
                     </CButton>
-
                   </div>
+
                 </div>
+
               </CCol>
             </CRow>
 
+            <!-- Products -->
             <CRow>
               <CCol :md="12">
-                <div
-                  ref="swiperElement"
-                  class="products-carousel swiper"
-                >
+
+                <div class="products-carousel swiper">
+
                   <div class="swiper-wrapper">
-                    <ProductCard
-                      v-for="product in products"
-                      :key="product.productId"
-                      :product-id="product.productId"
-                      :name="product.name"
-                      :image="product.image"
-                      :price="product.price"
-                    />
+
+                    <div
+                      v-for="product in category.products"
+                      :key="product.product_id"
+                      class="swiper-slide"
+                    >
+                      <ProductCard
+                        :product-id="product.product_id"
+                        :name="product.product_name"
+                        :image="product.main_image"
+                        :price="product.display_price"
+                      />
+                    </div>
+
                   </div>
+
                 </div>
+
               </CCol>
             </CRow>
+
           </CContainer>
         </section>
+
       </div>
 
-      <Footer />
+      <Footer
+        :footer="home?.footer || {}"
+      />
+
       <Createdby />
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -74,7 +111,7 @@ import {
 
 import Swiper from 'swiper'
 
-import { getStore } from '../../api/store.js'
+import { getCustomerHome } from '../../api/customer.js'
 
 import ProductCard from '../../components/customer_homepage/ProductCard.vue'
 import Header from '../../components/customer_homepage/Header.vue'
@@ -84,78 +121,133 @@ import Sidebar from '../../components/customer_homepage/Sidebar.vue'
 import Footer from '../../components/customer_homepage/Footer.vue'
 import Createdby from '../../components/customer_homepage/Createdby.vue'
 
-const swiperElement = ref(null)
-const swiper = ref(null)
-
 const route = useRoute()
 const router = useRouter()
 
-const store = ref(null)
+const home = ref(null)
+const categories = ref([])
 
-const products = [
-  {
-    productId: 1,
-    name: '商品 1',
-    image: '',
-    price: 100
-  },
-  {
-    productId: 2,
-    name: '商品 2',
-    image: '',
-    price: 150
-  },
-  {
-    productId: 3,
-    name: '商品 3',
-    image: '',
-    price: 200
-  },
-  {
-    productId: 4,
-    name: '商品 4',
-    image: '',
-    price: 250
-  }
-]
-
-onMounted(async() => {
+onMounted(async () => {
   const storeId = route.params.storeId
 
   try {
-    store.value = await getStore(storeId)
+    home.value = await getCustomerHome(storeId)
 
-    console.log('Store:', store.value)
+    categories.value = home.value.categories
+
+    console.log('Customer Home:', home.value)
+
+    await nextTick()
+
+    const swiperElements = document.querySelectorAll(
+      '.products-carousel'
+    )
+
+    swiperElements.forEach((element) => {
+      new Swiper(element, {
+        slidesPerView: 'auto',
+        spaceBetween: 20,
+
+        breakpoints: {
+          576: {
+            slidesPerView: 'auto'
+          },
+
+          768: {
+            slidesPerView: 'auto'
+          },
+
+          992: {
+            slidesPerView: 'auto'
+          },
+
+          1200: {
+            slidesPerView: 'auto'
+          }
+        }
+      })
+    })
+
   } catch (error) {
-    console.error('取得商店資料失敗:', error)
+    console.error('取得首頁資料失敗:', error)
 
     router.push('/404')
   }
-
-  swiper.value = new Swiper(swiperElement.value, {
-    slidesPerView: 1,
-    spaceBetween: 20,
-    breakpoints: {
-      576: {
-        slidesPerView: 2
-      },
-      768: {
-        slidesPerView: 3
-      },
-      992: {
-        slidesPerView: 4
-      },
-      1200: {
-        slidesPerView: 4
-      }
-    }
-  })
 })
 </script>
 
 <style scoped>
+
+.category-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.category-title-wrapper h1 {
+  margin: 0;
+
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+
+  color: #3b4f66;
+
+  cursor: default;
+  position: relative;
+  display: inline-block;
+}
+
+.category-title-wrapper h1::before,
+.category-title-wrapper h1::after {
+  content: '';
+  display: inline-block;
+  width: 8rem;
+  height: 1px;
+  background-color: var(--cui-border-color);
+  vertical-align: middle;
+  margin: 0 15px;
+}
+
+.category-header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin-bottom: 3rem;
+}
+
+.category-action {
+  position: absolute;
+  right: 0;
+}
+
 .products-carousel {
   width: 100%;
   overflow: hidden;
 }
+
+.products-carousel :deep(.swiper-slide) {
+  width: calc((100% - 60px) / 4);
+}
+
+@media (max-width: 991px) {
+  .products-carousel :deep(.swiper-slide) {
+    width: calc((100% - 40px) / 3);
+  }
+}
+
+@media (max-width: 767px) {
+  .products-carousel :deep(.swiper-slide) {
+    width: calc((100% - 20px) / 2);
+  }
+}
+
+@media (max-width: 575px) {
+  .products-carousel :deep(.swiper-slide) {
+    width: 100%;
+  }
+}
+
 </style>

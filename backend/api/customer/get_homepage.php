@@ -173,6 +173,8 @@ foreach ($banners as &$banner) {
             : null;
 
     $banner["sort_order"] = (int)$banner["sort_order"];
+
+    $banner["image_url"] = "http://localhost/ecommerce-platform/backend" . $banner["image_url"];
 }
 
 unset($banner);
@@ -199,6 +201,8 @@ $sliders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 foreach ($sliders as &$slider) {
     $slider["image_id"] = (int)$slider["image_id"];
     $slider["sort_order"] = (int)$slider["sort_order"];
+
+    $slider["image_url"] = "http://localhost/ecommerce-platform/backend" . $slider["image_url"];
 }
 
 unset($slider);
@@ -321,6 +325,8 @@ foreach ($categories as $category) {
             $product["has_spec"]
                 ? $product["min_spec_price"]
                 : $product["price"];
+
+        $product["main_image"] = "http://localhost/ecommerce-platform/backend" . $product["main_image"];
     }
 
     unset($product);

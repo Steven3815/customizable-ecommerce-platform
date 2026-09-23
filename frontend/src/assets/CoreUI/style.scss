@@ -51,7 +51,9 @@
 .footer {
   min-height: calc(3rem + 1px); // stylelint-disable-line function-disallowed-list
 }
-
+.btn-danger {
+  color: white !important;
+}
 @include color-mode(dark) {
   body {
     background-color: var(--cui-dark-bg-subtle);

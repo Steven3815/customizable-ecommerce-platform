@@ -11,18 +11,29 @@
 
           <div
             v-for="slider in sliders"
-            :key="slider.id"
+            :key="slider.image_id"
             class="swiper-slide"
           >
 
-            <div v-if="slider.image" class="slider-image">
-              <img
-                :src="slider.image"
-                :alt="slider.title"
-              >
+            <div
+              v-if="slider.image_url"
+            >
+              <div class="slider-title mt-4">
+                {{ slider.title }}
+              </div>
+
+              <div class="slider-image">
+                <img
+                  :src="slider.image_url"
+                  :alt="slider.title"
+                >
+              </div>
             </div>
 
-            <div v-else class="slider-placeholder">
+            <div
+              v-else
+              class="slider-placeholder"
+            >
               No Slider Image
             </div>
 
@@ -45,25 +56,18 @@ import { Pagination, Autoplay } from 'swiper/modules'
 
 const swiperElement = ref(null)
 
-const sliders = [
-  {
-    id: 1,
-    title: 'Slider 1',
-    image: ''
-  },
-  {
-    id: 2,
-    title: 'Slider 2',
-    image: ''
-  },
-  {
-    id: 3,
-    title: 'Slider 3',
-    image: ''
+defineProps({
+  sliders: {
+    type: Array,
+    default: () => []
   }
-]
+})
 
 onMounted(() => {
+  if (!swiperElement.value) {
+    return
+  }
+
   new Swiper(swiperElement.value, {
     modules: [Pagination, Autoplay],
 
@@ -78,7 +82,7 @@ onMounted(() => {
     },
 
     pagination: {
-      el: '.swiper-pagination',
+      el: swiperElement.value.querySelector('.swiper-pagination'),
       clickable: true
     }
   })
@@ -86,15 +90,28 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.slider-title {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: var(--cui-secondary-color);
+  letter-spacing: 0.03em;
+  cursor: default;
+}
+
 .slider-image {
   width: 100%;
   aspect-ratio: 16 / 5;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
 .slider-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .slider-placeholder {

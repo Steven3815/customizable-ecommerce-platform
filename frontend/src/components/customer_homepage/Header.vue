@@ -16,7 +16,14 @@ const { colorMode, setColorMode } = useColorModes(
 
 const sidebar = useSidebarStore()
 
-const storeLogo = null
+const props = defineProps({
+  store: {
+    type: Object,
+    default: () => ({
+      store_name: ''
+    })
+  }
+})
 
 const openCart = () => {
   cartOffcanvas.value?.open()
@@ -39,7 +46,7 @@ onMounted(() => {
     :class="headerClassNames"
   >
     <CContainer
-      class="border-bottom px-4"
+      class="border-bottom px-4 position-relative"
       fluid
     >
       <CHeaderToggler
@@ -119,22 +126,11 @@ onMounted(() => {
         </CModalBody>
       </CModal>
 
-      <CHeaderBrand class="ms-3">
-        <a
-          v-if="storeLogo"
-          href="#"
-        >
-          <img
-            :src="storeLogo"
-            alt="logo"
-            class="img-fluid"
-          >
-        </a>
-
-        <div
-          v-else
-          class="logo-placeholder"
-        ></div>
+      <!-- Store Name -->
+      <CHeaderBrand class="store-name-wrapper">
+        <div class="store-name">
+          {{ props.store.store_name }}
+        </div>
       </CHeaderBrand>
 
       <CHeaderNav class="ms-auto">
@@ -196,9 +192,16 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.logo-placeholder {
-  width: 120px;
-  height: 40px;
+.store-name-wrapper {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.store-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .cart-container {
