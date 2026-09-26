@@ -1,5 +1,6 @@
 <template>
   <div>
+
     <Sidebar />
 
     <div class="wrapper d-flex flex-column min-vh-100">
@@ -21,7 +22,7 @@
         />
 
         <section
-          v-for="category in categories"
+          v-for="category in categories.filter(category => category.products.some(product => product.display_price !== null))"
           :key="category.category_id"
           class="py-5"
         >
@@ -64,15 +65,17 @@
                   <div class="swiper-wrapper">
 
                     <div
-                      v-for="product in category.products"
+                      v-for="product in category.products.filter(product => product.display_price !== null)"
                       :key="product.product_id"
                       class="swiper-slide"
                     >
                       <ProductCard
                         :product-id="product.product_id"
+                        :store-id="route.params.storeId"
                         :name="product.product_name"
                         :image="product.main_image"
                         :price="product.display_price"
+                        @view-product="openProduct"
                       />
                     </div>
 
@@ -95,6 +98,15 @@
       <Createdby />
 
     </div>
+
+    <!-- Product Detail Modal -->
+    <ProductCardDetailModal
+      :visible="showProductModal"
+      :product-id="selectedProductId"
+      :store-id="route.params.storeId"
+      @close="closeProductModal"
+    />
+
   </div>
 </template>
 
@@ -114,6 +126,7 @@ import Swiper from 'swiper'
 import { getCustomerHome } from '../../api/customer.js'
 
 import ProductCard from '../../components/customer_homepage/ProductCard.vue'
+import ProductCardDetailModal from '../../components/customer_homepage/ProductCardDetailModal.vue'
 import Header from '../../components/customer_homepage/Header.vue'
 import Banner from '../../components/customer_homepage/Banner.vue'
 import Slider from '../../components/customer_homepage/Slider.vue'
@@ -126,6 +139,18 @@ const router = useRouter()
 
 const home = ref(null)
 const categories = ref([])
+
+const showProductModal = ref(false)
+const selectedProductId = ref(null)
+
+const openProduct = (product) => {
+  selectedProductId.value = product.productId
+  showProductModal.value = true
+}
+
+const closeProductModal = () => {
+  showProductModal.value = false
+}
 
 onMounted(async () => {
   const storeId = route.params.storeId

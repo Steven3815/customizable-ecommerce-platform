@@ -2,7 +2,6 @@
   <CCol>
     <CCard class="h-100">
 
-      <!-- Product Image -->
       <CCardImage
         v-if="image"
         :src="image"
@@ -27,42 +26,13 @@
           ${{ Number(price).toFixed(2) }}
         </div>
 
-        <div class="d-flex gap-2 mt-auto">
-
-          <CInputGroup class="quantity-input">
-
-            <CButton
-              color="light"
-              @click="decreaseQuantity"
-            >
-              −
-            </CButton>
-
-            <CFormInput
-              v-model.number="quantity"
-              type="number"
-              min="1"
-              class="text-center"
-            />
-
-            <CButton
-              color="light"
-              @click="increaseQuantity"
-            >
-              +
-            </CButton>
-
-          </CInputGroup>
-
-          <CButton
-            color="primary"
-            class="cart-btn"
-            @click="addToCart"
-          >
-            購買
-          </CButton>
-
-        </div>
+        <CButton
+          color="primary"
+          class="mt-auto"
+          @click="openProduct"
+        >
+          查看商品
+        </CButton>
 
       </CCardBody>
 
@@ -71,12 +41,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {
+  CCol,
+  CCard,
+  CCardImage,
+  CCardBody,
+  CCardTitle,
+  CButton
+} from '@coreui/vue'
 
 const props = defineProps({
   productId: {
     type: Number,
     default: null
+  },
+
+  storeId: {
+    type: [Number, String],
+    required: true
   },
 
   name: {
@@ -95,23 +77,18 @@ const props = defineProps({
   }
 })
 
-const quantity = ref(1)
+const emit = defineEmits([
+  'view-product'
+])
 
-const decreaseQuantity = () => {
-  if (quantity.value > 1) {
-    quantity.value--
-  }
-}
-
-const increaseQuantity = () => {
-  quantity.value++
-}
-
-const addToCart = () => {
-  console.log('Add to cart:', {
-    productId: props.productId,
-    quantity: quantity.value
-  })
+const openProduct = () => {
+  emit(
+    'view-product',
+    {
+      productId: props.productId,
+      storeId: props.storeId
+    }
+  )
 }
 </script>
 
@@ -149,30 +126,10 @@ const addToCart = () => {
   font-size: 1.2rem;
 }
 
-:deep(input[type='number']::-webkit-inner-spin-button),
-:deep(input[type='number']::-webkit-outer-spin-button) {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-:deep(input[type='number']) {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
 h2,
 .card-title,
 .price {
   cursor: default;
   text-align: center;
-}
-
-.quantity-input {
-  width: 60%;
-  margin-right: 3%;
-}
-
-.cart-btn {
-  width: 30%;
 }
 </style>

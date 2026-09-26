@@ -1,5 +1,6 @@
 <?php
-// Customer 加入購物車
+
+// Customer 加入購物車 不檢查庫存(交由付款時檢查)
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -253,31 +254,12 @@ if ((int)$product["has_spec"] === 1) {
         exit;
     }
 
-    // 檢查規格庫存
-    if ((int)$spec["stock"] < $quantity) {
-        http_response_code(409);
-        echo json_encode([
-            "error" => "Insufficient stock"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
 } else {
     // 無規格商品不可傳 Spec ID
     if ($spec_id !== null) {
         http_response_code(400);
         echo json_encode([
             "error" => "This product does not have specifications"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
-
-    // 檢查商品庫存
-    if ((int)$product["stock"] < $quantity) {
-        http_response_code(409);
-        echo json_encode([
-            "error" => "Insufficient stock"
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -358,28 +340,6 @@ if ($cart_item) {
     $new_quantity =
         (int)$cart_item["quantity"] + $quantity;
 
-    // 取得目前可用庫存
-    if ((int)$product["has_spec"] === 1) {
-
-        $available_stock =
-            (int)$spec["stock"];
-
-    } else {
-
-        $available_stock =
-            (int)$product["stock"];
-    }
-
-    // 檢查累加後是否超過庫存
-    if ($new_quantity > $available_stock) {
-        http_response_code(409);
-        echo json_encode([
-            "error" => "Insufficient stock"
-        ], JSON_UNESCAPED_UNICODE);
-
-        exit;
-    }
-
     // 更新購物車數量
     $sql = "
     UPDATE CART_ITEM
@@ -441,28 +401,6 @@ if ($cart_item) {
 }
 
 // 回傳
-echo json_encode([
-    "message" => $message,
-    "customer_id" => $customer_id,
-    "cart_id" => $cart_id,
-    "store_id" => $store_id,
-    "product_id" => $product_id,
-    "spec_id" => $spec_id,
-    "quantity" => $final_quantity
-], JSON_UNESCAPED_UNICODE);
-
-?>       $store_id,
-        $product_id,
-        $spec_id,
-        $quantity
-    ]);
-
-    $message = "Product added to cart";
-
-    $final_quantity = $quantity;
-}
-
-// ?
 echo json_encode([
     "message" => $message,
     "customer_id" => $customer_id,

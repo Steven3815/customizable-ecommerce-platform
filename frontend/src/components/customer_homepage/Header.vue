@@ -20,7 +20,8 @@ const props = defineProps({
   store: {
     type: Object,
     default: () => ({
-      store_name: ''
+      store_name: '',
+      store_id: null
     })
   }
 })
@@ -187,6 +188,7 @@ onMounted(() => {
 
     <CartOffcanvas
       ref="cartOffcanvas"
+      :store-id="props.store.store_id"
     />
   </CHeader>
 </template>

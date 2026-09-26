@@ -300,7 +300,14 @@ foreach ($items as &$item) {
         $item["subtotal"] !== null
             ? (float)$item["subtotal"]
             : null;
-
+    
+    if (
+        $item["image_url"] !== null &&
+        $item["image_url"] !== ""
+    ) {
+        $item["image_url"] = "http://localhost/ecommerce-platform/backend" . $item["image_url"];
+    }
+    
     if ($item["subtotal"] !== null) {
         $total_amount += $item["subtotal"];
     }

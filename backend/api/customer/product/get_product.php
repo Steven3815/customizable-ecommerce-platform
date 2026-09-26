@@ -26,8 +26,7 @@ if (
 
 if (
     !is_numeric($product_id) ||
-    floor((float)$product_id)
-        != (float)$product_id ||
+    floor((float)$product_id) != (float)$product_id ||
     (int)$product_id <= 0
 ) {
     http_response_code(400);
@@ -55,8 +54,7 @@ if (
 
 if (
     !is_numeric($store_id) ||
-    floor((float)$store_id)
-        != (float)$store_id ||
+    floor((float)$store_id) != (float)$store_id ||
     (int)$store_id <= 0
 ) {
     http_response_code(400);
@@ -101,7 +99,6 @@ if ($store["status"] !== "active") {
 
     exit;
 }
-
 
 // 取得商品基本資料
 $sql = "
@@ -161,7 +158,6 @@ $product["category_id"] =
 
 $product["has_spec"] = (bool)$product["has_spec"];
 
-
 // 商品價格與庫存
 // 無規格：PRODUCT.price, PRODUCT.stock
 // 有規格：實際價格與庫存由 PRODUCT_SPEC 管理
@@ -204,15 +200,13 @@ $stmt->execute([
 ]);
 $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-foreach (
-    $images as &$image
-) {
+foreach ($images as &$image) {
     $image["image_id"] = (int)$image["image_id"];
     $image["sort_order"] = (int)$image["sort_order"];
+    $image["image_url"] = "http://localhost/ecommerce-platform/backend" . $image["image_url"];
 }
 
 unset($image);
-
 
 // 取得商品規格
 $specs = [];
@@ -229,6 +223,7 @@ if ($product["has_spec"]) {
     WHERE product_id = ?
     AND store_id = ?
     AND status = 'active'
+    AND price IS NOT NULL
     ORDER BY
         spec_id ASC
     ";
@@ -240,9 +235,7 @@ if ($product["has_spec"]) {
     ]);
     $specs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach (
-        $specs as &$spec
-    ) {
+    foreach ($specs as &$spec) {
         $spec["spec_id"] = (int)$spec["spec_id"];
 
         $spec["price"] =
@@ -256,6 +249,33 @@ if ($product["has_spec"]) {
     unset($spec);
 }
 
+// 有規格商品沒有任何可用規格
+if (
+    $product["has_spec"] &&
+    count($specs) === 0
+) {
+    http_response_code(404);
+
+    echo json_encode([
+        "error" => "Product has no available specifications"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 無規格商品沒有設定價格
+if (
+    !$product["has_spec"] &&
+    $product["price"] === null
+) {
+    http_response_code(404);
+
+    echo json_encode([
+        "error" => "Product price is not set"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
 
 // 回傳商品資料
 echo json_encode([

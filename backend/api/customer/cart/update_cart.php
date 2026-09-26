@@ -1,6 +1,6 @@
 <?php
 
-// Customer 更新購物車商品數量
+// Customer 更新購物車商品數量 不檢查庫存(交由付款時檢查)
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -246,7 +246,7 @@ if ($item["category_status"] !== "active") {
     exit;
 }
 
-// 判斷庫存
+// 判斷規格
 if ((int)$item["has_spec"] === 1) {
 
     // 有規格商品
@@ -269,8 +269,6 @@ if ((int)$item["has_spec"] === 1) {
         exit;
     }
 
-    $available_stock = (int)$item["spec_stock"];
-
 } else {
 
     // 無規格商品不可有 spec_id
@@ -282,19 +280,6 @@ if ((int)$item["has_spec"] === 1) {
 
         exit;
     }
-
-    $available_stock = (int)$item["product_stock"];
-}
-
-// 檢查庫存
-if ($quantity > $available_stock) {
-    http_response_code(409);
-    echo json_encode([
-        "error" => "Insufficient stock",
-        "available_stock" => $available_stock
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
 }
 
 // 更新購物車數量
