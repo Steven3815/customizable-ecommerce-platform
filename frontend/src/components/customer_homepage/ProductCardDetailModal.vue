@@ -1,330 +1,383 @@
 <template>
-  <div>
-    <CModal
-      v-if="isLoggedIn"
-      :visible="visible"
-      @close="closeModal"
-      alignment="center"
-      class="product-modal"
-    >
-      <CModalHeader class="border-0">
-      </CModalHeader>
+  <CModal
+    :visible="visible"
+    @close="closeModal"
+    alignment="center"
+    class="product-modal"
+  >
+    <CModalHeader class="border-0">
 
-      <CModalBody>
-        <div v-if="addedMessage" class="added-message">
-          已加入 {{ addedQuantity }} 件
+    </CModalHeader>
+
+    <CModalBody>
+
+      <div v-if="addedMessage" class="added-message">
+        已加入 {{ addedQuantity }} 件
+      </div>
+
+      <template v-else>
+
+        <!-- 載入登入狀態 -->
+        <div
+          v-if="loading"
+          class="text-center py-4"
+        >
+          載入中...
         </div>
 
-        <template v-else>
-          <!-- 載入商品資料 -->
-          <div
-            v-if="loading"
-            class="text-center py-4"
-          >
-            載入中...
+        <!-- 未登入 -->
+        <div
+          v-else-if="!isLoggedIn"
+          class="login-modal text-center py-4"
+        >
+          <div class="mb-3">
+            請先登入後查看商品資訊
           </div>
 
-          <!-- 已登入且商品資料取得成功 -->
-          <div
-            v-else-if="product"
-            class="product-detail"
+          <CButton
+            color="primary"
+            @click="goToLogin"
           >
-            <!-- 商品圖片 -->
-            <div
-              v-if="product.images?.length && product.images[0].image_url"
-              class="product-image-wrapper"
-            >
-              <CButton
-                v-if="product.images.length > 1"
-                color="light"
-                class="image-prev"
-                @click="previousImage"
-              >
-                ‹
-              </CButton>
+            登入
+          </CButton>
+        </div>
 
-              <img
-                :src="product.images[currentImageIndex].image_url"
-                :alt="product.product_name"
-                class="modal-product-image"
-              />
+        <!-- 已登入且商品資料取得成功 -->
+        <div
+          v-else-if="product"
+          class="product-detail"
+        >
 
-              <CButton
-                v-if="product.images.length > 1"
-                color="light"
-                class="image-next"
-                @click="nextImage"
-              >
-                ›
-              </CButton>
-            </div>
-
-            <div
-              v-else
-              class="image-placeholder"
-            >
-              無照片
-            </div>
-
-            <!-- 商品名稱 -->
-            <h4 class="product-name">
-              {{ product.product_name }}
-            </h4>
-
-            <!-- 商品描述 -->
-            <p
-              v-if="product.description"
-              :ref="setDescriptionRef"
-              :class="[
-                'product-description',
-                descriptionExpanded ? 'expanded' : ''
-              ]"
-            >
-              {{ product.description }}
-            </p>
-
-            <!-- 展開 / 收合 -->
+          <!-- 商品圖片 -->
+          <div
+            v-if="product.images?.length && product.images[0].image_url"
+            class="product-image-wrapper"
+          >
             <CButton
-              v-if="
-                product.description &&
-                descriptionOverflow
-              "
-              color="secondary"
-              variant="ghost"
-              size="sm"
-              class="description-button"
-              @click="toggleDescription"
+              v-if="product.images.length > 1"
+              color="light"
+              class="image-prev"
+              @click="previousImage"
             >
-              <CIcon
-                :icon="
-                  descriptionExpanded
-                    ? 'cilChevronTop'
-                    : 'cilChevronBottom'
-                "
-                class="me-1"
-              />
-              {{
-                descriptionExpanded
-                  ? '收合'
-                  : '展開'
-              }}
+              ‹
             </CButton>
 
-            <!-- 無規格商品 -->
-            <template v-if="!product.has_spec">
-              <!-- 價格 -->
-              <CRow class="align-items-center mt-4 mb-3">
-                <CCol :md="3">
-                  <div class="form-label mb-0">
-                    價格
-                  </div>
-                </CCol>
+            <img
+              :src="product.images[currentImageIndex].image_url"
+              :alt="product.product_name"
+              class="modal-product-image"
+            />
 
-                <CCol :md="9">
-                  <div
-                    v-if="product.price !== null"
-                    class="modal-price"
-                  >
-                    ${{ Number(product.price).toFixed(2) }}
-                  </div>
+            <CButton
+              v-if="product.images.length > 1"
+              color="light"
+              class="image-next"
+              @click="nextImage"
+            >
+              ›
+            </CButton>
+          </div>
 
-                  <div
-                    v-else
-                    class="stock text-start"
-                  >
-                    尚未設定價格
-                  </div>
-                </CCol>
-              </CRow>
+          <div
+            v-else
+            class="image-placeholder"
+          >
+            無照片
+          </div>
 
-              <!-- 庫存 -->
-              <CRow class="align-items-center mb-3">
-                <CCol :md="3">
-                  <div class="form-label mb-0">
-                    庫存
-                  </div>
-                </CCol>
+          <!-- 商品名稱 -->
+          <h4 class="product-name">
+            {{ product.product_name }}
+          </h4>
 
-                <CCol :md="9">
-                  <div
-                    v-if="Number(product.stock) > 0"
-                    class="stock text-start"
-                  >
-                    {{ Number(product.stock) }} 件
-                  </div>
+          <!-- 商品描述 -->
+          <p
+            v-if="product.description"
+            :ref="setDescriptionRef"
+            :class="[
+              'product-description',
+              descriptionExpanded ? 'expanded' : ''
+            ]"
+          >
+            {{ product.description }}
+          </p>
 
-                  <div
-                    v-else
-                    class="stock out-of-stock text-start"
-                  >
-                    無庫存
-                  </div>
-                </CCol>
-              </CRow>
-            </template>
+          <!-- 展開 / 收合 -->
+          <CButton
+            v-if="
+              product.description &&
+              descriptionOverflow
+            "
+            color="secondary"
+            variant="ghost"
+            size="sm"
+            class="description-button"
+            @click="toggleDescription"
+          >
 
-            <!-- 有規格商品 -->
-            <template v-else>
-              <!-- 規格 -->
-              <CRow class="align-items-center mt-4 mb-3">
-                <CCol :md="3">
-                  <div class="form-label mb-0">
-                    規格
-                  </div>
-                </CCol>
+            <CIcon
+              :icon="
+                descriptionExpanded
+                  ? 'cilChevronTop'
+                  : 'cilChevronBottom'
+              "
+              class="me-1"
+            />
 
-                <CCol :md="9">
-                  <CFormSelect
-                    v-model="selectedSpecId"
-                    class="spec-select"
-                  >
-                    <option :value="null">
-                      請選擇規格
-                    </option>
+            {{
+              descriptionExpanded
+                ? '收合'
+                : '展開'
+            }}
 
-                    <option
-                      v-for="spec in activeSpecs"
-                      :key="spec.spec_id"
-                      :value="spec.spec_id"
-                      :disabled="Number(spec.stock) <= 0"
-                    >
-                      {{ spec.spec_name }}
-                      -
-                      ${{ Number(spec.price).toFixed(2) }}
+          </CButton>
 
-                      <template v-if="Number(spec.stock) <= 0">
-                        （無庫存）
-                      </template>
+          <!-- 無規格商品 -->
+          <template v-if="!product.has_spec">
 
-                      <template v-else-if="Number(spec.stock) <= 5">
-                        （現在庫存：{{ Number(spec.stock) }}）
-                      </template>
-                    </option>
-                  </CFormSelect>
-                </CCol>
-              </CRow>
+            <!-- 價格 -->
+            <CRow class="align-items-center mt-4 mb-3">
 
-              <!-- 選擇規格後的價格 -->
-              <CRow
-                v-if="selectedSpec"
-                class="align-items-center mb-3"
-              >
-                <CCol :md="3">
-                  <div class="form-label mb-0">
-                    價格
-                  </div>
-                </CCol>
-
-                <CCol :md="9">
-                  <div class="modal-price">
-                    ${{ Number(selectedSpec.price).toFixed(2) }}
-                  </div>
-                </CCol>
-              </CRow>
-
-              <!-- 選擇規格後的庫存 -->
-              <CRow
-                v-if="selectedSpec"
-                class="align-items-center mb-3"
-              >
-                <CCol :md="3">
-                  <div class="form-label mb-0">
-                    庫存
-                  </div>
-                </CCol>
-
-                <CCol :md="9">
-                  <div
-                    v-if="Number(selectedSpec.stock) > 0"
-                    class="stock text-start"
-                  >
-                    {{ Number(selectedSpec.stock) }} 件
-                  </div>
-
-                  <div
-                    v-else
-                    class="stock out-of-stock text-start"
-                  >
-                    無庫存
-                  </div>
-                </CCol>
-              </CRow>
-            </template>
-
-            <!-- 數量 -->
-            <CRow class="align-items-center mt-4 mb-4">
               <CCol :md="3">
                 <div class="form-label mb-0">
-                  數量
+                  價格
                 </div>
               </CCol>
 
               <CCol :md="9">
-                <CInputGroup class="quantity-input">
-                  <CButton
-                    color="light"
-                    @click="decreaseQuantity"
-                  >
-                    −
-                  </CButton>
 
-                  <CFormInput
-                    v-model.number="quantity"
-                    type="number"
-                    min="1"
-                    class="text-center"
-                  />
+                <div
+                  v-if="product.price !== null"
+                  class="modal-price"
+                >
+                  ${{ Number(product.price).toFixed(2) }}
+                </div>
 
-                  <CButton
-                    color="light"
-                    @click="increaseQuantity"
-                  >
-                    +
-                  </CButton>
-                </CInputGroup>
+                <div
+                  v-else
+                  class="stock text-start"
+                >
+                  尚未設定價格
+                </div>
+
               </CCol>
+
             </CRow>
-          </div>
 
-          <!-- 已登入但商品資料取得失敗 -->
-          <div
-            v-else
-            class="text-center py-4"
-          >
-            無法取得商品資料
-          </div>
-        </template>
-      </CModalBody>
+            <!-- 庫存 -->
+            <CRow class="align-items-center mb-3">
 
-      <CModalFooter class="border-0">
-        <CButton
-          color="secondary"
-          @click="closeModal"
+              <CCol :md="3">
+                <div class="form-label mb-0">
+                  庫存
+                </div>
+              </CCol>
+
+              <CCol :md="9">
+
+                <div
+                  v-if="Number(product.stock) > 0"
+                  class="stock text-start"
+                >
+                  {{ Number(product.stock) }} 件
+                </div>
+
+                <div
+                  v-else
+                  class="stock out-of-stock text-start"
+                >
+                  無庫存
+                </div>
+
+              </CCol>
+
+            </CRow>
+
+          </template>
+
+          <!-- 有規格商品 -->
+          <template v-else>
+
+            <!-- 規格 -->
+            <CRow class="align-items-center mt-4 mb-3">
+
+              <CCol :md="3">
+                <div class="form-label mb-0">
+                  規格
+                </div>
+              </CCol>
+
+              <CCol :md="9">
+
+                <CFormSelect
+                  v-model="selectedSpecId"
+                  class="spec-select"
+                >
+                  <option :value="null">
+                    請選擇規格
+                  </option>
+
+                  <option
+                    v-for="spec in activeSpecs"
+                    :key="spec.spec_id"
+                    :value="spec.spec_id"
+                    :disabled="Number(spec.stock) <= 0"
+                  >
+                    {{ spec.spec_name }}
+                    -
+                    ${{ Number(spec.price).toFixed(2) }}
+
+                    <template v-if="Number(spec.stock) <= 0">
+                      （無庫存）
+                    </template>
+
+                    <template v-else-if="Number(spec.stock) <= 5">
+                      （現在庫存：{{ Number(spec.stock) }}）
+                    </template>
+                  </option>
+
+                </CFormSelect>
+
+              </CCol>
+
+            </CRow>
+
+            <!-- 選擇規格後的價格 -->
+            <CRow
+              v-if="selectedSpec"
+              class="align-items-center mb-3"
+            >
+
+              <CCol :md="3">
+                <div class="form-label mb-0">
+                  價格
+                </div>
+              </CCol>
+
+              <CCol :md="9">
+
+                <div class="modal-price">
+                  ${{ Number(selectedSpec.price).toFixed(2) }}
+                </div>
+
+              </CCol>
+
+            </CRow>
+
+            <!-- 選擇規格後的庫存 -->
+            <CRow
+              v-if="selectedSpec"
+              class="align-items-center mb-3"
+            >
+
+              <CCol :md="3">
+                <div class="form-label mb-0">
+                  庫存
+                </div>
+              </CCol>
+
+              <CCol :md="9">
+
+                <div
+                  v-if="Number(selectedSpec.stock) > 0"
+                  class="stock text-start"
+                >
+                  {{ Number(selectedSpec.stock) }} 件
+                </div>
+
+                <div
+                  v-else
+                  class="stock out-of-stock text-start"
+                >
+                  無庫存
+                </div>
+
+              </CCol>
+
+            </CRow>
+
+          </template>
+
+          <!-- 數量 -->
+          <CRow class="align-items-center mt-4 mb-4">
+
+            <CCol :md="3">
+              <div class="form-label mb-0">
+                數量
+              </div>
+            </CCol>
+
+            <CCol :md="9">
+
+              <CInputGroup class="quantity-input">
+
+                <CButton
+                  color="light"
+                  @click="decreaseQuantity"
+                >
+                  −
+                </CButton>
+
+                <CFormInput
+                  v-model.number="quantity"
+                  type="number"
+                  min="1"
+                  class="text-center"
+                />
+
+                <CButton
+                  color="light"
+                  @click="increaseQuantity"
+                >
+                  +
+                </CButton>
+
+              </CInputGroup>
+
+            </CCol>
+
+          </CRow>
+
+        </div>
+
+        <!-- 已登入但商品資料取得失敗 -->
+        <div
+          v-else
+          class="text-center py-4"
         >
-          {{ addedMessage ? '確認' : '關閉' }}
-        </CButton>
+          無法取得商品資料
+        </div>
 
-        <CButton
-          v-if="!addedMessage && product"
-          color="primary"
-          @click="addToCart"
-        >
-          加入購物車
-        </CButton>
-      </CModalFooter>
-    </CModal>
+      </template>
 
-    <!-- 未登入 -->
-    <LoginRequireModal
-      :visible="visible && !loading && !isLoggedIn"
-      :store-id="props.storeId"
-      @close="closeModal"
-    />
-  </div>
+    </CModalBody>
+
+    <CModalFooter class="border-0">
+
+      <CButton
+        color="secondary"
+        @click="closeModal"
+      >
+        {{ addedMessage ? '確認' : '關閉' }}
+      </CButton>
+
+      <CButton
+        v-if="!addedMessage && isLoggedIn && product"
+        color="primary"
+        @click="addToCart"
+      >
+        加入購物車
+      </CButton>
+
+    </CModalFooter>
+
+  </CModal>
 </template>
+
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   CModal,
@@ -345,17 +398,19 @@ import {
   getCustomerLoginStatus
 } from '../../api/customer.js'
 
-import LoginRequireModal from '../customer/LoginRequireModal.vue'
+const router = useRouter()
 
 const props = defineProps({
   visible: {
     type: Boolean,
     default: false
   },
+
   productId: {
     type: Number,
     default: null
   },
+
   storeId: {
     type: [Number, String],
     required: true
@@ -377,9 +432,11 @@ const descriptionExpanded = ref(false)
 const descriptionRef = ref(null)
 const descriptionOverflow = ref(false)
 
+
 // 取得可使用的規格
 // PHP 已經只回傳 status = active 的規格
 const activeSpecs = computed(() => {
+
   if (!product.value?.has_spec) {
     return []
   }
@@ -387,10 +444,13 @@ const activeSpecs = computed(() => {
   return (product.value.specs || []).filter(
     spec => spec.price !== null
   )
+
 })
+
 
 // 目前選擇的規格
 const selectedSpec = computed(() => {
+
   if (!product.value?.has_spec) {
     return null
   }
@@ -398,17 +458,23 @@ const selectedSpec = computed(() => {
   return activeSpecs.value.find(
     spec => Number(spec.spec_id) === Number(selectedSpecId.value)
   )
+
 })
+
 
 // 商品描述 DOM
 function setDescriptionRef(el) {
+
   if (el) {
     descriptionRef.value = el
   }
+
 }
+
 
 // 檢查商品描述是否超過一行
 function checkDescriptionOverflow() {
+
   if (!descriptionRef.value) {
     descriptionOverflow.value = false
     return
@@ -420,34 +486,47 @@ function checkDescriptionOverflow() {
 
   descriptionOverflow.value =
     descriptionRef.value.scrollHeight > lineHeight + 1
+
 }
+
 
 // 展開 / 收合商品描述
 function toggleDescription() {
+
   descriptionExpanded.value =
     !descriptionExpanded.value
+
 }
+
 
 // 取得登入狀態
 const checkLoginStatus = async () => {
+
   try {
+
     const data = await getCustomerLoginStatus()
 
     isLoggedIn.value = data.loggedIn === true
+
   } catch (error) {
+
     console.error(
       '取得登入狀態失敗:',
       error
     )
 
     isLoggedIn.value = false
+
   }
+
 }
+
 
 // 開啟 Modal 時
 watch(
   () => props.visible,
   async (visible) => {
+
     if (!visible) {
       return
     }
@@ -468,6 +547,7 @@ watch(
     loading.value = true
 
     try {
+
       // 先確認登入狀態
       await checkLoginStatus()
 
@@ -503,24 +583,43 @@ watch(
       setTimeout(() => {
         checkDescriptionOverflow()
       }, 0)
+
     } catch (error) {
+
       console.error(
         '取得商品資料失敗:',
         error
       )
+
     } finally {
+
       loading.value = false
+
     }
+
   }
 )
+
 
 // 關閉 Modal
 const closeModal = () => {
   emit('close')
 }
 
+
+// 前往登入頁面
+const goToLogin = () => {
+
+  closeModal()
+
+  router.push(`/store-${props.storeId}/login`)
+
+}
+
+
 // 上一張圖片
 const previousImage = () => {
+
   if (!product.value?.images?.length) {
     return
   }
@@ -528,10 +627,13 @@ const previousImage = () => {
   currentImageIndex.value =
     (currentImageIndex.value - 1 + product.value.images.length) %
     product.value.images.length
+
 }
+
 
 // 下一張圖片
 const nextImage = () => {
+
   if (!product.value?.images?.length) {
     return
   }
@@ -539,17 +641,23 @@ const nextImage = () => {
   currentImageIndex.value =
     (currentImageIndex.value + 1) %
     product.value.images.length
+
 }
+
 
 // 減少數量
 const decreaseQuantity = () => {
+
   if (quantity.value > 1) {
     quantity.value--
   }
+
 }
+
 
 // 增加數量
 const increaseQuantity = () => {
+
   if (!product.value) {
     return
   }
@@ -559,15 +667,19 @@ const increaseQuantity = () => {
   }
 
   quantity.value++
+
 }
+
 
 // 加入購物車
 const addToCart = async () => {
+
   if (!isLoggedIn.value || !product.value) {
     return
   }
 
   try {
+
     const data = await addCustomerCart(
       product.value.product_id,
       quantity.value,
@@ -582,16 +694,22 @@ const addToCart = async () => {
 
     addedQuantity.value = quantity.value
     addedMessage.value = true
+
   } catch (error) {
+
     console.error(
       '加入購物車失敗:',
       error
     )
+
   }
+
 }
 </script>
 
+
 <style scoped>
+
 .product-modal :deep(.modal-dialog) {
   max-width: 500px;
   width: 90%;
@@ -716,6 +834,14 @@ const addToCart = async () => {
   margin: 0;
 }
 
+.login-modal {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .added-message {
   display: flex;
   align-items: center;
@@ -737,6 +863,7 @@ const addToCart = async () => {
 }
 
 @media (max-width: 575px) {
+
   .product-modal :deep(.modal-dialog) {
     width: 95%;
   }
@@ -750,5 +877,7 @@ const addToCart = async () => {
     width: calc(50% - 24px);
     aspect-ratio: 1 / 1;
   }
+
 }
+
 </style>
