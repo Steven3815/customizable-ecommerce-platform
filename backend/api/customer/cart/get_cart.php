@@ -203,8 +203,17 @@ SELECT
     p.product_id,
     p.product_name,
     p.description,
+    p.has_spec,
 
     ci.quantity,
+
+    p.stock AS product_stock,
+
+    CASE
+        WHEN p.has_spec = 1
+        THEN ps.stock
+        ELSE p.stock
+    END AS stock,
 
     CASE
         WHEN p.has_spec = 1
@@ -223,6 +232,7 @@ SELECT
 
     ps.spec_id,
     ps.spec_name,
+    ps.stock AS spec_stock,
 
     (
         SELECT pi2.image_url
@@ -286,6 +296,13 @@ foreach ($items as &$item) {
 
     $item["quantity"] = (int)$item["quantity"];
 
+    $item["has_spec"] = (int)$item["has_spec"];
+
+    $item["stock"] =
+        $item["stock"] !== null
+            ? (int)$item["stock"]
+            : null;
+
     $item["spec_id"] =
         $item["spec_id"] !== null
             ? (int)$item["spec_id"]
@@ -300,14 +317,19 @@ foreach ($items as &$item) {
         $item["subtotal"] !== null
             ? (float)$item["subtotal"]
             : null;
-    
+
+    // 判斷目前購物車數量是否超過庫存
+    $item["stock_insufficient"] =
+        $item["stock"] !== null &&
+        $item["quantity"] > $item["stock"];
+
     if (
         $item["image_url"] !== null &&
         $item["image_url"] !== ""
     ) {
         $item["image_url"] = "http://localhost/ecommerce-platform/backend" . $item["image_url"];
     }
-    
+
     if ($item["subtotal"] !== null) {
         $total_amount += $item["subtotal"];
     }

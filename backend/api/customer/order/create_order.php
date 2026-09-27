@@ -190,11 +190,14 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $params = array_merge(
         [$customer_id],
         $cart_item_ids
     );
+
     $stmt->execute($params);
+
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 檢查商品是否全部存在
@@ -218,7 +221,10 @@ try {
             (int)$item["store_id"] !==
             $store_id
         ) {
-            throw new Exception("Cart items must belong to the same store", 400);
+            throw new Exception(
+                "Cart items must belong to the same store",
+                400
+            );
         }
     }
 
@@ -238,22 +244,35 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$store_id]);
+
     $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store) {
-        throw new Exception("Store setting not found", 404);
+        throw new Exception(
+            "Store setting not found",
+            404
+        );
     }
 
     if ($store["store_status"] !== "active") {
-        throw new Exception("Store is inactive", 409);
+        throw new Exception(
+            "Store is inactive",
+            409
+        );
     }
 
     if ($store["business_status"] !== "open") {
-        throw new Exception("Store is currently closed", 409);
+        throw new Exception(
+            "Store is currently closed",
+            409
+        );
     }
 
     if ($store["store_mode"] !== "shopping") {
-        throw new Exception("Store is currently in showcase mode", 409);
+        throw new Exception(
+            "Store is currently in showcase mode",
+            409
+        );
     }
 
     // 驗證商店是否啟用此配送方式
@@ -263,21 +282,28 @@ try {
         delivery_method,
         status
     FROM STORE_DELIVERY_METHOD
+
     WHERE store_id = ?
     AND delivery_method = ?
     AND status = 'active'
+
     LIMIT 1
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $store_id,
         $delivery_method
     ]);
+
     $delivery = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$delivery) {
-        throw new Exception("Selected delivery method is not available", 404);
+        throw new Exception(
+            "Selected delivery method is not available",
+            404
+        );
     }
 
     // 檢查商品、Category、規格與庫存
@@ -288,22 +314,34 @@ try {
         $quantity = (int)$item["quantity"];
 
         if ($quantity <= 0) {
-            throw new Exception("Invalid product quantity", 400);
+            throw new Exception(
+                "Invalid product quantity",
+                400
+            );
         }
 
         if ($item["product_status"] !== "active") {
-            throw new Exception("Product is no longer available", 404);
+            throw new Exception(
+                "Product is no longer available",
+                404
+            );
         }
 
         // 檢查 Category
         if ($item["category_id"] !== null) {
 
             if ($item["category_name"] === null) {
-                throw new Exception("Product category not found", 404);
+                throw new Exception(
+                    "Product category not found",
+                    404
+                );
             }
 
             if ($item["category_status"] !== "active") {
-                throw new Exception("Product category is no longer available", 404);
+                throw new Exception(
+                    "Product category is no longer available",
+                    404
+                );
             }
         }
 
@@ -311,36 +349,62 @@ try {
         if ((int)$item["has_spec"] === 1) {
 
             if ($item["spec_id"] === null) {
-                throw new Exception("Product specification is no longer available", 404);
+                throw new Exception(
+                    "Product specification is no longer available",
+                    404
+                );
             }
 
             if ($item["spec_name"] === null) {
-                throw new Exception("Product specification is no longer available", 404);
+                throw new Exception(
+                    "Product specification is no longer available",
+                    404
+                );
             }
 
             if ($item["spec_status"] !== "active") {
-                throw new Exception("Product specification is no longer available", 404);
+                throw new Exception(
+                    "Product specification is no longer available",
+                    404
+                );
             }
 
             $price = (float)$item["spec_price"];
             $stock = (int)$item["spec_stock"];
 
             if ($quantity > $stock) {
-                throw new Exception("Insufficient specification stock", 409);
+                throw new Exception(
+                    "SPECIFICATION_STOCK_INSUFFICIENT|"
+                    . $item["product_name"]
+                    . "|"
+                    . $item["spec_name"]
+                    . "|"
+                    . $stock,
+                    409
+                );
             }
 
         } else {
 
             // 無規格商品
             if ($item["spec_id"] !== null) {
-                throw new Exception("Invalid product specification", 400);
+                throw new Exception(
+                    "Invalid product specification",
+                    400
+                );
             }
 
             $price = (float)$item["product_price"];
             $stock = (int)$item["product_stock"];
 
             if ($quantity > $stock) {
-                throw new Exception("Insufficient product stock", 409);
+                throw new Exception(
+                    "PRODUCT_STOCK_INSUFFICIENT|"
+                    . $item["product_name"]
+                    . "|"
+                    . $stock,
+                    409
+                );
             }
         }
 
@@ -418,7 +482,6 @@ try {
 
     $order_id = (int)$pdo->lastInsertId();
 
-
     // 建立訂單編號
     $order_number =
         "ORD"
@@ -433,8 +496,10 @@ try {
     // 更新訂單編號
     $sql = "
     UPDATE ORDERS
+
     SET
         order_number = ?
+
     WHERE order_id = ?
     AND store_id = ?
     ";
@@ -515,6 +580,7 @@ try {
 
             $sql = "
             UPDATE PRODUCT_SPEC
+
             SET
                 stock = stock - ?,
                 updated_at = NOW()
@@ -601,6 +667,7 @@ try {
     // 回傳
     echo json_encode([
         "message" => "Order created successfully",
+        "order_id" => $order_id,
         "order_number" => $order_number,
         "customer_id" => $customer_id,
         "store_id" => $store_id,
@@ -621,8 +688,61 @@ try {
         $status_code = 500;
     }
     http_response_code($status_code);
+
+    $error_type = "general";
+    $error_message = $e->getMessage();
+    $stock = null;
+
+    // 一般商品庫存不足
+    if (str_starts_with(
+        $error_message,
+        "PRODUCT_STOCK_INSUFFICIENT|"
+    )) {
+
+        $parts = explode(
+            "|",
+            $error_message,
+            3
+        );
+
+        $error_type = "insufficient_stock";
+
+        $error_message =
+            "商品「"
+            . $parts[1]
+            . "」庫存不足";
+
+        $stock = (int)$parts[2];
+    }
+
+    // 規格商品庫存不足
+    elseif (str_starts_with(
+        $error_message,
+        "SPECIFICATION_STOCK_INSUFFICIENT|"
+    )) {
+
+        $parts = explode(
+            "|",
+            $error_message,
+            4
+        );
+
+        $error_type = "insufficient_stock";
+
+        $error_message =
+            "商品「"
+            . $parts[1]
+            . "」的規格「"
+            . $parts[2]
+            . "」庫存不足";
+
+        $stock = (int)$parts[3];
+    }
+
     echo json_encode([
-        "error" => $e->getMessage()
+        "error_type" => $error_type,
+        "error" => $error_message,
+        "stock" => $stock
     ], JSON_UNESCAPED_UNICODE);
 
     exit;

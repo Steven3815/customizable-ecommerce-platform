@@ -299,3 +299,56 @@ export async function getCustomerProducts(
     throw error
   }
 }
+
+// order
+export async function createCustomerOrder(
+  cartItemIds,
+  receiverName,
+  receiverPhone,
+  receiverAddress,
+  deliveryMethod
+) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/order/create_order.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          cart_item_ids: cartItemIds,
+          receiver_name: receiverName,
+          receiver_phone: receiverPhone,
+          receiver_address: receiverAddress,
+          delivery_method: deliveryMethod
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '建立訂單失敗'
+      )
+
+      error.status = response.status
+      error.errorType = data.error_type
+      error.stock = data.stock
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '建立訂單失敗:',
+      error
+    )
+
+    throw error
+  }
+}

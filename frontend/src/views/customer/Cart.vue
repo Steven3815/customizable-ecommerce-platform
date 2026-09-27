@@ -91,7 +91,7 @@
             <CRow v-else>
 
               <!-- Cart Items -->
-              <CCol :lg="8">
+              <CCol :lg="9">
 
                 <!-- 全選 -->
                 <div class="mb-3">
@@ -209,6 +209,20 @@
                           {{ item.spec_name }}
                         </p>
 
+                        <!-- 庫存不足 -->
+                        <p
+                          v-if="item.stock_insufficient"
+                          class="text-danger mb-2"
+                        >
+                          <template v-if="item.spec_name">
+                            商品規格「{{ item.spec_name }}」庫存不足，目前剩餘 {{ item.stock }} 件，請調整數量
+                          </template>
+
+                          <template v-else>
+                            商品庫存不足，目前剩餘 {{ item.stock }} 件，請調整數量
+                          </template>
+                        </p>
+
                         <!-- 單價 -->
                         <p class="mb-0">
                           NT$ {{ Number(item.price).toLocaleString() }}
@@ -281,7 +295,10 @@
               </CCol>
 
               <!-- Summary -->
-              <CCol :lg="4">
+              <CCol
+                :lg="3"
+                class="summary-column"
+              >
 
                 <CCard>
 
@@ -319,11 +336,14 @@
 
                     <CButton
                       color="primary"
-                      class="w-100 mb-2"
-                      :disabled="selectedItems.length === 0"
+                      class="w-100 mb-2 mt-2"
+                      :disabled="
+                        selectedItems.length === 0 ||
+                        hasInsufficientStock
+                      "
                       @click="goCheckout"
                     >
-                      前往結帳
+                      建立訂單
                     </CButton>
 
                     <CButton
@@ -362,6 +382,7 @@
       :store-id="storeId"
       @close="showLoginModal = false"
     />
+
   </div>
 </template>
 
@@ -498,6 +519,19 @@ const selectedTotalAmount = computed(() => {
         total + Number(item.price) * Number(item.quantity),
       0
     )
+})
+
+// 檢查選取商品是否有庫存不足
+const hasInsufficientStock = computed(() => {
+  if (!cart.value?.items) {
+    return false
+  }
+
+  return cart.value.items.some(
+    item =>
+      selectedItems.value.includes(item.cart_item_id) &&
+      item.stock_insufficient
+  )
 })
 
 // 儲存選取商品
@@ -642,6 +676,10 @@ async function increaseQuantity(item) {
 
     item.subtotal =
       Number(item.price) * newQuantity
+
+    item.stock_insufficient =
+      item.stock !== null &&
+      newQuantity > Number(item.stock)
   } catch (err) {
     error.value =
       err.message ||
@@ -669,6 +707,10 @@ async function decreaseQuantity(item) {
 
     item.subtotal =
       Number(item.price) * newQuantity
+
+    item.stock_insufficient =
+      item.stock !== null &&
+      newQuantity > Number(item.stock)
   } catch (err) {
     error.value =
       err.message ||
@@ -699,6 +741,10 @@ async function updateQuantity(item) {
 
     item.subtotal =
       Number(item.price) * newQuantity
+
+    item.stock_insufficient =
+      item.stock !== null &&
+      newQuantity > Number(item.stock)
   } catch (err) {
     error.value =
       err.message ||
@@ -733,9 +779,9 @@ function continueShopping() {
   router.push(`/store-${storeId}`)
 }
 
-// 前往結帳
+// 前往建立訂單
 function goCheckout() {
-  router.push(`/store-${storeId}/checkout`)
+  router.push(`/store-${storeId}/create_order`)
 }
 
 onMounted(() => {
@@ -791,6 +837,10 @@ onMounted(() => {
   line-height: 38px;
 }
 
+.summary-column {
+  padding-top: 52px;
+}
+
 :deep(input[type='number']::-webkit-inner-spin-button),
 :deep(input[type='number']::-webkit-outer-spin-button) {
   -webkit-appearance: none;
@@ -805,6 +855,12 @@ onMounted(() => {
 :deep(.form-control),
 :deep(.form-select) {
   font-size: 14px;
+}
+
+@media (max-width: 991px) {
+  .summary-column {
+    padding-top: 0;
+  }
 }
 
 @media (max-width: 767px) {
