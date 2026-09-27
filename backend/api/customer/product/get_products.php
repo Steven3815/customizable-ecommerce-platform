@@ -75,60 +75,56 @@ if ($store["status"] !== "active") {
 }
 
 // 檢查 Category ID
-if (
-    $category_id === null ||
-    $category_id === ""
-) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Category ID is required"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
+$category = null;
 
 if (
-    !is_numeric($category_id) ||
-    floor((float)$category_id)
-        != (float)$category_id ||
-    (int)$category_id <= 0
+    $category_id !== null &&
+    $category_id !== ""
 ) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Invalid category ID"
-    ], JSON_UNESCAPED_UNICODE);
 
-    exit;
-}
+    if (
+        !is_numeric($category_id) ||
+        floor((float)$category_id)
+            != (float)$category_id ||
+        (int)$category_id <= 0
+    ) {
+        http_response_code(400);
+        echo json_encode([
+            "error" => "Invalid category ID"
+        ], JSON_UNESCAPED_UNICODE);
 
-$category_id = (int)$category_id;
+        exit;
+    }
 
-// 檢查 Category
-$sql = "
-SELECT
-    category_id,
-    category_name
-FROM CATEGORY
-WHERE category_id = ?
-AND store_id = ?
-AND status = 'active'
-";
+    $category_id = (int)$category_id;
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-    $category_id,
-    $store_id
-]);
+    // 檢查 Category
+    $sql = "
+    SELECT
+        category_id,
+        category_name
+    FROM CATEGORY
+    WHERE category_id = ?
+    AND store_id = ?
+    AND status = 'active'
+    ";
 
-$category = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $category_id,
+        $store_id
+    ]);
 
-if (!$category) {
-    http_response_code(403);
-    echo json_encode([
-        "error" => "Category not found or inactive"
-    ], JSON_UNESCAPED_UNICODE);
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    exit;
+    if (!$category) {
+        http_response_code(403);
+        echo json_encode([
+            "error" => "Category not found or inactive"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
 }
 
 // 取得首頁商品設定
@@ -179,14 +175,19 @@ if (
 $where = [
     "p.store_id = ?",
     "p.status = 'active'",
-    "c.status = 'active'",
-    "p.category_id = ?"
+    "c.status = 'active'"
 ];
 
 $params = [
-    $store_id,
-    $category_id
+    $store_id
 ];
+
+if ($category_id !== null) {
+
+    $where[] = "p.category_id = ?";
+    $params[] = $category_id;
+
+}
 
 // 關鍵字搜尋
 if ($keyword !== "") {
@@ -374,7 +375,9 @@ echo json_encode([
     "store_id" => $store_id,
     "store_name" => $store["store_name"],
     "category_id" => $category_id,
-    "category_name" => $category["category_name"],
+    "category_name" => $category !== null
+        ? $category["category_name"]
+        : null,
     "display_limit" => $display_limit,
     "keyword" => $keyword,
     "sort" => $sort,

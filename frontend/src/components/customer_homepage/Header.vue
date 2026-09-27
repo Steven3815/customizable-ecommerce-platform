@@ -7,7 +7,6 @@ import CartOffcanvas from './CartOffcanvas.vue'
 import { useSidebarStore } from '../../stores/sidebar.js'
 
 const headerClassNames = ref('mb-4 p-0')
-const searchModalVisible = ref(false)
 const cartOffcanvas = ref(null)
 
 const { colorMode, setColorMode } = useColorModes(
@@ -59,73 +58,6 @@ onMounted(() => {
           size="lg"
         />
       </CHeaderToggler>
-
-      <CSearchButton
-        class="ms-2"
-        @trigger="searchModalVisible = true"
-        aria-label="Open search dialog"
-        aria-controls="headerSearchModal"
-      />
-
-      <CModal
-        id="headerSearchModal"
-        :visible="searchModalVisible"
-        @close="
-          () => {
-            searchModalVisible = false
-          }
-        "
-        aria-labelledby="headerSearchModalTitle"
-      >
-        <CModalHeader
-          dismiss
-          @close="
-            () => {
-              searchModalVisible = false
-            }
-          "
-        >
-          <CModalTitle
-            id="headerSearchModalTitle"
-            class="w-100"
-          >
-            <CFormInput
-              type="search"
-              placeholder="Search"
-              aria-label="Search"
-            />
-          </CModalTitle>
-        </CModalHeader>
-
-        <CModalBody>
-          <p class="text-body-secondary small mb-2">
-            Recent searches
-          </p>
-
-          <CListGroup flush>
-            <CListGroupItem
-              as="a"
-              href="#"
-            >
-              CoreUI components overview
-            </CListGroupItem>
-
-            <CListGroupItem
-              as="a"
-              href="#"
-            >
-              Modal dialog examples
-            </CListGroupItem>
-
-            <CListGroupItem
-              as="a"
-              href="#"
-            >
-              Sidebar navigation customization
-            </CListGroupItem>
-          </CListGroup>
-        </CModalBody>
-      </CModal>
 
       <!-- Store Name -->
       <CHeaderBrand class="store-name-wrapper">
