@@ -6,26 +6,13 @@
     <div class="wrapper d-flex flex-column min-vh-100">
 
       <Header
-        :store="home?.store || {}"
+        :store="store"
       />
 
       <div class="body flex-grow-1">
 
-        <Banner
-          v-if="home?.website_setting?.banner_section_enable"
-          :banners="home?.banners || []"
-        />
+        <section class="py-5">
 
-        <Slider
-          v-if="home?.website_setting?.intro_section_enable"
-          :sliders="home?.sliders || []"
-        />
-
-        <section
-          v-for="category in categories.filter(category => category.products.some(product => product.display_price !== null))"
-          :key="category.category_id"
-          class="py-5"
-        >
           <CContainer fluid>
 
             <!-- Category Header -->
@@ -37,19 +24,9 @@
                   <div class="category-title-wrapper">
 
                     <h1>
-                      {{ category.category_name }}
+                      {{ categoryName }}
                     </h1>
 
-                  </div>
-
-                  <div class="category-action">
-                    <CButton
-                      color="link"
-                      class="text-decoration-none"
-                      @click="viewCategory(category.category_id)"
-                    >
-                      查看類別商品 →
-                    </CButton>
                   </div>
 
                 </div>
@@ -62,17 +39,18 @@
               <CCol :md="12">
 
                 <div
-                  class="products-carousel swiper"
-                  :class="`display-limit-${home?.homepage_product_setting?.display_limit || 4}`"
+                  class="products-carousel"
+                  :class="`display-limit-${displayLimit}`"
                 >
 
-                  <div class="swiper-wrapper">
+                  <div class="products-wrapper">
 
                     <div
-                      v-for="product in category.products.filter(product => product.display_price !== null)"
+                      v-for="product in products"
                       :key="product.product_id"
-                      class="swiper-slide"
+                      class="product-item"
                     >
+
                       <ProductCard
                         :product-id="product.product_id"
                         :store-id="route.params.storeId"
@@ -81,6 +59,7 @@
                         :price="product.display_price"
                         @view-product="openProduct"
                       />
+
                     </div>
 
                   </div>
@@ -90,15 +69,31 @@
               </CCol>
             </CRow>
 
+            <!-- Loading -->
+            <div
+              v-if="loading"
+              class="text-center py-5"
+            >
+              載入中...
+            </div>
+
+            <!-- No Products -->
+            <div
+              v-else-if="products.length === 0"
+              class="text-center py-5"
+            >
+              此類別目前沒有商品
+            </div>
+
           </CContainer>
+
         </section>
 
       </div>
 
       <Footer
-        :footer="home?.footer || {}"
+        :footer="footer"
       />
-
       <Createdby />
 
     </div>
@@ -115,25 +110,20 @@
 </template>
 
 <script setup>
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
   CContainer,
   CRow,
-  CCol,
-  CButton
+  CCol
 } from '@coreui/vue'
 
-import Swiper from 'swiper'
-
-import { getCustomerHome } from '../../api/customer.js'
+import { getCustomerProducts } from '../../api/customer.js'
 
 import ProductCard from '../../components/customer_homepage/ProductCard.vue'
 import ProductCardDetailModal from '../../components/customer_homepage/ProductCardDetailModal.vue'
 import Header from '../../components/customer_homepage/Header.vue'
-import Banner from '../../components/customer_homepage/Banner.vue'
-import Slider from '../../components/customer_homepage/Slider.vue'
 import Sidebar from '../../components/customer_homepage/Sidebar.vue'
 import Footer from '../../components/customer_homepage/Footer.vue'
 import Createdby from '../../components/customer_homepage/Createdby.vue'
@@ -141,8 +131,15 @@ import Createdby from '../../components/customer_homepage/Createdby.vue'
 const route = useRoute()
 const router = useRouter()
 
-const home = ref(null)
-const categories = ref([])
+const products = ref([])
+const categoryName = ref('商品')
+
+const store = ref({})
+const footer = ref({})
+
+const displayLimit = ref(4)
+
+const loading = ref(false)
 
 const showProductModal = ref(false)
 const selectedProductId = ref(null)
@@ -156,62 +153,62 @@ const closeProductModal = () => {
   showProductModal.value = false
 }
 
-const viewCategory = (categoryId) => {
-  router.push({
-    name: 'CustomerCategoryProduct',
-    params: {
-      storeId: route.params.storeId,
-      categoryId
-    }
-  })
-}
-
 onMounted(async () => {
+
   const storeId = route.params.storeId
+  const categoryId = route.params.categoryId
+
+  loading.value = true
 
   try {
-    home.value = await getCustomerHome(storeId)
 
-    categories.value = home.value.categories
-
-    console.log('Customer Home:', home.value)
-
-    await nextTick()
-
-    const swiperElements = document.querySelectorAll(
-      '.products-carousel'
+    const data = await getCustomerProducts(
+      storeId,
+      categoryId
     )
 
-    swiperElements.forEach((element) => {
-      new Swiper(element, {
-        slidesPerView: 'auto',
-        spaceBetween: 20,
+    console.log(
+      'Customer Category Products:',
+      data
+    )
 
-        breakpoints: {
-          576: {
-            slidesPerView: 'auto'
-          },
+    products.value = data.products || []
 
-          768: {
-            slidesPerView: 'auto'
-          },
+    categoryName.value =
+      data.category_name ||
+      data.products?.[0]?.category_name ||
+      '商品'
 
-          992: {
-            slidesPerView: 'auto'
-          },
+    displayLimit.value =
+      Number(data.display_limit) || 4
 
-          1200: {
-            slidesPerView: 'auto'
-          }
-        }
-      })
-    })
+    store.value = {
+    store_id: data.store_id,
+    store_name: data.store_name
+    }
+
+    footer.value = data.footer || {}
 
   } catch (error) {
-    console.error('取得首頁資料失敗:', error)
 
-    router.push('/404')
+    console.error(
+      '取得類別商品失敗:',
+      error
+    )
+
+    if (
+      error.status === 403 ||
+      error.status === 404
+    ) {
+      router.push('/404')
+    }
+
+  } finally {
+
+    loading.value = false
+
   }
+
 })
 </script>
 
@@ -257,44 +254,71 @@ onMounted(async () => {
   margin-bottom: 3rem;
 }
 
-.category-action {
-  position: absolute;
-  right: 0;
-}
+
+/* Products */
 
 .products-carousel {
   width: 100%;
-  overflow: hidden;
 }
 
-.products-carousel.display-limit-4 :deep(.swiper-slide) {
-  width: calc((100% - 60px) / 4);
+.products-wrapper {
+  display: grid;
+  gap: 20px;
 }
 
-.products-carousel.display-limit-5 :deep(.swiper-slide) {
-  width: calc((100% - 80px) / 5);
+.products-carousel.display-limit-4 .products-wrapper {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
 }
 
-.products-carousel.display-limit-6 :deep(.swiper-slide) {
-  width: calc((100% - 100px) / 6);
+.products-carousel.display-limit-5 .products-wrapper {
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
 }
+
+.products-carousel.display-limit-6 .products-wrapper {
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+}
+
+.product-item {
+  min-width: 0;
+}
+
+
+/* Tablet */
 
 @media (max-width: 991px) {
-  .products-carousel :deep(.swiper-slide) {
-    width: calc((100% - 40px) / 3);
+
+  .products-wrapper {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr)) !important;
   }
+
 }
+
+
+/* Mobile */
 
 @media (max-width: 767px) {
-  .products-carousel :deep(.swiper-slide) {
-    width: calc((100% - 20px) / 2);
+
+  .products-wrapper {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
   }
+
 }
 
+
+/* Small Mobile */
+
 @media (max-width: 575px) {
-  .products-carousel :deep(.swiper-slide) {
-    width: 100%;
+
+  .products-wrapper {
+    grid-template-columns:
+      1fr !important;
   }
+
 }
 
 </style>

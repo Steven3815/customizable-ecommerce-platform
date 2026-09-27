@@ -250,3 +250,52 @@ export async function getCustomerProduct(productId, storeId) {
     throw error
   }
 }
+
+export async function getCustomerProducts(
+  storeId,
+  categoryId = null,
+  sort = 'asc',
+  keyword = ''
+) {
+  try {
+    const params = new URLSearchParams({
+      store_id: storeId,
+      sort,
+      keyword
+    })
+
+    if (categoryId !== null && categoryId !== '') {
+      params.append('category_id', categoryId)
+    }
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/product/get_products.php?${params.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得商品列表失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得商品列表失敗:',
+      error
+    )
+
+    throw error
+  }
+}

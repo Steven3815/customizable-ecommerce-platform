@@ -76,50 +76,87 @@ if ($store["status"] !== "active") {
 
 // 檢查 Category ID
 if (
-    $category_id !== null &&
-    $category_id !== ""
+    $category_id === null ||
+    $category_id === ""
 ) {
-    if (
-        !is_numeric($category_id) ||
-        floor((float)$category_id)
-            != (float)$category_id ||
-        (int)$category_id <= 0
-    ) {
-        http_response_code(400);
-        echo json_encode([
-            "error" => "Invalid category ID"
-        ], JSON_UNESCAPED_UNICODE);
+    http_response_code(400);
+    echo json_encode([
+        "error" => "Category ID is required"
+    ], JSON_UNESCAPED_UNICODE);
 
-        exit;
-    }
+    exit;
+}
 
-    $category_id = (int)$category_id;
+if (
+    !is_numeric($category_id) ||
+    floor((float)$category_id)
+        != (float)$category_id ||
+    (int)$category_id <= 0
+) {
+    http_response_code(400);
+    echo json_encode([
+        "error" => "Invalid category ID"
+    ], JSON_UNESCAPED_UNICODE);
 
-    $sql = "
-    SELECT
-        category_id,
-        category_name
-    FROM CATEGORY
-    WHERE category_id = ?
-    AND store_id = ?
-    AND status = 'active'
-    ";
+    exit;
+}
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        $category_id,
-        $store_id
-    ]);
-    $category = $stmt->fetch(PDO::FETCH_ASSOC);
+$category_id = (int)$category_id;
 
-    if (!$category) {
-        http_response_code(403);
-        echo json_encode([
-            "error" => "Category not found or inactive"
-        ], JSON_UNESCAPED_UNICODE);
+// 檢查 Category
+$sql = "
+SELECT
+    category_id,
+    category_name
+FROM CATEGORY
+WHERE category_id = ?
+AND store_id = ?
+AND status = 'active'
+";
 
-        exit;
-    }
+$stmt = $pdo->prepare($sql);
+$stmt->execute([
+    $category_id,
+    $store_id
+]);
+
+$category = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$category) {
+    http_response_code(403);
+    echo json_encode([
+        "error" => "Category not found or inactive"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 取得首頁商品設定
+$sql = "
+SELECT
+    display_limit
+FROM HOMEPAGE_PRODUCT_SETTING
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$store_id]);
+
+$homepage_setting = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$homepage_setting) {
+    http_response_code(404);
+    echo json_encode([
+        "error" => "Homepage product setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$display_limit = (int)$homepage_setting["display_limit"];
+
+if ($display_limit <= 0) {
+    $display_limit = 4;
 }
 
 // 檢查排序方式
@@ -142,10 +179,14 @@ if (
 $where = [
     "p.store_id = ?",
     "p.status = 'active'",
-    "c.status = 'active'"
+    "c.status = 'active'",
+    "p.category_id = ?"
 ];
 
-$params = [$store_id];
+$params = [
+    $store_id,
+    $category_id
+];
 
 // 關鍵字搜尋
 if ($keyword !== "") {
@@ -156,18 +197,11 @@ if ($keyword !== "") {
             OR p.description LIKE ?
         )
     ";
-    $search_keyword = "%" . $keyword . "%";
-    $params[] = $search_keyword;
-    $params[] = $search_keyword;
-}
 
-// Category 篩選
-if (
-    $category_id !== null &&
-    $category_id !== ""
-) {
-    $where[] = "p.category_id = ?";
-    $params[] = $category_id;
+    $search_keyword = "%" . $keyword . "%";
+
+    $params[] = $search_keyword;
+    $params[] = $search_keyword;
 }
 
 $where_sql =
@@ -252,7 +286,7 @@ ORDER BY
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$products =$stmt->fetchAll(PDO::FETCH_ASSOC);
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 整理商品資料
 foreach (
@@ -278,6 +312,14 @@ foreach (
             ? (float)$product["min_spec_price"]
             : null;
 
+    // 商品圖片
+    if (
+        $product["main_image"] !== null &&
+        $product["main_image"] !== ""
+    ) {
+        $product["main_image"] = "http://localhost/ecommerce-platform/backend" . $product["main_image"];
+    }
+
     // 顯示價格
     // 有規格：使用最低 active 規格價格
     // 無規格：使用 PRODUCT.price
@@ -290,15 +332,55 @@ foreach (
 
 unset($product);
 
+// 取得 Footer
+$sql = "
+SELECT
+    footer_id,
+    contact_phone,
+    address,
+    email,
+    service_phone,
+    contact_phone_enable,
+    address_enable,
+    email_enable,
+    service_phone_enable
+FROM FOOTER_SETTING
+WHERE store_id = ?
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$store_id]);
+$footer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$footer) {
+    http_response_code(404);
+    echo json_encode([
+        "error" => "Footer setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 整理 Footer 資料
+$footer["footer_id"] = (int)$footer["footer_id"];
+$footer["contact_phone_enable"] = (bool)$footer["contact_phone_enable"];
+$footer["address_enable"] = (bool)$footer["address_enable"];
+$footer["email_enable"] = (bool)$footer["email_enable"];
+$footer["service_phone_enable"] = (bool)$footer["service_phone_enable"];
+
 // 回傳
 echo json_encode([
     "message" => "Products retrieved successfully",
     "store_id" => $store_id,
     "store_name" => $store["store_name"],
-    "keyword" => $keyword,
     "category_id" => $category_id,
+    "category_name" => $category["category_name"],
+    "display_limit" => $display_limit,
+    "keyword" => $keyword,
     "sort" => $sort,
-    "products" => $products
+    "products" => $products,
+    "footer" => $footer
+
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

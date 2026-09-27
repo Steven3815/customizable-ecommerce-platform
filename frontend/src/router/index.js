@@ -12,6 +12,7 @@ import StoreRegister from '../views/auth/StoreRegister.vue'
 
 import CustomerHome from '../views/customer/Home.vue'
 import CustomerCart from '../views/customer/Cart.vue'
+import CustomerCategoryProduct from '../views/customer/CategoryProduct.vue'
 
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
@@ -70,6 +71,20 @@ const router = createRouter({
       component: CustomerCart,
       beforeEnter: (to) => {
         if (!/^[1-9]\d*$/.test(to.params.storeId)) {
+          return '/404'
+        }
+      },
+    },
+
+    {
+      path: '/store-:storeId/category/:categoryId',
+      name: 'CustomerCategoryProduct',
+      component: CustomerCategoryProduct,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId) ||
+          !/^[1-9]\d*$/.test(to.params.categoryId)
+        ) {
           return '/404'
         }
       },
