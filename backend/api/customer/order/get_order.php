@@ -146,6 +146,7 @@ INNER JOIN STORE s
 WHERE o.order_id = ?
 AND o.customer_id = ?
 AND o.store_id = ?
+AND o.order_status != 'cancelled'
 
 LIMIT 1
 ";

@@ -56,7 +56,7 @@ SELECT
     order_id,
     order_number,
     store_id,
-    delivery_status
+    order_status
 FROM ORDERS
 WHERE order_id = ?
 AND customer_id = ?
@@ -138,10 +138,10 @@ if ($store["store_mode"] !== "shopping") {
 }
 
 // 訂單只能在 pending 時修改
-if ($order["delivery_status"] !== "pending") {
+if ($order["order_status"] !== "pending") {
     http_response_code(409);
     echo json_encode([
-        "error" => "Order cannot be updated after shipping"
+        "error" => "Order cannot be updated"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -236,7 +236,7 @@ SET
 WHERE order_id = ?
 AND customer_id = ?
 AND store_id = ?
-AND delivery_status = 'pending'
+AND order_status = 'pending'
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -245,7 +245,6 @@ $stmt->execute([
     $receiver_phone,
     $receiver_address,
     $delivery_method,
-
     $order_id,
     $customer_id,
     $order["store_id"]

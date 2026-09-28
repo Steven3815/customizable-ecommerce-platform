@@ -91,7 +91,10 @@
 
                     <span
                       class="order-info-value"
-                      :class="{ 'text-danger fw-bold': order.order_status === 'pending' }"
+                      :class="{
+                        'text-danger fw-bold':
+                          order.order_status === 'pending'
+                      }"
                     >
                       {{ getOrderStatusText(order.order_status) }}
                     </span>
@@ -156,14 +159,26 @@
 
                 </div>
 
-                <CButton
+                <!-- Pending 訂單操作 -->
+                <div
                   v-if="order.order_status === 'pending'"
-                  color="primary"
-                  class="mt-3"
-                  @click="goOrderEdit"
+                  class="d-flex gap-2 mt-3 justify-content-end"
                 >
-                  前往完成訂單
-                </CButton>
+                  <CButton
+                    color="danger"
+                    @click="openCancelModal"
+                  >
+                    取消訂單
+                  </CButton>
+
+                  <CButton
+                    color="primary"
+                    @click="goOrderEdit"
+                  >
+                    前往完成訂單
+                  </CButton>
+
+                </div>
 
               </CCardBody>
             </CCard>
@@ -389,7 +404,10 @@
 
             <!-- 付款資訊 -->
             <CCard
-              v-if="order.order_status !== 'pending' && order.payment"
+              v-if="
+                order.order_status !== 'pending'
+                && order.payment
+              "
               class="mb-4"
             >
               <CCardBody>
@@ -427,7 +445,9 @@
                   </div>
 
                   <template
-                    v-if="order.payment.payment_status !== 'pending'"
+                    v-if="
+                      order.payment.payment_status !== 'pending'
+                    "
                   >
 
                     <div class="order-info-item">
@@ -610,6 +630,51 @@
 
     </div>
 
+    <!-- 取消訂單確認 -->
+    <CModal
+      :visible="showCancelModal"
+      @close="closeCancelModal"
+    >
+      <CModalHeader class="border-0">
+
+        <CModalTitle>
+          取消訂單
+        </CModalTitle>
+
+      </CModalHeader>
+
+      <CModalBody>
+
+        確定要取消此訂單嗎？
+
+      </CModalBody>
+
+      <CModalFooter class="border-0">
+
+        <CButton
+          color="secondary"
+          :disabled="cancelling"
+          @click="closeCancelModal"
+        >
+          返回
+        </CButton>
+
+        <CButton
+          color="danger"
+          :disabled="cancelling"
+          @click="cancelOrder"
+        >
+          {{
+            cancelling
+              ? '取消中...'
+              : '取消訂單'
+          }}
+        </CButton>
+
+      </CModalFooter>
+
+    </CModal>
+
   </div>
 </template>
 
@@ -617,13 +682,27 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import {
+  CAlert,
+  CButton,
+  CCard,
+  CCardBody,
+  CContainer,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter
+} from '@coreui/vue'
+
 import Sidebar from '../../components/customer_homepage/Sidebar.vue'
 import Header from '../../components/customer_homepage/Header.vue'
 import Footer from '../../components/customer_homepage/Footer.vue'
 import Createdby from '../../components/customer_homepage/Createdby.vue'
 
 import {
-  getCustomerOrder
+  getCustomerOrder,
+  deleteCustomerOrder
 } from '../../api/customer.js'
 
 const route = useRoute()
@@ -633,11 +712,15 @@ const storeId = Number(route.params.storeId)
 const orderId = Number(route.params.orderId)
 
 const loading = ref(true)
+const cancelling = ref(false)
 const error = ref('')
 const order = ref(null)
 const refundEnable = ref(false)
 
+const showCancelModal = ref(false)
+
 const loadOrder = async () => {
+
   loading.value = true
   error.value = ''
 
@@ -684,6 +767,70 @@ const goOrderEdit = () => {
   router.push(
     `/store-${storeId}/create_order?order_id=${orderId}`
   )
+
+}
+
+// 開啟取消訂單 Modal
+const openCancelModal = () => {
+
+  showCancelModal.value = true
+
+}
+
+// 關閉取消訂單 Modal
+const closeCancelModal = () => {
+
+  if (cancelling.value) {
+    return
+  }
+
+  showCancelModal.value = false
+
+}
+
+// 取消訂單
+const cancelOrder = async () => {
+
+  if (
+    cancelling.value ||
+    !order.value
+  ) {
+    return
+  }
+
+  cancelling.value = true
+  error.value = ''
+
+  try {
+
+    await deleteCustomerOrder(
+      storeId,
+      order.value.order_number
+    )
+
+    showCancelModal.value = false
+
+    router.push(
+      `/store-${storeId}/order_list`
+    )
+
+  } catch (err) {
+
+    console.error(
+      '取消訂單失敗:',
+      err
+    )
+
+    showCancelModal.value = false
+
+    error.value =
+      err.message || '取消訂單失敗'
+
+  } finally {
+
+    cancelling.value = false
+
+  }
 
 }
 

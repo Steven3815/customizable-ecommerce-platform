@@ -492,3 +492,47 @@ export async function updateCustomerOrder(
     throw error
   }
 }
+
+export async function deleteCustomerOrder(
+  storeId,
+  orderNumber
+) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/order/delete_order.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          store_id: storeId,
+          order_number: orderNumber
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '刪除訂單失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '刪除訂單失敗:',
+      error
+    )
+
+    throw error
+  }
+}
