@@ -330,6 +330,11 @@ const selectedItems = ref(
   JSON.parse(localStorage.getItem(`cart-selected-${storeId}`) || '[]')
 )
 
+// 記錄曾經出現在購物車中的商品
+const knownCartItems = ref(
+  JSON.parse(localStorage.getItem(`cart-known-${storeId}`) || '[]')
+)
+
 const expandedDescriptions = ref({})
 const sortBy = ref('created_at')
 const sortOrder = ref('desc')
@@ -428,6 +433,18 @@ watch(
   { deep: true }
 )
 
+// 儲存已出現過的購物車商品
+watch(
+  knownCartItems,
+  value => {
+    localStorage.setItem(
+      `cart-known-${storeId}`,
+      JSON.stringify(value)
+    )
+  },
+  { deep: true }
+)
+
 // 展開 / 收合商品描述
 function toggleDescription(cartItemId) {
   expandedDescriptions.value[cartItemId] =
@@ -486,10 +503,28 @@ async function loadCart() {
       item => item.cart_item_id
     )
 
-    // 移除購物車中已不存在的商品
-    selectedItems.value = selectedItems.value.filter(
+    // 保留目前購物車中原本的勾選狀態
+    const existingSelectedItems = selectedItems.value.filter(
       cartItemId => cartItemIds.includes(cartItemId)
     )
+
+    // 只有從未出現過的商品才預設勾選
+    const newCartItemIds = cartItemIds.filter(
+      cartItemId => !knownCartItems.value.includes(cartItemId)
+    )
+
+    selectedItems.value = [
+      ...existingSelectedItems,
+      ...newCartItemIds
+    ]
+
+    // 記錄這次出現過的購物車商品
+    knownCartItems.value = [
+      ...new Set([
+        ...knownCartItems.value,
+        ...cartItemIds
+      ])
+    ]
 
     // 重新載入後預設全部收合
     expandedDescriptions.value = {}
