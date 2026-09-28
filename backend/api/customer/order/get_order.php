@@ -272,27 +272,16 @@ $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 商品資料型別轉換
 foreach ($items as &$item) {
-
-    $item["order_item_id"] =
-        (int)$item["order_item_id"];
-
-    $item["product_id"] =
-        (int)$item["product_id"];
+    $item["order_item_id"] = (int)$item["order_item_id"];
+    $item["product_id"] = (int)$item["product_id"];
 
     if ($item["spec_id"] !== null) {
-        $item["spec_id"] =
-            (int)$item["spec_id"];
+        $item["spec_id"] = (int)$item["spec_id"];
     }
 
-    $item["quantity"] =
-        (int)$item["quantity"];
-
-    $item["price"] =
-        (float)$item["price"];
-
-    $item["subtotal"] =
-        $item["quantity"] *
-        $item["price"];
+    $item["quantity"] = (int)$item["quantity"];
+    $item["price"] = (float)$item["price"];
+    $item["subtotal"] = $item["quantity"] * $item["price"];
 
     // 商品圖片完整網址
     if (
@@ -309,19 +298,13 @@ unset($item);
 
 // Payment 資料型別轉換
 if ($payment) {
-
-    $payment["payment_id"] =
-        (int)$payment["payment_id"];
-
-    $payment["amount"] =
-        (float)$payment["amount"];
+    $payment["payment_id"] = (int)$payment["payment_id"];
+    $payment["amount"] = (float)$payment["amount"];
 }
 
 // Refund 資料型別轉換
 if ($refund) {
-
-    $refund["refund_id"] =
-        (int)$refund["refund_id"];
+    $refund["refund_id"] = (int)$refund["refund_id"];
 }
 
 // 建立訂單結果

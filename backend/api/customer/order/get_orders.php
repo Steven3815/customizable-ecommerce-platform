@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 // Customer 取得指定 Store 的訂單列表
 
@@ -84,13 +84,7 @@ $allowed_payment_confirm_status = [
     "rejected"
 ];
 
-if (
-    !in_array(
-        $payment_confirm_status,
-        $allowed_payment_confirm_status,
-        true
-    )
-) {
+if (!in_array($payment_confirm_status, $allowed_payment_confirm_status, true)) {
     http_response_code(400);
     echo json_encode([
         "error" => "Invalid payment confirm status"
@@ -204,7 +198,6 @@ $params = [
 
 // Order Status 篩選
 if ($order_status !== "all") {
-
     $where .= "
         AND o.order_status = ?
     ";
@@ -214,7 +207,6 @@ if ($order_status !== "all") {
 
 // Payment Status 篩選
 if ($payment_status !== "all") {
-
     $where .= "
         AND EXISTS (
             SELECT 1
@@ -230,7 +222,6 @@ if ($payment_status !== "all") {
 
 // Payment Confirm Status 篩選
 if ($payment_confirm_status !== "all") {
-
     $where .= "
         AND EXISTS (
             SELECT 1
@@ -246,7 +237,6 @@ if ($payment_confirm_status !== "all") {
 
 // Delivery Status 篩選
 if ($delivery_status !== "all") {
-
     $where .= "
         AND o.delivery_status = ?
     ";
@@ -256,7 +246,6 @@ if ($delivery_status !== "all") {
 
 // Refund Status 篩選
 if ($refund_enable && $refund_status !== "all") {
-
     $where .= "
         AND EXISTS (
             SELECT 1
@@ -315,7 +304,6 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 沒有訂單
 if (!$orders) {
-
     echo json_encode([
         "message" => "No orders found",
         "refund_enable" => $refund_enable,
@@ -328,7 +316,6 @@ if (!$orders) {
 $result = [];
 
 foreach ($orders as $order) {
-
     $order_id = (int)$order["order_id"];
 
     // Payment
@@ -367,7 +354,6 @@ foreach ($orders as $order) {
     $refund = null;
 
     if ($refund_enable) {
-
         $sql = "
         SELECT
             refund_id,
@@ -427,46 +413,29 @@ foreach ($orders as $order) {
 
     // 商品資料型別轉換
     foreach ($items as &$item) {
-
-        $item["order_item_id"] =
-            (int)$item["order_item_id"];
-
-        $item["product_id"] =
-            (int)$item["product_id"];
+        $item["order_item_id"] = (int)$item["order_item_id"];
+        $item["product_id"] = (int)$item["product_id"];
 
         if ($item["spec_id"] !== null) {
-            $item["spec_id"] =
-                (int)$item["spec_id"];
+            $item["spec_id"] = (int)$item["spec_id"];
         }
 
-        $item["quantity"] =
-            (int)$item["quantity"];
-
-        $item["price"] =
-            (float)$item["price"];
-
-        $item["subtotal"] =
-            $item["quantity"] *
-            $item["price"];
+        $item["quantity"] = (int)$item["quantity"];
+        $item["price"] = (float)$item["price"];
+        $item["subtotal"] = $item["quantity"] * $item["price"];
     }
 
     unset($item);
 
     // Payment 資料型別轉換
     if ($payment) {
-
-        $payment["payment_id"] =
-            (int)$payment["payment_id"];
-
-        $payment["amount"] =
-            (float)$payment["amount"];
+        $payment["payment_id"] = (int)$payment["payment_id"];
+        $payment["amount"] = (float)$payment["amount"];
     }
 
     // Refund 資料型別轉換
     if ($refund) {
-
-        $refund["refund_id"] =
-            (int)$refund["refund_id"];
+        $refund["refund_id"] = (int)$refund["refund_id"];
     }
 
     // 建立訂單結果

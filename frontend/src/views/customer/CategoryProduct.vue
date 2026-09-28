@@ -1,56 +1,42 @@
 <template>
   <div>
-
     <Sidebar />
 
     <div class="wrapper d-flex flex-column min-vh-100">
-
       <Header
         :store="store"
       />
 
       <div class="body flex-grow-1">
-
         <section class="py-5">
-
           <CContainer fluid>
 
             <!-- Category Header -->
             <CRow>
               <CCol :md="12">
-
                 <div class="category-header">
-
                   <div class="category-title-wrapper">
-
                     <h1>
                       {{ categoryName }}
                     </h1>
-
                   </div>
-
                 </div>
-
               </CCol>
             </CRow>
 
             <!-- Products -->
             <CRow>
               <CCol :md="12">
-
                 <div
                   class="products-carousel"
                   :class="`display-limit-${displayLimit}`"
                 >
-
                   <div class="products-wrapper">
-
                     <div
                       v-for="product in products"
                       :key="product.product_id"
                       class="product-item"
                     >
-
                       <ProductCard
                         :product-id="product.product_id"
                         :store-id="route.params.storeId"
@@ -59,13 +45,9 @@
                         :price="product.display_price"
                         @view-product="openProduct"
                       />
-
                     </div>
-
                   </div>
-
                 </div>
-
               </CCol>
             </CRow>
 
@@ -86,16 +68,14 @@
             </div>
 
           </CContainer>
-
         </section>
-
       </div>
 
       <Footer
         :footer="footer"
       />
-      <Createdby />
 
+      <Createdby />
     </div>
 
     <!-- Product Detail Modal -->
@@ -105,7 +85,6 @@
       :store-id="route.params.storeId"
       @close="closeProductModal"
     />
-
   </div>
 </template>
 
@@ -154,14 +133,12 @@ const closeProductModal = () => {
 }
 
 onMounted(async () => {
-
   const storeId = route.params.storeId
   const categoryId = route.params.categoryId
 
   loading.value = true
 
   try {
-
     const data = await getCustomerProducts(
       storeId,
       categoryId
@@ -183,14 +160,13 @@ onMounted(async () => {
       Number(data.display_limit) || 4
 
     store.value = {
-    store_id: data.store_id,
-    store_name: data.store_name
+      store_id: data.store_id,
+      store_name: data.store_name
     }
 
     footer.value = data.footer || {}
 
   } catch (error) {
-
     console.error(
       '取得類別商品失敗:',
       error
@@ -204,16 +180,12 @@ onMounted(async () => {
     }
 
   } finally {
-
     loading.value = false
-
   }
-
 })
 </script>
 
 <style scoped>
-
 .category-title-wrapper {
   display: flex;
   flex-direction: column;
@@ -289,36 +261,29 @@ onMounted(async () => {
 /* Tablet */
 
 @media (max-width: 991px) {
-
   .products-wrapper {
     grid-template-columns:
       repeat(3, minmax(0, 1fr)) !important;
   }
-
 }
 
 
 /* Mobile */
 
 @media (max-width: 767px) {
-
   .products-wrapper {
     grid-template-columns:
       repeat(2, minmax(0, 1fr)) !important;
   }
-
 }
 
 
 /* Small Mobile */
 
 @media (max-width: 575px) {
-
   .products-wrapper {
     grid-template-columns:
       1fr !important;
   }
-
 }
-
 </style>

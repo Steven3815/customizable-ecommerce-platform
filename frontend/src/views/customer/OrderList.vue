@@ -4,28 +4,20 @@
       <Sidebar />
 
       <div class="wrapper flex-column d-flex min-vh-100">
-
-        <Header
-          :store="home?.store || {}"
-        />
+        <Header :store="home?.store || {}" />
 
         <div class="body flex-grow-1">
-
           <CContainer class="px-4" lg>
-
             <!-- 標題 -->
             <div class="mb-4">
-
               <h2 class="mt-2 mb-4">
                 訂單總覽
               </h2>
 
               <!-- 篩選 + 排序 -->
               <div class="row g-3">
-
                 <!-- 訂單狀態 -->
                 <div class="col-md-3">
-
                   <div class="mb-2">
                     <strong>訂單狀態</strong>
                   </div>
@@ -35,12 +27,10 @@
                     :options="orderStatusOptions"
                     @change="changeFilter"
                   />
-
                 </div>
 
                 <!-- 付款狀態 -->
                 <div class="col-md-3">
-
                   <div class="mb-2">
                     <strong>付款狀態</strong>
                   </div>
@@ -50,12 +40,10 @@
                     :options="paymentStatusOptions"
                     @change="changeFilter"
                   />
-
                 </div>
 
                 <!-- 付款確認狀態 -->
                 <div class="col-md-3">
-
                   <div class="mb-2">
                     <strong>付款確認</strong>
                   </div>
@@ -65,12 +53,10 @@
                     :options="paymentConfirmStatusOptions"
                     @change="changeFilter"
                   />
-
                 </div>
 
                 <!-- 配送狀態 -->
                 <div class="col-md-3">
-
                   <div class="mb-2">
                     <strong>配送狀態</strong>
                   </div>
@@ -80,15 +66,10 @@
                     :options="deliveryStatusOptions"
                     @change="changeFilter"
                   />
-
                 </div>
 
                 <!-- 退款狀態 -->
-                <div
-                  v-if="refundEnable"
-                  class="col-md-3"
-                >
-
+                <div v-if="refundEnable" class="col-md-3">
                   <div class="mb-2">
                     <strong>退款狀態</strong>
                   </div>
@@ -98,12 +79,10 @@
                     :options="refundStatusOptions"
                     @change="changeFilter"
                   />
-
                 </div>
 
                 <!-- 排序 -->
                 <div class="col-md-3">
-
                   <div class="mb-2">
                     <strong>排序</strong>
                   </div>
@@ -112,29 +91,18 @@
                     v-model="sortValue"
                     :options="sortOptions"
                   />
-
                 </div>
-
               </div>
-
             </div>
 
             <!-- Loading -->
-            <div
-              v-if="loading"
-              class="text-center py-5"
-            >
+            <div v-if="loading" class="text-center py-5">
               載入中...
             </div>
 
             <!-- Error -->
-            <CCard
-              v-else-if="error"
-              class="border-0"
-            >
-
+            <CCard v-else-if="error" class="border-0">
               <CCardBody class="text-center py-5">
-
                 <p class="text-danger mb-3">
                   {{ error }}
                 </p>
@@ -145,19 +113,12 @@
                 >
                   重新載入
                 </CButton>
-
               </CCardBody>
-
             </CCard>
 
             <!-- Empty -->
-            <CCard
-              v-else-if="!orders.length"
-              class="border-0"
-            >
-
+            <CCard v-else-if="!orders.length" class="border-0">
               <CCardBody class="text-center py-5">
-
                 <h4 class="mb-3">
                   目前沒有符合條件的訂單
                 </h4>
@@ -168,25 +129,19 @@
                 >
                   繼續購物
                 </CButton>
-
               </CCardBody>
-
             </CCard>
 
             <!-- Orders -->
             <div v-else>
-
               <CCard
                 v-for="order in orders"
                 :key="order.order_id"
                 class="mb-4"
               >
-
                 <CCardBody>
-
                   <!-- 訂單資訊 -->
                   <div class="d-flex justify-content-between align-items-start mb-3">
-
                     <h5 class="mb-0">
                       <strong>
                         訂單編號： {{ order.order_number }}
@@ -201,7 +156,6 @@
                     >
                       查看訂單
                     </CButton>
-
                   </div>
 
                   <div class="mb-2">
@@ -210,25 +164,21 @@
                   </div>
 
                   <div class="mb-3">
-
                     <strong>訂單狀態：</strong>
 
                     <span
                       :class="{
-                        'text-danger fw-bold':
-                          order.order_status === 'pending'
+                        'text-danger fw-bold': order.order_status === 'pending'
                       }"
                     >
                       {{ getOrderStatusText(order.order_status) }}
                     </span>
-
                   </div>
 
                   <hr>
 
                   <!-- 商品資訊 -->
                   <div class="d-flex align-items-center mb-3">
-
                     <h5 class="mb-0">
                       商品資訊
                     </h5>
@@ -236,48 +186,26 @@
                     <CButton
                       color="link"
                       class="text-decoration-none text-secondary p-0 ms-2"
-                      @click="
-                        showProducts[order.order_id] =
-                          !showProducts[order.order_id]
-                      "
+                      @click="showProducts[order.order_id] = !showProducts[order.order_id]"
                     >
-
                       <CIcon
-                        :icon="
-                          showProducts[order.order_id]
-                            ? 'cilChevronTop'
-                            : 'cilChevronBottom'
-                        "
+                        :icon="showProducts[order.order_id] ? 'cilChevronTop' : 'cilChevronBottom'"
                         class="me-1"
                       />
 
-                      {{
-                        showProducts[order.order_id]
-                          ? '收合'
-                          : '展開詳細'
-                      }}
-
+                      {{ showProducts[order.order_id] ? '收合' : '展開詳細' }}
                     </CButton>
-
                   </div>
 
-                  <CCollapse
-                    :visible="
-                      showProducts[order.order_id]
-                    "
-                  >
-
+                  <CCollapse :visible="showProducts[order.order_id]">
                     <div
                       v-for="item in order.items"
                       :key="item.order_item_id"
                       class="mb-3"
                     >
-
                       <div class="row align-items-center">
-
                         <!-- 商品 -->
                         <div class="col-md-2">
-
                           <div class="fw-bold mb-2">
                             {{ item.product_name }}
                           </div>
@@ -288,33 +216,19 @@
                           >
                             規格：{{ item.spec_name }}
                           </div>
-
                         </div>
 
                         <!-- 單價 -->
                         <div class="col-md-3 text-end text-body-secondary">
-
-                          $ {{ Number(
-                            item.price
-                          ).toLocaleString() }}
-
-                          × {{ item.quantity }}
-
+                          $ {{ Number(item.price).toLocaleString() }} × {{ item.quantity }}
                         </div>
 
                         <!-- 小計 -->
                         <div class="col-md-3 text-end fw-bold">
-
-                          $ {{ Number(
-                            item.subtotal
-                          ).toLocaleString() }}
-
+                          $ {{ Number(item.subtotal).toLocaleString() }}
                         </div>
-
                       </div>
-
                     </div>
-
                   </CCollapse>
 
                   <hr>
@@ -325,108 +239,63 @@
                   </h5>
 
                   <!-- 已完成訂單才顯示付款、配送、退款狀態 -->
-                  <template
-                    v-if="order.order_status === 'confirmed'"
-                  >
-
+                  <template v-if="order.order_status === 'confirmed'">
                     <div class="mb-2">
-
                       <strong>付款狀態：</strong>
-
-                      {{ getPaymentText(
-                        order.payment?.payment_status
-                      ) }}
-
+                      {{ getPaymentText(order.payment?.payment_status) }}
                     </div>
 
                     <div class="mb-2">
-
                       <strong>付款確認：</strong>
-
-                      {{ getPaymentConfirmText(
-                        order.payment?.payment_confirm_status
-                      ) }}
-
+                      {{ getPaymentConfirmText(order.payment?.payment_confirm_status) }}
                     </div>
 
                     <div class="mb-2">
-
                       <strong>配送狀態：</strong>
-
-                      {{ getDeliveryText(
-                        order.delivery_status
-                      ) }}
-
+                      {{ getDeliveryText(order.delivery_status) }}
                     </div>
 
-                    <div
-                      v-if="refundEnable"
-                      class="mb-2"
-                    >
-
+                    <div v-if="refundEnable" class="mb-2">
                       <strong>退款狀態：</strong>
-
-                      {{ getRefundText(
-                        order.refund?.refund_status
-                      ) }}
-
+                      {{ getRefundText(order.refund?.refund_status) }}
                     </div>
-
                   </template>
 
                   <!-- 商品金額 -->
                   <div class="row mb-2">
-
                     <div class="col-md-5">
                       <strong>商品金額：</strong>
                     </div>
 
                     <div class="col-md-3 text-end">
-
-                      $ {{ getProductAmount(
-                        order.items
-                      ).toLocaleString() }}
-
+                      $ {{ getProductAmount(order.items).toLocaleString() }}
                     </div>
-
                   </div>
 
                   <!-- 運費 -->
                   <div class="row mb-3">
-
                     <div class="col-md-5">
                       <strong>運費：</strong>
                     </div>
 
                     <div class="col-md-3 text-end">
-
-                      $ {{ Number(
-                        order.shipping_fee
-                      ).toLocaleString() }}
-
+                      $ {{ Number(order.shipping_fee).toLocaleString() }}
                     </div>
-
                   </div>
 
                   <hr>
 
                   <!-- 總金額 -->
                   <div class="row mb-0 fw-bold">
-
                     <div class="col-md-5">
                       <strong>總金額：</strong>
                     </div>
 
                     <div class="col-md-3 text-end">
-
                       <strong>
-                        $ {{ Number(
-                          order.total_amount
-                        ).toLocaleString() }}
+                        $ {{ Number(order.total_amount).toLocaleString() }}
                       </strong>
-
                     </div>
-
                   </div>
 
                   <!-- Pending 訂單操作 -->
@@ -434,7 +303,6 @@
                     v-if="order.order_status === 'pending'"
                     class="d-flex justify-content-end gap-2 mt-3"
                   >
-
                     <CButton
                       color="danger"
                       @click="openCancelModal(order)"
@@ -449,25 +317,16 @@
                     >
                       前往完成訂單
                     </CButton>
-
                   </div>
-
                 </CCardBody>
-
               </CCard>
-
             </div>
-
           </CContainer>
-
         </div>
 
-        <Footer
-          :footer="home?.footer || {}"
-        />
+        <Footer :footer="home?.footer || {}" />
 
         <Createdby />
-
       </div>
     </div>
 
@@ -483,23 +342,17 @@
       :visible="showCancelModal"
       @close="closeCancelModal"
     >
-
       <CModalHeader class="border-0">
-
         <CModalTitle>
           取消訂單
         </CModalTitle>
-
       </CModalHeader>
 
       <CModalBody>
-
         確定要取消此訂單嗎？
-
       </CModalBody>
 
       <CModalFooter class="border-0">
-
         <CButton
           color="secondary"
           :disabled="cancelling"
@@ -513,17 +366,10 @@
           :disabled="cancelling"
           @click="cancelOrder"
         >
-          {{
-            cancelling
-              ? '取消中...'
-              : '取消訂單'
-          }}
+          {{ cancelling ? '取消中...' : '取消訂單' }}
         </CButton>
-
       </CModalFooter>
-
     </CModal>
-
   </div>
 </template>
 
@@ -562,25 +408,17 @@ const route = useRoute()
 const router = useRouter()
 
 const home = ref(null)
-
 const orders = ref([])
-
 const loading = ref(true)
 const cancelling = ref(false)
 const error = ref('')
-
 const storeId = route.params.storeId
-
 const showLoginModal = ref(false)
-
 const showCancelModal = ref(false)
 const selectedOrder = ref(null)
-
 const showProducts = ref({})
-
 const sortBy = ref('order_date')
 const sortOrder = ref('desc')
-
 const orderStatus = ref('all')
 const paymentStatus = ref('all')
 const paymentConfirmStatus = ref('all')
@@ -698,151 +536,99 @@ const sortValue = computed({
   get() {
     return `${sortBy.value}-${sortOrder.value}`
   },
-
   set(value) {
     const [by, order] = value.split('-')
-
     sortBy.value = by
     sortOrder.value = order
-
     sortOrders()
   }
 })
 
 // 取得首頁資料
 async function loadHome() {
-
   try {
-
-    home.value =
-      await getCustomerHome(storeId)
-
+    home.value = await getCustomerHome(storeId)
   } catch (err) {
-
-    console.error(
-      '取得首頁資料失敗:',
-      err
-    )
-
+    console.error('取得首頁資料失敗:', err)
     router.push('/404')
   }
 }
 
 // 檢查登入狀態
 async function checkLoginStatus() {
-
   try {
-
-    const data =
-      await getCustomerLoginStatus()
+    const data = await getCustomerLoginStatus()
 
     if (data.loggedIn !== true) {
-
       showLoginModal.value = true
       loading.value = false
-
       return false
     }
 
     return true
-
   } catch (err) {
-
-    console.error(
-      '取得登入狀態失敗:',
-      err
-    )
-
+    console.error('取得登入狀態失敗:', err)
     showLoginModal.value = true
     loading.value = false
-
     return false
   }
 }
 
 // 取得訂單
 async function loadOrders() {
-
   loading.value = true
   error.value = ''
 
-  const loggedIn =
-    await checkLoginStatus()
+  const loggedIn = await checkLoginStatus()
 
   if (!loggedIn) {
     return
   }
 
   try {
+    const data = await getCustomerOrders(
+      storeId,
+      orderStatus.value,
+      paymentStatus.value,
+      paymentConfirmStatus.value,
+      deliveryStatus.value,
+      refundStatus.value
+    )
 
-    const data =
-      await getCustomerOrders(
-        storeId,
-        orderStatus.value,
-        paymentStatus.value,
-        paymentConfirmStatus.value,
-        deliveryStatus.value,
-        refundStatus.value
-      )
-
-    refundEnable.value =
-      data.refund_enable === true
-
-    orders.value =
-      data.orders || []
+    refundEnable.value = data.refund_enable === true
+    orders.value = data.orders || []
 
     // 商品資訊預設收合
     showProducts.value = {}
 
     orders.value.forEach(order => {
-
-      showProducts.value[
-        order.order_id
-      ] = false
-
+      showProducts.value[order.order_id] = false
     })
 
     sortOrders()
-
   } catch (err) {
-
-    console.error(
-      '取得訂單資料失敗:',
-      err
-    )
-
-    error.value =
-      err.message ||
-      '取得訂單資料失敗'
-
+    console.error('取得訂單資料失敗:', err)
+    error.value = err.message || '取得訂單資料失敗'
   } finally {
-
     loading.value = false
-
   }
 }
 
 // 排序
 function sortOrders() {
-
   if (sortOrder.value === 'asc') {
-
     orders.value.sort(
       (a, b) =>
         new Date(a.order_date) -
         new Date(b.order_date)
     )
-
   } else {
-
     orders.value.sort(
       (a, b) =>
         new Date(b.order_date) -
         new Date(a.order_date)
     )
-
   }
-
 }
 
 // 篩選變更
@@ -852,19 +638,14 @@ function changeFilter() {
 
 // 取得商品金額
 function getProductAmount(items) {
-
   return items.reduce(
-    (total, item) =>
-      total +
-      Number(item.subtotal || 0),
+    (total, item) => total + Number(item.subtotal || 0),
     0
   )
-
 }
 
 // 訂單狀態文字
 function getOrderStatusText(status) {
-
   const statusMap = {
     pending: '未完成',
     confirmed: '已完成',
@@ -876,7 +657,6 @@ function getOrderStatusText(status) {
 
 // 付款狀態文字
 function getPaymentText(status) {
-
   const statusMap = {
     pending: '待付款',
     processing: '處理中',
@@ -889,7 +669,6 @@ function getPaymentText(status) {
 
 // 付款確認文字
 function getPaymentConfirmText(status) {
-
   const statusMap = {
     waiting: '等待確認',
     confirmed: '已確認',
@@ -901,7 +680,6 @@ function getPaymentConfirmText(status) {
 
 // 配送狀態文字
 function getDeliveryText(status) {
-
   const statusMap = {
     pending: '待出貨',
     shipping: '配送中',
@@ -913,7 +691,6 @@ function getDeliveryText(status) {
 
 // 退款狀態文字
 function getRefundText(status) {
-
   const statusMap = {
     pending: '處理中',
     approved: '已核准',
@@ -925,49 +702,33 @@ function getRefundText(status) {
 
 // 前往訂單詳細頁
 function goOrderDetail(orderId) {
-
-  router.push(
-    `/store-${storeId}/order/${orderId}`
-  )
-
+  router.push(`/store-${storeId}/order/${orderId}`)
 }
 
 // 前往完成訂單
 function goOrderEdit(orderId) {
-
-  router.push(
-    `/store-${storeId}/create_order?order_id=${orderId}`
-  )
-
+  router.push(`/store-${storeId}/create_order?order_id=${orderId}`)
 }
 
 // 開啟取消訂單 Modal
 function openCancelModal(order) {
-
   selectedOrder.value = order
   showCancelModal.value = true
-
 }
 
 // 關閉取消訂單 Modal
 function closeCancelModal() {
-
   if (cancelling.value) {
     return
   }
 
   showCancelModal.value = false
   selectedOrder.value = null
-
 }
 
 // 取消訂單
 async function cancelOrder() {
-
-  if (
-    cancelling.value ||
-    !selectedOrder.value
-  ) {
+  if (cancelling.value || !selectedOrder.value) {
     return
   }
 
@@ -975,7 +736,6 @@ async function cancelOrder() {
   error.value = ''
 
   try {
-
     await deleteCustomerOrder(
       storeId,
       selectedOrder.value.order_number
@@ -985,39 +745,21 @@ async function cancelOrder() {
     selectedOrder.value = null
 
     await loadOrders()
-
   } catch (err) {
-
-    console.error(
-      '取消訂單失敗:',
-      err
-    )
-
-    error.value =
-      err.message ||
-      '取消訂單失敗'
-
+    console.error('取消訂單失敗:', err)
+    error.value = err.message || '取消訂單失敗'
   } finally {
-
     cancelling.value = false
-
   }
-
 }
 
 // 繼續購物
 function continueShopping() {
-
-  router.push(
-    `/store-${storeId}`
-  )
-
+  router.push(`/store-${storeId}`)
 }
 
 onMounted(() => {
-
   loadHome()
   loadOrders()
-
 })
 </script>

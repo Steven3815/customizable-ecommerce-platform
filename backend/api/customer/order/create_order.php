@@ -83,7 +83,6 @@ if ($delivery_method === "") {
 
 // 檢查 cart_item_id
 foreach ($cart_item_ids as $cart_item_id) {
-
     if (
         !is_numeric($cart_item_id) ||
         floor((float)$cart_item_id) != (float)$cart_item_id ||
@@ -98,15 +97,10 @@ foreach ($cart_item_ids as $cart_item_id) {
     }
 }
 
-$cart_item_ids = array_map(
-    "intval",
-    $cart_item_ids
-);
+$cart_item_ids = array_map("intval", $cart_item_ids);
 
 // 移除重複的 cart_item_id
-$cart_item_ids = array_values(
-    array_unique($cart_item_ids)
-);
+$cart_item_ids = array_values(array_unique($cart_item_ids));
 
 // 固定運費
 $shipping_fee = 60;
@@ -216,7 +210,6 @@ try {
     $store_id = (int)$items[0]["store_id"];
 
     foreach ($items as $item) {
-
         if (
             (int)$item["store_id"] !==
             $store_id
@@ -310,7 +303,6 @@ try {
     $product_amount = 0;
 
     foreach ($items as $item) {
-
         $quantity = (int)$item["quantity"];
 
         if ($quantity <= 0) {
@@ -329,7 +321,6 @@ try {
 
         // 檢查 Category
         if ($item["category_id"] !== null) {
-
             if ($item["category_name"] === null) {
                 throw new Exception(
                     "Product category not found",
@@ -347,7 +338,6 @@ try {
 
         // 有規格商品
         if ((int)$item["has_spec"] === 1) {
-
             if ($item["spec_id"] === null) {
                 throw new Exception(
                     "Product specification is no longer available",
@@ -383,9 +373,7 @@ try {
                     409
                 );
             }
-
         } else {
-
             // 無規格商品
             if ($item["spec_id"] !== null) {
                 throw new Exception(
@@ -408,14 +396,11 @@ try {
             }
         }
 
-        $product_amount +=
-            $price * $quantity;
+        $product_amount += $price * $quantity;
     }
 
     // 計算訂單總額
-    $total_amount =
-        $product_amount +
-        $shipping_fee;
+    $total_amount = $product_amount + $shipping_fee;
 
     // 建立 ORDERS
     $sql = "
@@ -547,14 +532,10 @@ try {
     $stmt_order_item = $pdo->prepare($sql);
 
     foreach ($items as $item) {
-
         if ((int)$item["has_spec"] === 1) {
-
             $price = (float)$item["spec_price"];
             $spec_name = $item["spec_name"];
-
         } else {
-
             $price = (float)$item["product_price"];
             $spec_name = null;
         }
@@ -575,11 +556,9 @@ try {
 
     // 扣除庫存
     foreach ($items as $item) {
-
         $quantity = (int)$item["quantity"];
 
         if ((int)$item["has_spec"] === 1) {
-
             $sql = "
             UPDATE PRODUCT_SPEC
 
@@ -610,9 +589,7 @@ try {
                     "Failed to update specification stock"
                 );
             }
-
         } else {
-
             $sql = "
             UPDATE PRODUCT
             SET
@@ -682,14 +659,16 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
-
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+
     $status_code = $e->getCode();
+
     if ($status_code < 400 || $status_code > 599) {
         $status_code = 500;
     }
+
     http_response_code($status_code);
 
     $error_type = "general";
@@ -701,7 +680,6 @@ try {
         $error_message,
         "PRODUCT_STOCK_INSUFFICIENT|"
     )) {
-
         $parts = explode(
             "|",
             $error_message,
@@ -723,7 +701,6 @@ try {
         $error_message,
         "SPECIFICATION_STOCK_INSUFFICIENT|"
     )) {
-
         $parts = explode(
             "|",
             $error_message,

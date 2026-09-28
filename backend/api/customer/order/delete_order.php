@@ -64,7 +64,6 @@ $store_id = (int)$store_id;
 $pdo->beginTransaction();
 
 try {
-
     // 取得訂單
     // 確認訂單屬於目前登入會員與指定商店
     $sql = "
@@ -137,7 +136,6 @@ try {
 
     // 回補商品庫存
     foreach ($order_items as $item) {
-
         $quantity = (int)$item["quantity"];
 
         if ($quantity <= 0) {
@@ -149,7 +147,6 @@ try {
 
         // 有規格商品
         if ($item["spec_id"] !== null) {
-
             $sql = "
             UPDATE PRODUCT_SPEC
 
@@ -177,9 +174,7 @@ try {
                     500
                 );
             }
-
         } else {
-
             // 無規格商品
             $sql = "
             UPDATE PRODUCT
@@ -253,7 +248,6 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
-
     // 發生錯誤時全部回滾
     if ($pdo->inTransaction()) {
         $pdo->rollBack();

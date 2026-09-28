@@ -1,25 +1,16 @@
 <template>
   <div>
-
     <Sidebar />
 
     <div class="wrapper d-flex flex-column min-vh-100">
-
-      <Header
-        :store="order?.store || {}"
-      />
+      <Header :store="order?.store || {}" />
 
       <div class="body flex-grow-1">
-
         <CContainer class="px-4" lg>
-
           <!-- 標題 -->
           <div class="mb-4">
-
             <div class="d-flex justify-content-between align-items-center">
-
               <div>
-
                 <h2 class="mb-2">
                   訂單詳情
                 </h2>
@@ -27,7 +18,6 @@
                 <p class="text-body-secondary mb-0">
                   查看您的訂單與付款資訊
                 </p>
-
               </div>
 
               <CButton
@@ -36,9 +26,7 @@
               >
                 返回訂單
               </CButton>
-
             </div>
-
           </div>
 
           <!-- 載入中 -->
@@ -58,11 +46,9 @@
           </CAlert>
 
           <template v-else-if="order">
-
             <!-- 訂單資訊 -->
             <CCard class="mb-4">
               <CCardBody>
-
                 <div class="section-title">
                   <h5 class="mb-0">
                     訂單資訊
@@ -70,9 +56,7 @@
                 </div>
 
                 <div class="order-info-list">
-
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       訂單編號
                     </span>
@@ -80,11 +64,9 @@
                     <span class="order-info-value">
                       {{ order.order_number }}
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       訂單狀態
                     </span>
@@ -98,11 +80,9 @@
                     >
                       {{ getOrderStatusText(order.order_status) }}
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       訂單日期
                     </span>
@@ -110,13 +90,11 @@
                     <span class="order-info-value">
                       {{ order.order_date }}
                     </span>
-
                   </div>
 
                   <hr>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       商品金額
                     </span>
@@ -126,11 +104,9 @@
                         $ {{ Number(order.product_amount).toLocaleString() }}
                       </span>
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       運費
                     </span>
@@ -140,11 +116,9 @@
                         $ {{ Number(order.shipping_fee).toLocaleString() }}
                       </span>
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       訂單總金額
                     </span>
@@ -154,9 +128,7 @@
                         $ {{ Number(order.total_amount).toLocaleString() }}
                       </span>
                     </span>
-
                   </div>
-
                 </div>
 
                 <!-- Pending 訂單操作 -->
@@ -177,9 +149,7 @@
                   >
                     前往完成訂單
                   </CButton>
-
                 </div>
-
               </CCardBody>
             </CCard>
 
@@ -189,7 +159,6 @@
               class="mb-4"
             >
               <CCardBody>
-
                 <div class="section-title">
                   <h5 class="mb-0">
                     收件資訊
@@ -197,9 +166,7 @@
                 </div>
 
                 <div class="order-info-list">
-
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       收件人
                     </span>
@@ -207,11 +174,9 @@
                     <span class="order-info-value">
                       {{ order.receiver_name }}
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       聯絡電話
                     </span>
@@ -219,11 +184,9 @@
                     <span class="order-info-value">
                       {{ order.receiver_phone }}
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       收件地址
                     </span>
@@ -231,18 +194,14 @@
                     <span class="order-info-value">
                       {{ order.receiver_address }}
                     </span>
-
                   </div>
-
                 </div>
-
               </CCardBody>
             </CCard>
 
             <!-- 商品資訊 -->
             <CCard class="mb-4">
               <CCardBody>
-
                 <div class="section-title">
                   <h5 class="mb-0">
                     商品資訊
@@ -254,19 +213,15 @@
                   :key="item.order_item_id"
                   class="d-flex border-bottom py-4"
                 >
-
                   <div class="product-image ms-4 me-4">
-
                     <img
                       :src="item.image_url"
                       :alt="item.product_name"
                       class="img-fluid"
                     >
-
                   </div>
 
                   <div class="flex-grow-1">
-
                     <h5 class="fw-bold mb-3">
                       {{ item.product_name }}
                     </h5>
@@ -279,7 +234,6 @@
                     </div>
 
                     <div class="mb-2 d-flex">
-
                       <span>
                         單價：
                       </span>
@@ -287,11 +241,9 @@
                       <span class="product-amount">
                         $ {{ Number(item.price).toLocaleString() }}
                       </span>
-
                     </div>
 
                     <div class="mb-2 d-flex">
-
                       <span>
                         數量：
                       </span>
@@ -299,11 +251,9 @@
                       <span class="product-amount">
                         {{ item.quantity }}
                       </span>
-
                     </div>
 
                     <div class="fw-bold d-flex">
-
                       <span>
                         小計：
                       </span>
@@ -311,11 +261,8 @@
                       <span class="product-amount">
                         $ {{ Number(item.subtotal).toLocaleString() }}
                       </span>
-
                     </div>
-
                   </div>
-
                 </div>
 
                 <div
@@ -324,7 +271,6 @@
                 >
                   沒有商品
                 </div>
-
               </CCardBody>
             </CCard>
 
@@ -334,7 +280,6 @@
               class="mb-4"
             >
               <CCardBody>
-
                 <div class="section-title">
                   <h5 class="mb-0">
                     配送資訊
@@ -342,9 +287,7 @@
                 </div>
 
                 <div class="order-info-list">
-
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       配送方式
                     </span>
@@ -352,11 +295,9 @@
                     <span class="order-info-value">
                       {{ getDeliveryMethodText(order.delivery_method) }}
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       配送狀態
                     </span>
@@ -364,14 +305,12 @@
                     <span class="order-info-value">
                       {{ getDeliveryStatusText(order.delivery_status) }}
                     </span>
-
                   </div>
 
                   <div
                     v-if="order.delivery_status === 'shipping'"
                     class="order-info-item"
                   >
-
                     <span class="order-info-label">
                       預計出貨日期
                     </span>
@@ -379,14 +318,12 @@
                     <span class="order-info-value">
                       {{ order.estimated_ship_date }}
                     </span>
-
                   </div>
 
                   <div
                     v-if="order.delivery_status === 'completed'"
                     class="order-info-item"
                   >
-
                     <span class="order-info-label">
                       預計送達日期
                     </span>
@@ -394,11 +331,8 @@
                     <span class="order-info-value">
                       {{ order.estimated_arrival_date }}
                     </span>
-
                   </div>
-
                 </div>
-
               </CCardBody>
             </CCard>
 
@@ -411,7 +345,6 @@
               class="mb-4"
             >
               <CCardBody>
-
                 <div class="section-title">
                   <h5 class="mb-0">
                     付款資訊
@@ -419,9 +352,7 @@
                 </div>
 
                 <div class="order-info-list">
-
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       付款方式
                     </span>
@@ -429,11 +360,9 @@
                     <span class="order-info-value">
                       {{ getPaymentMethodText(order.payment.payment_method) }}
                     </span>
-
                   </div>
 
                   <div class="order-info-item">
-
                     <span class="order-info-label">
                       付款狀態
                     </span>
@@ -441,7 +370,6 @@
                     <span class="order-info-value">
                       {{ getPaymentStatusText(order.payment.payment_status) }}
                     </span>
-
                   </div>
 
                   <template
@@ -449,9 +377,7 @@
                       order.payment.payment_status !== 'pending'
                     "
                   >
-
                     <div class="order-info-item">
-
                       <span class="order-info-label">
                         付款金額
                       </span>
@@ -461,14 +387,12 @@
                           $ {{ Number(order.payment.amount).toLocaleString() }}
                         </span>
                       </span>
-
                     </div>
 
                     <div
                       v-if="order.payment.payment_note"
                       class="order-info-item"
                     >
-
                       <span class="order-info-label">
                         付款備註
                       </span>
@@ -476,14 +400,12 @@
                       <span class="order-info-value">
                         {{ order.payment.payment_note }}
                       </span>
-
                     </div>
 
                     <div
                       v-if="order.payment.paid_at"
                       class="order-info-item"
                     >
-
                       <span class="order-info-label">
                         付款時間
                       </span>
@@ -491,7 +413,6 @@
                       <span class="order-info-value">
                         {{ order.payment.paid_at }}
                       </span>
-
                     </div>
 
                     <div
@@ -501,7 +422,6 @@
                       "
                       class="order-info-item"
                     >
-
                       <span class="order-info-label">
                         確認時間
                       </span>
@@ -509,13 +429,9 @@
                       <span class="order-info-value">
                         {{ order.payment.confirmed_at }}
                       </span>
-
                     </div>
-
                   </template>
-
                 </div>
-
               </CCardBody>
             </CCard>
 
@@ -525,7 +441,6 @@
               class="mb-4"
             >
               <CCardBody>
-
                 <div class="section-title">
                   <h5 class="mb-0">
                     退款資訊
@@ -540,11 +455,8 @@
                 </div>
 
                 <template v-else-if="order.refund">
-
                   <div class="order-info-list">
-
                     <div class="order-info-item">
-
                       <span class="order-info-label">
                         退款狀態
                       </span>
@@ -552,14 +464,12 @@
                       <span class="order-info-value">
                         {{ getRefundText(order.refund.refund_status) }}
                       </span>
-
                     </div>
 
                     <div
                       v-if="order.refund.refund_reason"
                       class="order-info-item"
                     >
-
                       <span class="order-info-label">
                         退款原因
                       </span>
@@ -567,14 +477,12 @@
                       <span class="order-info-value">
                         {{ order.refund.refund_reason }}
                       </span>
-
                     </div>
 
                     <div
                       v-if="order.refund.refund_description"
                       class="order-info-item"
                     >
-
                       <span class="order-info-label">
                         退款說明
                       </span>
@@ -582,14 +490,12 @@
                       <span class="order-info-value">
                         {{ order.refund.refund_description }}
                       </span>
-
                     </div>
 
                     <div
                       v-if="order.refund.admin_reply"
                       class="order-info-item"
                     >
-
                       <span class="order-info-label">
                         商家回覆
                       </span>
@@ -597,11 +503,8 @@
                       <span class="order-info-value">
                         {{ order.refund.admin_reply }}
                       </span>
-
                     </div>
-
                   </div>
-
                 </template>
 
                 <div
@@ -610,14 +513,10 @@
                 >
                   尚無退款資料
                 </div>
-
               </CCardBody>
             </CCard>
-
           </template>
-
         </CContainer>
-
       </div>
 
       <!-- Footer -->
@@ -627,7 +526,6 @@
       />
 
       <Createdby />
-
     </div>
 
     <!-- 取消訂單確認 -->
@@ -636,21 +534,16 @@
       @close="closeCancelModal"
     >
       <CModalHeader class="border-0">
-
         <CModalTitle>
           取消訂單
         </CModalTitle>
-
       </CModalHeader>
 
       <CModalBody>
-
         確定要取消此訂單嗎？
-
       </CModalBody>
 
       <CModalFooter class="border-0">
-
         <CButton
           color="secondary"
           :disabled="cancelling"
@@ -670,11 +563,8 @@
               : '取消訂單'
           }}
         </CButton>
-
       </CModalFooter>
-
     </CModal>
-
   </div>
 </template>
 
@@ -716,16 +606,13 @@ const cancelling = ref(false)
 const error = ref('')
 const order = ref(null)
 const refundEnable = ref(false)
-
 const showCancelModal = ref(false)
 
 const loadOrder = async () => {
-
   loading.value = true
   error.value = ''
 
   try {
-
     const data = await getCustomerOrder(
       storeId,
       orderId
@@ -736,9 +623,7 @@ const loadOrder = async () => {
 
     order.value =
       data.order
-
   } catch (err) {
-
     console.error(
       '取得訂單詳情失敗:',
       err
@@ -746,51 +631,39 @@ const loadOrder = async () => {
 
     error.value =
       err.message || '取得訂單詳情失敗'
-
   } finally {
-
     loading.value = false
-
   }
 }
 
 const goBack = () => {
-
   router.push(
     `/store-${storeId}/order_list`
   )
-
 }
 
 const goOrderEdit = () => {
-
   router.push(
     `/store-${storeId}/create_order?order_id=${orderId}`
   )
-
 }
 
 // 開啟取消訂單 Modal
 const openCancelModal = () => {
-
   showCancelModal.value = true
-
 }
 
 // 關閉取消訂單 Modal
 const closeCancelModal = () => {
-
   if (cancelling.value) {
     return
   }
 
   showCancelModal.value = false
-
 }
 
 // 取消訂單
 const cancelOrder = async () => {
-
   if (
     cancelling.value ||
     !order.value
@@ -802,7 +675,6 @@ const cancelOrder = async () => {
   error.value = ''
 
   try {
-
     await deleteCustomerOrder(
       storeId,
       order.value.order_number
@@ -813,9 +685,7 @@ const cancelOrder = async () => {
     router.push(
       `/store-${storeId}/order_list`
     )
-
   } catch (err) {
-
     console.error(
       '取消訂單失敗:',
       err
@@ -825,17 +695,12 @@ const cancelOrder = async () => {
 
     error.value =
       err.message || '取消訂單失敗'
-
   } finally {
-
     cancelling.value = false
-
   }
-
 }
 
 const getOrderStatusText = (status) => {
-
   const map = {
     pending: '未完成',
     confirmed: '已完成',
@@ -843,11 +708,9 @@ const getOrderStatusText = (status) => {
   }
 
   return map[status] || status
-
 }
 
 const getPaymentMethodText = (method) => {
-
   const map = {
     credit_card: '信用卡',
     atm: 'ATM',
@@ -857,11 +720,9 @@ const getPaymentMethodText = (method) => {
   }
 
   return map[method] || method
-
 }
 
 const getPaymentStatusText = (status) => {
-
   const map = {
     pending: '待付款',
     processing: '處理中',
@@ -870,11 +731,9 @@ const getPaymentStatusText = (status) => {
   }
 
   return map[status] || status
-
 }
 
 const getDeliveryMethodText = (method) => {
-
   const map = {
     home_delivery: '宅配',
     convenience_store: '超商取貨',
@@ -882,11 +741,9 @@ const getDeliveryMethodText = (method) => {
   }
 
   return map[method] || method
-
 }
 
 const getDeliveryStatusText = (status) => {
-
   const map = {
     pending: '待出貨',
     shipping: '配送中',
@@ -894,11 +751,9 @@ const getDeliveryStatusText = (status) => {
   }
 
   return map[status] || status
-
 }
 
 const getRefundText = (status) => {
-
   const map = {
     pending: '申請中',
     approved: '已核准',
@@ -906,13 +761,10 @@ const getRefundText = (status) => {
   }
 
   return map[status] || status
-
 }
 
 onMounted(() => {
-
   loadOrder()
-
 })
 </script>
 
@@ -976,7 +828,6 @@ onMounted(() => {
 }
 
 @media (max-width: 576px) {
-
   .order-info-item {
     flex-direction: column;
     gap: 4px;
@@ -985,6 +836,5 @@ onMounted(() => {
   .order-info-label {
     width: auto;
   }
-
 }
 </style>
