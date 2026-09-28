@@ -73,6 +73,7 @@ SELECT
 
     o.delivery_method,
     o.delivery_status,
+    o.order_status,
 
     s.store_name,
     s.status AS store_status,
@@ -276,7 +277,7 @@ foreach ($payment_methods as $method) {
     $payment_method =
         $method["payment_method"];
 
-    // 如果尚未建立 Payment且 Customer 的 preferred_payment與目前 active 的付款方式相同就預設 selected = true
+    // 如果尚未建立 Payment 且 Customer 的 preferred_payment 與目前 active 的付款方式相同就預設 selected = true
     $selected = (
         !$payment &&
         $preferred_payment !== null &&
@@ -284,7 +285,7 @@ foreach ($payment_methods as $method) {
         $preferred_payment === $payment_method
     );
 
-    // 如果已經有 Payment則以實際 Payment 的付款方式為準
+    // 如果已經有 Payment 則以實際 Payment 的付款方式為準
     if (
         $payment &&
         $payment["payment_method"] === $payment_method
@@ -308,7 +309,7 @@ foreach ($delivery_methods as $method) {
 
     $delivery_method = $method["delivery_method"];
 
-    // 配送方式以目前訂單的ORDERS.delivery_method 為準
+    // 配送方式以目前訂單的 ORDERS.delivery_method 為準
     $selected = (
         $order["delivery_method"] !== null &&
         $order["delivery_method"] !== "" &&
@@ -338,7 +339,8 @@ echo json_encode([
         "receiver_phone" => $order["receiver_phone"],
         "receiver_address" => $order["receiver_address"],
         "delivery_method" => $order["delivery_method"],
-        "delivery_status" => $order["delivery_status"]
+        "delivery_status" => $order["delivery_status"],
+        "order_status" => $order["order_status"]
     ],
     "payment" => $payment_data,
     "customer" => [

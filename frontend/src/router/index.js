@@ -15,6 +15,8 @@ import CustomerCart from '../views/customer/Cart.vue'
 import CustomerCategoryProduct from '../views/customer/CategoryProduct.vue'
 import CustomerProductSearch from '../views/customer/ProductSearch.vue'
 import CustomerOrderCreate from '../views/customer/OrderCreate.vue'
+import CustomerOrderList from '../views/customer/OrderList.vue'
+import CustomerOrderDetail from '../views/customer/OrderDetail.vue'
 
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
@@ -54,7 +56,6 @@ const router = createRouter({
       name: 'Page401',
       component: Page401,
     },
-
     // Customer
     {
       path: '/store-:storeId',
@@ -66,7 +67,6 @@ const router = createRouter({
         }
       },
     },
-
     {
       path: '/store-:storeId/cart',
       name: 'CustomerCart',
@@ -77,7 +77,6 @@ const router = createRouter({
         }
       },
     },
-
     {
       path: '/store-:storeId/category/:categoryId',
       name: 'CustomerCategoryProduct',
@@ -91,7 +90,6 @@ const router = createRouter({
         }
       },
     },
-
     {
       path: '/store-:storeId/product_search',
       name: 'CustomerProductSearch',
@@ -104,11 +102,34 @@ const router = createRouter({
         }
       },
     },
-
     {
       path: '/store-:storeId/create_order',
       name: 'CustomerOrderCreate',
       component: CustomerOrderCreate,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId)
+        ) {
+          return '/404'
+        }
+      },
+    },
+    {
+      path: '/store-:storeId/order_list',
+      name: 'CustomerOrderList',
+      component: CustomerOrderList,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId)
+        ) {
+          return '/404'
+        }
+      },
+    },
+    {
+      path: '/store-:storeId/order/:orderId',
+      name: 'CustomerOrderDetail',
+      component: CustomerOrderDetail,
       beforeEnter: (to) => {
         if (
           !/^[1-9]\d*$/.test(to.params.storeId)

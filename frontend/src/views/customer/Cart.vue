@@ -152,54 +152,21 @@
                         :md="4"
                       >
 
+                        <!-- 商品名稱 -->
                         <h5 class="mb-2">
                           {{ item.product_name }}
                         </h5>
 
                         <!-- 商品描述 -->
                         <p
-                          v-if="item.description"
-                          :ref="el => setDescriptionRef(item.cart_item_id, el)"
-                          :class="[
-                            'text-body-secondary',
-                            'cart-description',
+                          v-if="
+                            item.description &&
                             expandedDescriptions[item.cart_item_id]
-                              ? 'expanded'
-                              : ''
-                          ]"
+                          "
+                          class="text-body-secondary cart-description"
                         >
                           {{ item.description }}
                         </p>
-
-                        <!-- 展開 / 收合 -->
-                        <CButton
-                          v-if="
-                            item.description &&
-                            descriptionOverflow[item.cart_item_id]
-                          "
-                          color="secondary"
-                          variant="ghost"
-                          size="sm"
-                          class="description-button"
-                          @click="toggleDescription(item.cart_item_id)"
-                        >
-
-                          <CIcon
-                            :icon="
-                              expandedDescriptions[item.cart_item_id]
-                                ? 'cilChevronTop'
-                                : 'cilChevronBottom'
-                            "
-                            class="me-1"
-                          />
-
-                          {{
-                            expandedDescriptions[item.cart_item_id]
-                              ? '收合'
-                              : '展開'
-                          }}
-
-                        </CButton>
 
                         <!-- 規格 -->
                         <p
@@ -225,7 +192,7 @@
 
                         <!-- 單價 -->
                         <p class="mb-0">
-                          NT$ {{ Number(item.price).toLocaleString() }}
+                          $ {{ Number(item.price).toLocaleString() }}
                         </p>
 
                       </CCol>
@@ -237,32 +204,68 @@
                         class="mt-3 mt-sm-0"
                       >
 
-                        <CInputGroup class="quantity-input">
+                        <div class="d-flex align-items-center">
 
-                          <CButton
-                            color="light"
-                            :disabled="Number(item.quantity) <= 1"
-                            @click="decreaseQuantity(item)"
-                          >
-                            −
-                          </CButton>
+                          <!-- 產品介紹 -->
+                          <div class="description-area">
 
-                          <CFormInput
-                            v-model.number="item.quantity"
-                            type="number"
-                            min="1"
-                            class="text-center quantity-value"
-                            @change="updateQuantity(item)"
-                          />
+                            <CButton
+                              v-if="item.description"
+                              color="secondary"
+                              variant="ghost"
+                              size="sm"
+                              class="description-button"
+                              @click="toggleDescription(item.cart_item_id)"
+                            >
 
-                          <CButton
-                            color="light"
-                            @click="increaseQuantity(item)"
-                          >
-                            +
-                          </CButton>
+                              <CIcon
+                                :icon="
+                                  expandedDescriptions[item.cart_item_id]
+                                    ? 'cilChevronTop'
+                                    : 'cilChevronBottom'
+                                "
+                                class="me-1"
+                              />
 
-                        </CInputGroup>
+                              {{
+                                expandedDescriptions[item.cart_item_id]
+                                  ? '收合'
+                                  : '產品介紹'
+                              }}
+
+                            </CButton>
+
+                          </div>
+
+                          <!-- 數量 -->
+                          <CInputGroup class="quantity-input">
+
+                            <CButton
+                              color="light"
+                              :disabled="Number(item.quantity) <= 1"
+                              @click="decreaseQuantity(item)"
+                            >
+                              −
+                            </CButton>
+
+                            <CFormInput
+                              v-model.number="item.quantity"
+                              type="number"
+                              min="1"
+                              class="text-center quantity-value"
+                              @change="updateQuantity(item)"
+                            />
+
+                            <CButton
+                              color="light"
+                              @click="increaseQuantity(item)"
+                            >
+                              +
+                            </CButton>
+
+                          </CInputGroup>
+
+                        </div>
 
                       </CCol>
 
@@ -273,7 +276,7 @@
                       >
 
                         <div class="fw-bold mb-2">
-                          NT$ {{ Number(item.subtotal).toLocaleString() }}
+                          $ {{ Number(item.subtotal).toLocaleString() }}
                         </div>
 
                         <CButton
@@ -329,7 +332,7 @@
                       </span>
 
                       <span class="fw-bold fs-5">
-                        NT$ {{ selectedTotalAmount.toLocaleString() }}
+                        $ {{ selectedTotalAmount.toLocaleString() }}
                       </span>
 
                     </div>
@@ -437,8 +440,6 @@ const selectedItems = ref(
 )
 
 const expandedDescriptions = ref({})
-const descriptionRefs = ref({})
-const descriptionOverflow = ref({})
 
 const sortBy = ref('created_at')
 const sortOrder = ref('desc')
@@ -546,27 +547,6 @@ watch(
   { deep: true }
 )
 
-// 設定商品描述 DOM
-function setDescriptionRef(cartItemId, el) {
-  if (el) {
-    descriptionRefs.value[cartItemId] = el
-  }
-}
-
-// 檢查商品描述是否超過一行
-function checkDescriptionOverflow() {
-  Object.entries(descriptionRefs.value).forEach(
-    ([cartItemId, el]) => {
-      const lineHeight = parseFloat(
-        getComputedStyle(el).lineHeight
-      )
-
-      descriptionOverflow.value[cartItemId] =
-        el.scrollHeight > lineHeight + 1
-    }
-  )
-}
-
 // 展開 / 收合商品描述
 function toggleDescription(cartItemId) {
   expandedDescriptions.value[cartItemId] =
@@ -640,12 +620,8 @@ async function loadCart() {
           cartItemIds.includes(cartItemId)
       )
 
-    descriptionRefs.value = {}
-    descriptionOverflow.value = {}
-
-    setTimeout(() => {
-      checkDescriptionOverflow()
-    }, 0)
+    // 重新載入後預設全部收合
+    expandedDescriptions.value = {}
   } catch (err) {
     console.error(
       '取得購物車資料失敗:',
@@ -808,25 +784,25 @@ onMounted(() => {
 }
 
 .cart-description {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.cart-description.expanded {
-  display: block;
-  -webkit-line-clamp: unset;
+/* 產品介紹固定區塊 */
+.description-area {
+  width: 90px;
+  flex-shrink: 0;
 }
 
 .description-button {
   padding: 0;
-  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  transform: translateX(-20px);
 }
 
+/* 數量輸入框固定寬度 */
 .quantity-input {
   width: 140px;
+  flex-shrink: 0;
   margin: 0;
 }
 

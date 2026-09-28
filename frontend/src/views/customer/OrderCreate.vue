@@ -13,27 +13,32 @@
         <CContainer class="px-4" lg>
 
           <!-- 標題 -->
-          <div class="d-flex justify-content-between align-items-center mb-4">
+          <div class="mb-4">
 
-            <div>
+            <div
+              class="d-flex justify-content-between align-items-center"
+            >
 
-              <h2 class="mt-2 mb-2">
-                建立訂單
-              </h2>
+              <div>
 
-              <div class="mt-4">
-                商品數：{{ productQuantity }} 件
+                <h2 class="mb-2">
+                  建立訂單
+                </h2>
+
+                <div class="mt-4">
+                  商品數：{{ productQuantity }} 件
+                </div>
+
               </div>
 
-            </div>
+              <CButton
+                color="secondary"
+                @click="goBack"
+              >
+                返回上一頁
+              </CButton>
 
-            <CButton
-              color="secondary"
-              variant="outline"
-              @click="goCart"
-            >
-              返回購物車
-            </CButton>
+            </div>
 
           </div>
 
@@ -47,11 +52,10 @@
 
               <div
                 v-for="item in selectedCartItems"
-                :key="item.cart_item_id"
+                :key="item.cart_item_id || item.order_item_id || item.product_id"
                 class="d-flex border-bottom py-4"
               >
 
-                <!-- 商品圖片 -->
                 <div class="product-image ms-4 me-4">
 
                   <img
@@ -62,10 +66,9 @@
 
                 </div>
 
-                <!-- 商品資訊 -->
                 <div class="flex-grow-1">
 
-                  <h5 class="mb-3">
+                  <h5 class="fw-bold mb-3">
                     {{ item.product_name }}
                   </h5>
 
@@ -76,27 +79,57 @@
                     規格：{{ item.spec_name }}
                   </div>
 
-                  <div class="mb-2">
-                    單價：NT$ {{ Number(item.price).toLocaleString() }}
+                  <div class="mb-2 d-flex">
+
+                    <span>
+                      單價：
+                    </span>
+
+                    <span class="product-amount">
+                      $ {{ Number(item.price).toLocaleString() }}
+                    </span>
+
                   </div>
 
-                  <div class="mb-2">
-                    數量：{{ item.quantity }}
+                  <div class="mb-2 d-flex">
+
+                    <span>
+                      數量：
+                    </span>
+
+                    <span class="product-amount">
+                      {{ item.quantity }}
+                    </span>
+
                   </div>
 
-                  <div class="fw-bold">
-                    小計：
-                    NT$
-                    {{
-                      (
-                        Number(item.price) *
-                        Number(item.quantity)
-                      ).toLocaleString()
-                    }}
+                  <div class="fw-bold d-flex">
+
+                    <span>
+                      小計：
+                    </span>
+
+                    <span class="product-amount">
+                      $
+                      {{
+                        (
+                          Number(item.price) *
+                          Number(item.quantity)
+                        ).toLocaleString()
+                      }}
+                    </span>
+
                   </div>
 
                 </div>
 
+              </div>
+
+              <div
+                v-if="selectedCartItems.length === 0"
+                class="text-body-secondary py-4"
+              >
+                沒有商品
               </div>
 
             </CCardBody>
@@ -117,7 +150,7 @@
                 </span>
 
                 <span>
-                  NT$ {{ productAmount.toLocaleString() }}
+                  $ {{ productAmount.toLocaleString() }}
                 </span>
 
               </div>
@@ -129,7 +162,7 @@
                 </span>
 
                 <span>
-                  NT$ {{ shippingFee.toLocaleString() }}
+                  $ {{ shippingFee.toLocaleString() }}
                 </span>
 
               </div>
@@ -143,7 +176,7 @@
                 </span>
 
                 <span class="fw-bold">
-                  NT$ {{ totalAmount.toLocaleString() }}
+                  $ {{ totalAmount.toLocaleString() }}
                 </span>
 
               </div>
@@ -235,6 +268,7 @@
                     <CFormSelect
                       v-model="deliveryMethod"
                     >
+
                       <option value="">
                         請選擇配送方式
                       </option>
@@ -268,9 +302,13 @@
             <CButton
               color="primary"
               :disabled="loading"
-              @click="createOrder"
+              @click="submitOrder"
             >
-              {{ loading ? '建立中...' : '建立訂單' }}
+              {{
+                loading
+                  ? '處理中...'
+                  : '前往付款'
+              }}
             </CButton>
 
           </div>
@@ -290,8 +328,16 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import {
+  computed,
+  onMounted,
+  ref
+} from 'vue'
+
+import {
+  useRoute,
+  useRouter
+} from 'vue-router'
 
 import {
   CButton,
@@ -313,22 +359,31 @@ import Createdby from '../../components/customer_homepage/Createdby.vue'
 import {
   getCustomerHome,
   getCustomerCart,
-  createCustomerOrder
+  getCustomerOrder,
+  createCustomerOrder,
+  updateCustomerOrder
 } from '../../api/customer.js'
 
 const route = useRoute()
 const router = useRouter()
 
 const storeId = route.params.storeId
+const orderId = route.query.order_id
+const isEditMode = !!orderId
 
 const home = ref(null)
+
 const cart = ref({
   items: []
 })
 
+const orderItems = ref([])
+
 const selectedItems = ref(
   JSON.parse(
-    localStorage.getItem(`cart-selected-${storeId}`) || '[]'
+    localStorage.getItem(
+      `cart-selected-${storeId}`
+    ) || '[]'
   )
 )
 
@@ -339,84 +394,251 @@ const deliveryMethod = ref('')
 
 const loading = ref(false)
 
-const shippingFee = 60
+const shippingFee = ref(60)
 
 const selectedCartItems = computed(() => {
+
+  if (isEditMode) {
+    return orderItems.value
+  }
+
   return cart.value.items.filter(
     item =>
       selectedItems.value.includes(
         item.cart_item_id
       )
   )
+
 })
 
-const productQuantity = computed(() => selectedCartItems.value.length)
+const productQuantity = computed(() => {
+
+  return selectedCartItems.value.length
+
+})
 
 const productAmount = computed(() => {
-  return selectedCartItems.value.reduce((total, item) => total + Number(item.price) * Number(item.quantity), 0)
+
+  return selectedCartItems.value.reduce(
+    (total, item) =>
+      total +
+      Number(item.price) *
+      Number(item.quantity),
+    0
+  )
+
 })
 
 const totalAmount = computed(() => {
-  return productAmount.value + shippingFee
+
+  return productAmount.value +
+    Number(shippingFee.value)
+
 })
 
-function goCart() {
-  router.push(`/store-${storeId}/cart`)
+function goBack() {
+
+  router.back()
+
 }
 
 async function loadHome() {
+
   try {
-    home.value = await getCustomerHome(storeId)
+
+    home.value =
+      await getCustomerHome(storeId)
+
   } catch (error) {
-    console.error('取得首頁資料失敗:', error)
+
+    console.error(
+      '取得首頁資料失敗:',
+      error
+    )
+
   }
+
 }
 
 async function loadCart() {
+
+  if (isEditMode) {
+    return
+  }
+
   try {
-    cart.value = await getCustomerCart(
-      storeId,
-      'created_at',
-      'desc'
-    )
 
-    const cartItemIds = cart.value.items.map(
-      item => item.cart_item_id
-    )
+    cart.value =
+      await getCustomerCart(
+        storeId,
+        'created_at',
+        'desc'
+      )
 
-    selectedItems.value = selectedItems.value.filter(
-      id => cartItemIds.includes(id)
-    )
+    const cartItemIds =
+      cart.value.items.map(
+        item =>
+          item.cart_item_id
+      )
+
+    selectedItems.value =
+      selectedItems.value.filter(
+        id =>
+          cartItemIds.includes(id)
+      )
 
   } catch (error) {
-    console.error('取得購物車失敗:', error)
+
+    console.error(
+      '取得購物車失敗:',
+      error
+    )
+
   }
+
 }
 
-async function createOrder() {
+async function loadOrder() {
 
-  if (!receiverName.value.trim()) {
-    alert('請輸入收件人姓名')
+  if (!isEditMode) {
     return
   }
 
-  if (!receiverPhone.value.trim()) {
-    alert('請輸入收件人電話')
-    return
+  try {
+
+    const data =
+      await getCustomerOrder(
+        storeId,
+        orderId
+      )
+
+    const order = data.order
+
+    if (
+      order.order_status !==
+      'pending'
+    ) {
+
+      alert(
+        '此訂單目前無法重新建立'
+      )
+
+      router.push(
+        `/store-${storeId}/order_list`
+      )
+
+      return
+
+    }
+
+    receiverName.value =
+      order.receiver_name || ''
+
+    receiverPhone.value =
+      order.receiver_phone || ''
+
+    receiverAddress.value =
+      order.receiver_address || ''
+
+    deliveryMethod.value =
+      order.delivery_method || ''
+
+    shippingFee.value =
+      Number(order.shipping_fee || 0)
+
+    orderItems.value =
+      order.items || []
+
+  } catch (error) {
+
+    console.error(
+      '取得訂單資料失敗:',
+      error
+    )
+
+    alert(
+      error.message ||
+      '取得訂單資料失敗'
+    )
+
+    router.push(
+      `/store-${storeId}/order_list`
+    )
+
   }
 
-  if (!receiverAddress.value.trim()) {
-    alert('請輸入收件地址')
-    return
+}
+
+function validateOrder() {
+
+  if (
+    !receiverName.value.trim()
+  ) {
+
+    alert(
+      '請輸入收件人姓名'
+    )
+
+    return false
+
   }
 
-  if (!deliveryMethod.value) {
-    alert('請選擇配送方式')
-    return
+  if (
+    !receiverPhone.value.trim()
+  ) {
+
+    alert(
+      '請輸入收件人電話'
+    )
+
+    return false
+
   }
 
-  if (selectedItems.value.length === 0) {
-    alert('沒有選擇任何商品')
+  if (
+    !receiverAddress.value.trim()
+  ) {
+
+    alert(
+      '請輸入收件地址'
+    )
+
+    return false
+
+  }
+
+  if (
+    !deliveryMethod.value
+  ) {
+
+    alert(
+      '請選擇配送方式'
+    )
+
+    return false
+
+  }
+
+  if (
+    !isEditMode &&
+    selectedItems.value.length === 0
+  ) {
+
+    alert(
+      '沒有選擇任何商品'
+    )
+
+    return false
+
+  }
+
+  return true
+
+}
+
+async function submitOrder() {
+
+  if (!validateOrder()) {
     return
   }
 
@@ -424,30 +646,85 @@ async function createOrder() {
 
   try {
 
-    const data = await createCustomerOrder(
-      selectedItems.value,
-      receiverName.value,
-      receiverPhone.value,
-      receiverAddress.value,
-      deliveryMethod.value
+    if (isEditMode) {
+
+      const data =
+        await updateCustomerOrder(
+          storeId,
+          orderId,
+          receiverName.value,
+          receiverPhone.value,
+          receiverAddress.value,
+          deliveryMethod.value
+        )
+
+      console.log(
+        '建立訂單成功:',
+        data
+      )
+
+      alert(
+        '訂單建立成功'
+      )
+
+      router.push(
+        `/store-${storeId}/order/${orderId}/payment`
+      )
+
+      return
+
+    }
+
+    const data =
+      await createCustomerOrder(
+        selectedItems.value,
+        receiverName.value,
+        receiverPhone.value,
+        receiverAddress.value,
+        deliveryMethod.value
+      )
+
+    console.log(
+      '建立訂單成功:',
+      data
     )
 
     localStorage.removeItem(
       `cart-selected-${storeId}`
     )
 
-    alert('訂單建立成功')
+    alert(
+      '訂單建立成功'
+    )
 
-    console.log('建立訂單成功:', data)
+    router.push(
+      `/store-${storeId}/order/${data.order_id}/payment`
+    )
 
   } catch (error) {
 
-    console.error('建立訂單失敗:', error)
+    console.error(
+      '建立訂單失敗:',
+      error
+    )
 
-    if (error.errorType === 'insufficient_stock') {
-      alert(`${error.message}：目前剩餘 ${error.stock} 件，請至購物車調整數量`)
+    if (
+      !isEditMode &&
+      error.errorType ===
+      'insufficient_stock'
+    ) {
+
+      alert(
+        `${error.message}：目前剩餘 ${error.stock} 件，請至購物車調整數量`
+      )
+
     } else {
-      alert(error.message || '建立訂單失敗')
+
+      alert(
+        error.message ||
+        '建立訂單失敗'
+      )
+
     }
 
   } finally {
@@ -455,20 +732,26 @@ async function createOrder() {
     loading.value = false
 
   }
+
 }
 
 onMounted(async () => {
-  await Promise.all([
-    loadHome(),
-    loadCart()
-  ])
+
+  await loadHome()
+
+  await loadCart()
+
+  if (isEditMode) {
+    await loadOrder()
+  }
+
 })
 </script>
 
 <style scoped>
 .product-image {
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   flex-shrink: 0;
 }
 
@@ -477,6 +760,12 @@ onMounted(async () => {
   height: 100%;
   object-fit: cover;
   border-radius: 6px;
+}
+
+.product-amount {
+  width: 120px;
+  text-align: right;
+  margin-left: 8px;
 }
 
 :deep(.form-control),

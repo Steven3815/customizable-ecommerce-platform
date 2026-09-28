@@ -158,6 +158,7 @@ SELECT
     o.store_id,
     o.total_amount,
     o.delivery_status,
+    o.order_status,
 
     p.payment_id,
     p.payment_method,
@@ -190,6 +191,16 @@ if (!$order) {
     http_response_code(404);
     echo json_encode([
         "error" => "Order not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 訂單只能在 pending 時付款
+if ($order["order_status"] !== "pending") {
+    http_response_code(409);
+    echo json_encode([
+        "error" => "Order cannot be paid in its current status"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -362,6 +373,7 @@ try {
 
     $pdo->beginTransaction();
 
+    // 更新 Payment
     $sql = "
     UPDATE PAYMENT
 
@@ -395,6 +407,40 @@ try {
         http_response_code(500);
         echo json_encode([
             "error" => "Payment status could not be updated"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+
+    // 更新訂單狀態
+    $sql = "
+    UPDATE ORDERS
+
+    SET
+        order_status = 'confirmed',
+        updated_at = NOW()
+
+    WHERE order_id = ?
+    AND customer_id = ?
+    AND store_id = ?
+    AND order_status = 'pending'
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $order_id,
+        $customer_id,
+        $store_id
+    ]);
+
+    if ($stmt->rowCount() !== 1) {
+
+        $pdo->rollBack();
+
+        http_response_code(500);
+        echo json_encode([
+            "error" => "Order status could not be updated"
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
@@ -456,7 +502,8 @@ echo json_encode([
     "order" => [
         "customer_id" => (int)$order["customer_id"],
         "store_id" => $store_id,
-        "total_amount" => $order_total
+        "total_amount" => $order_total,
+        "order_status" => "confirmed"
     ]
 ], JSON_UNESCAPED_UNICODE);
 

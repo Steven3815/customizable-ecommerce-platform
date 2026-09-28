@@ -129,6 +129,7 @@ CREATE TABLE ORDERS (
     product_amount DECIMAL(10,2),
     shipping_fee DECIMAL(10,2),
     total_amount DECIMAL(10,2),
+    order_status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending', --是否完成建立訂單程序 判斷是否可以讓顧客修改訂單
     delivery_method VARCHAR(50),
     delivery_status ENUM('pending', 'shipping', 'completed') DEFAULT 'pending',
     estimated_ship_date DATE,

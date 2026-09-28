@@ -125,7 +125,7 @@
 
             <!-- 單價 -->
             <div class="small mb-1">
-              NT$ {{ Number(item.price).toLocaleString() }}
+              $ {{ Number(item.price).toLocaleString() }}
             </div>
 
             <!-- 數量 -->
@@ -137,7 +137,7 @@
 
           <!-- 小計 -->
           <div class="fw-semibold text-nowrap">
-            NT$
+            $
             {{
               (
                 Number(item.price) * Number(item.quantity)
@@ -157,7 +157,7 @@
           </span>
 
           <span>
-            NT$ {{ cartSubtotal.toLocaleString() }}
+            $ {{ cartSubtotal.toLocaleString() }}
           </span>
 
         </div>
@@ -170,7 +170,7 @@
           </span>
 
           <span>
-            NT$ {{ cartSubtotal.toLocaleString() }}
+            $ {{ cartSubtotal.toLocaleString() }}
           </span>
 
         </div>

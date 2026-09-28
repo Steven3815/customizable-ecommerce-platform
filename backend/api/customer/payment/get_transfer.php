@@ -63,6 +63,7 @@ SELECT
     o.total_amount,
     o.delivery_method,
     o.delivery_status,
+    o.order_status,
 
     s.store_name,
     s.status AS store_status,
@@ -362,7 +363,8 @@ echo json_encode([
         "shipping_fee" => (float)$order["shipping_fee"],
         "total_amount" => (float)$order["total_amount"],
         "delivery_method" => $order["delivery_method"],
-        "delivery_status" => $order["delivery_status"]
+        "delivery_status" => $order["delivery_status"],
+        "order_status" => $order["order_status"]
     ],
     "store" => [
         "store_id" => $store_id,

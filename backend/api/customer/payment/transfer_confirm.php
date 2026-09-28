@@ -76,6 +76,7 @@ SELECT
     o.total_amount, 
     o.delivery_method, 
     o.delivery_status, 
+    o.order_status,
  
     p.payment_id, 
     p.payment_method, 
@@ -227,6 +228,45 @@ try {
  
         exit; 
     } 
+
+    // 更新訂單狀態
+    $sql = "
+    UPDATE ORDERS
+
+    SET
+        order_status = 'confirmed',
+        updated_at = NOW()
+
+    WHERE order_id = ?
+    AND customer_id = ?
+    AND store_id = ?
+    AND order_status = 'pending'
+    ";
+
+    $stmt = $pdo->prepare($sql);
+
+    $stmt->execute([
+        $order_id,
+        $customer_id,
+        $store_id
+    ]);
+
+    // 確認只有一筆訂單被更新
+    if ($stmt->rowCount() !== 1) {
+
+        $pdo->rollBack();
+
+        if ($uploaded_image_url !== null) {
+            deleteImage($uploaded_image_url);
+        }
+
+        http_response_code(500);
+        echo json_encode([
+            "error" => "Order status could not be updated"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
  
     $pdo->commit(); 
  
@@ -316,7 +356,8 @@ echo json_encode([
         "shipping_fee" => (float)$payment["shipping_fee"], 
         "total_amount" => (float)$payment["total_amount"], 
         "delivery_method" => $payment["delivery_method"], 
-        "delivery_status" => $payment["delivery_status"] 
+        "delivery_status" => $payment["delivery_status"],
+        "order_status" => "confirmed"
     ], 
     "store" => [ 
         "store_id" => $store_id, 

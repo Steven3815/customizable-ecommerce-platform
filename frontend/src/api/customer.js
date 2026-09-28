@@ -352,3 +352,143 @@ export async function createCustomerOrder(
     throw error
   }
 }
+export async function getCustomerOrders(
+  storeId,
+  orderStatus = 'all',
+  paymentStatus = 'all',
+  paymentConfirmStatus = 'all',
+  deliveryStatus = 'all',
+  refundStatus = 'all'
+) {
+  try {
+    const params = new URLSearchParams({
+      store_id: storeId,
+      order_status: orderStatus,
+      payment_status: paymentStatus,
+      payment_confirm_status: paymentConfirmStatus,
+      delivery_status: deliveryStatus,
+      refund_status: refundStatus
+    })
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/order/get_orders.php?${params}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得訂單失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得訂單失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function getCustomerOrder(storeId, orderId) {
+  try {
+    const params = new URLSearchParams({
+      store_id: storeId,
+      order_id: orderId
+    })
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/order/get_order.php?${params}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得訂單失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得訂單失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function updateCustomerOrder(
+  storeId,
+  orderId,
+  receiverName,
+  receiverPhone,
+  receiverAddress,
+  deliveryMethod
+) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/order/update_order.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          store_id: storeId,
+          order_id: orderId,
+          receiver_name: receiverName,
+          receiver_phone: receiverPhone,
+          receiver_address: receiverAddress,
+          delivery_method: deliveryMethod
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '修改訂單失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '修改訂單失敗:',
+      error
+    )
+
+    throw error
+  }
+}

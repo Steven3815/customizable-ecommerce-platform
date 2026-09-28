@@ -435,6 +435,7 @@ try {
         total_amount,
 
         delivery_method,
+        order_status,
         delivery_status,
 
         estimated_ship_date,
@@ -456,6 +457,7 @@ try {
         ?,
 
         ?,
+        'pending',
         'pending',
 
         DATE_ADD(CURDATE(), INTERVAL 3 DAY),
@@ -675,6 +677,7 @@ try {
         "shipping_fee" => $shipping_fee,
         "total_amount" => $total_amount,
         "delivery_method" => $delivery_method,
+        "order_status" => "pending",
         "delivery_status" => "pending"
     ], JSON_UNESCAPED_UNICODE);
 
