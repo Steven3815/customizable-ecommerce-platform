@@ -538,6 +538,43 @@ export async function deleteCustomerOrder(
 }
 
 // Payment
+
+export async function getCustomerPaymentMethods(
+  storeId
+) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/payment/get_payment_methods.php?store_id=${storeId}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得付款與配送方式失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得付款與配送方式失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
 export async function getCustomerPayment(
   storeId,
   orderId
@@ -620,3 +657,4 @@ export async function createCustomerPayment(
     throw error
   }
 }
+

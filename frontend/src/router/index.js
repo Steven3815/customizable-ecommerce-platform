@@ -14,10 +14,9 @@ import CustomerHome from '../views/customer/Home.vue'
 import CustomerCart from '../views/customer/Cart.vue'
 import CustomerCategoryProduct from '../views/customer/CategoryProduct.vue'
 import CustomerProductSearch from '../views/customer/ProductSearch.vue'
-import CustomerOrderCreate from '../views/customer/OrderCreate.vue'
-import CustomerOrderList from '../views/customer/OrderList.vue'
 import CustomerOrderDetail from '../views/customer/OrderDetail.vue'
-import CustomerPayment from '../views/customer/Payment.vue'
+import CustomerOrderList from '../views/customer/OrderList.vue'
+import CustomerCheckout from '../views/customer/Checkout.vue'
 
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
@@ -104,9 +103,9 @@ const router = createRouter({
       },
     },
     {
-      path: '/store-:storeId/create_order',
-      name: 'CustomerOrderCreate',
-      component: CustomerOrderCreate,
+      path: '/store-:storeId/checkout',
+      name: 'CustomerCheckout',
+      component: CustomerCheckout,
       beforeEnter: (to) => {
         if (
           !/^[1-9]\d*$/.test(to.params.storeId)
@@ -134,24 +133,6 @@ const router = createRouter({
       beforeEnter: (to) => {
         if (
           !/^[1-9]\d*$/.test(to.params.storeId)
-        ) {
-          return '/404'
-        }
-      },
-    },
-    {
-      path: '/store-:storeId/order/:orderId/payment',
-      name: 'CustomerPayment',
-      component: CustomerPayment,
-      beforeEnter: (to) => {
-        if (
-          !/^[1-9]\d*$/.test(to.params.storeId)
-        ) {
-          return '/404'
-        }
-
-        if (
-          !/^[1-9]\d*$/.test(to.params.orderId)
         ) {
           return '/404'
         }
@@ -240,7 +221,10 @@ const router = createRouter({
     {
       path: '/store/admin/order/:orderId',
       name: 'StoreOrderDetail',
-      component: StoreOrderDetail
+      component: StoreOrderDetail,
+      meta: {
+        requiresStoreAuth: true
+      }
     },
     {
       path: '/store/admin/product_list',

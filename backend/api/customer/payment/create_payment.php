@@ -488,6 +488,30 @@ try {
         $message = "Payment updated successfully";
     }
 
+    // 貨到付款、店內付款 → 訂單確認完成
+    if (
+        $payment_method === "cash_on_delivery" ||
+        $payment_method === "in_store"
+    ) {
+
+        $sql = "
+        UPDATE ORDERS
+        SET
+            order_status = 'confirmed',
+            updated_at = NOW()
+
+        WHERE order_id = ?
+        AND store_id = ?
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            $order_id,
+            $store_id
+        ]);
+    }
+
     $pdo->commit();
 
 } catch (PDOException $e) {

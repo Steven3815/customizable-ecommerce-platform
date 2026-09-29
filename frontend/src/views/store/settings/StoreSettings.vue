@@ -100,6 +100,28 @@ async function loadSettings() {
 }
 
 function validateSettings() {
+  // 至少啟用一種付款方式
+  const hasPaymentMethod =
+    paymentMethods.value.some(
+      payment => payment.enabled
+    )
+
+  if (!hasPaymentMethod) {
+    showError('請至少啟用一種付款方式')
+    return false
+  }
+
+  // 至少啟用一種配送方式
+  const hasDeliveryMethod =
+    deliveryMethods.value.some(
+      delivery => delivery.enabled
+    )
+
+  if (!hasDeliveryMethod) {
+    showError('請至少啟用一種配送方式')
+    return false
+  }
+
   if (storeSettings.value.refund_enable) {
     if (
       storeSettings.value.refund_days_limit === '' ||
@@ -162,7 +184,10 @@ function validateSettings() {
     }
 
     if (payment.payment_method === 'atm') {
-      if (!payment.account.bank_name || !payment.account.bank_number) {
+      if (
+        !payment.account.bank_name ||
+        !payment.account.bank_number
+      ) {
         showError('請填寫 ATM 轉帳銀行資料')
         return false
       }

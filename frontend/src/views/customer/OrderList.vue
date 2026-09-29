@@ -158,21 +158,23 @@
                     </CButton>
                   </div>
 
-                  <div class="mb-2">
-                    <strong>訂單日期：</strong>
-                    {{ order.order_date }}
-                  </div>
+                  <div class="order-info mb-3">
+                    <div class="mb-3">
+                      <span>訂單日期：</span>
+                      {{ order.order_date }}
+                    </div>
 
-                  <div class="mb-3">
-                    <strong>訂單狀態：</strong>
+                    <div>
+                      <span>訂單狀態：</span>
 
-                    <span
-                      :class="{
-                        'text-danger fw-bold': order.order_status === 'pending'
-                      }"
-                    >
-                      {{ getOrderStatusText(order.order_status) }}
-                    </span>
+                      <span
+                        :class="{
+                          'text-danger fw-bold': order.order_status === 'pending'
+                        }"
+                      >
+                        {{ getOrderStatusText(order.order_status) }}
+                      </span>
+                    </div>
                   </div>
 
                   <hr>
@@ -201,7 +203,7 @@
                     <div
                       v-for="item in order.items"
                       :key="item.order_item_id"
-                      class="mb-3"
+                      class="product-info mb-3"
                     >
                       <div class="row align-items-center">
                         <!-- 商品 -->
@@ -240,29 +242,44 @@
 
                   <!-- 已完成訂單才顯示付款、配送、退款狀態 -->
                   <template v-if="order.order_status === 'confirmed'">
-                    <div class="mb-2">
-                      <strong>付款狀態：</strong>
-                      {{ getPaymentText(order.payment?.payment_status) }}
-                    </div>
+                    <div class="summary-info">
+                      <!-- 付款狀態 -->
+                      <div class="mb-3">
+                        <span>付款狀態：</span>
+                        {{ getPaymentText(order.payment?.payment_status) }}
+                      </div>
 
-                    <div class="mb-2">
-                      <strong>付款確認：</strong>
-                      {{ getPaymentConfirmText(order.payment?.payment_confirm_status) }}
-                    </div>
+                      <!-- 只有已付款才顯示付款確認 -->
+                      <div
+                        v-if="order.payment?.payment_status === 'paid'"
+                        class="mb-3"
+                      >
+                        <span>付款確認：</span>
+                        {{ getPaymentConfirmText(order.payment?.payment_confirm_status) }}
+                      </div>
 
-                    <div class="mb-2">
-                      <strong>配送狀態：</strong>
-                      {{ getDeliveryText(order.delivery_status) }}
-                    </div>
+                      <!-- 配送狀態 -->
+                      <div class="mb-3">
+                        <span>配送狀態：</span>
+                        {{ getDeliveryText(order.delivery_status) }}
+                      </div>
 
-                    <div v-if="refundEnable" class="mb-2">
-                      <strong>退款狀態：</strong>
-                      {{ getRefundText(order.refund?.refund_status) }}
+                      <!-- 只有已付款且商店開啟退款功能才顯示退款 -->
+                      <div
+                        v-if="
+                          refundEnable &&
+                          order.payment?.payment_status === 'paid'
+                        "
+                        class="mb-3"
+                      >
+                        <span>退款狀態：</span>
+                        {{ getRefundText(order.refund?.refund_status) }}
+                      </div>
                     </div>
                   </template>
 
                   <!-- 商品金額 -->
-                  <div class="row mb-2">
+                  <div class="row amount-row">
                     <div class="col-md-5">
                       <strong>商品金額：</strong>
                     </div>
@@ -273,7 +290,7 @@
                   </div>
 
                   <!-- 運費 -->
-                  <div class="row mb-3">
+                  <div class="row amount-row">
                     <div class="col-md-5">
                       <strong>運費：</strong>
                     </div>
@@ -286,7 +303,7 @@
                   <hr>
 
                   <!-- 總金額 -->
-                  <div class="row mb-0 fw-bold">
+                  <div class="row total-row">
                     <div class="col-md-5">
                       <strong>總金額：</strong>
                     </div>
@@ -707,7 +724,7 @@ function goOrderDetail(orderId) {
 
 // 前往完成訂單
 function goOrderEdit(orderId) {
-  router.push(`/store-${storeId}/create_order?order_id=${orderId}`)
+  router.push(`/store-${storeId}/checkout?order_id=${orderId}`)
 }
 
 // 開啟取消訂單 Modal
@@ -763,3 +780,34 @@ onMounted(() => {
   loadOrders()
 })
 </script>
+
+<style scoped>
+.order-info {
+  line-height: 1.6;
+}
+
+.summary-info {
+  line-height: 1.6;
+}
+
+.product-info {
+  line-height: 1.6;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.amount-row {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.total-row {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+:deep(.form-control),
+:deep(.form-select) {
+  font-size: 14px;
+}
+</style>

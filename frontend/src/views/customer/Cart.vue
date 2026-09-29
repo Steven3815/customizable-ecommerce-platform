@@ -632,7 +632,7 @@ function continueShopping() {
 
 // 前往建立訂單
 function goCheckout() {
-  router.push(`/store-${storeId}/create_order`)
+  router.push(`/store-${storeId}/checkout`)
 }
 
 onMounted(() => {

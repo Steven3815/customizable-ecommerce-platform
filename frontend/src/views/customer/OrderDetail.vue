@@ -8,7 +8,7 @@
       <div class="body flex-grow-1">
         <CContainer class="px-4" lg>
           <!-- 標題 -->
-          <div class="mb-4">
+          <div class="page-header mb-4">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <h2 class="mb-2">
@@ -22,6 +22,7 @@
 
               <CButton
                 color="secondary"
+                variant="outline"
                 @click="goBack"
               >
                 返回訂單
@@ -47,7 +48,7 @@
 
           <template v-else-if="order">
             <!-- 訂單資訊 -->
-            <CCard class="mb-4">
+            <CCard class="order-card mb-4">
               <CCardBody>
                 <div class="section-title">
                   <h5 class="mb-0">
@@ -61,7 +62,7 @@
                       訂單編號
                     </span>
 
-                    <span class="order-info-value">
+                    <span class="order-info-value order-number">
                       {{ order.order_number }}
                     </span>
                   </div>
@@ -118,13 +119,13 @@
                     </span>
                   </div>
 
-                  <div class="order-info-item">
+                  <div class="order-info-item total-amount-row">
                     <span class="order-info-label">
                       訂單總金額
                     </span>
 
                     <span class="order-info-value fw-semibold">
-                      <span class="amount-value">
+                      <span class="amount-value total-amount">
                         $ {{ Number(order.total_amount).toLocaleString() }}
                       </span>
                     </span>
@@ -134,10 +135,11 @@
                 <!-- Pending 訂單操作 -->
                 <div
                   v-if="order.order_status === 'pending'"
-                  class="d-flex gap-2 mt-3 justify-content-end"
+                  class="d-flex gap-2 mt-4 justify-content-end"
                 >
                   <CButton
                     color="danger"
+                    variant="outline"
                     @click="openCancelModal"
                   >
                     取消訂單
@@ -156,7 +158,7 @@
             <!-- 收件資訊 -->
             <CCard
               v-if="order.order_status !== 'pending'"
-              class="mb-4"
+              class="order-card mb-4"
             >
               <CCardBody>
                 <div class="section-title">
@@ -200,7 +202,7 @@
             </CCard>
 
             <!-- 商品資訊 -->
-            <CCard class="mb-4">
+            <CCard class="order-card mb-4">
               <CCardBody>
                 <div class="section-title">
                   <h5 class="mb-0">
@@ -211,57 +213,46 @@
                 <div
                   v-for="item in order.items"
                   :key="item.order_item_id"
-                  class="d-flex border-bottom py-4"
+                  class="product-item border-bottom mb-3 pb-3"
                 >
-                  <div class="product-image ms-4 me-4">
-                    <img
-                      :src="item.image_url"
-                      :alt="item.product_name"
-                      class="img-fluid"
-                    >
-                  </div>
+                  <div class="row align-items-center">
 
-                  <div class="flex-grow-1">
-                    <h5 class="fw-bold mb-3">
-                      {{ item.product_name }}
-                    </h5>
-
-                    <div
-                      v-if="item.spec_name"
-                      class="text-body-secondary mb-2"
-                    >
-                      規格：{{ item.spec_name }}
+                    <!-- 商品圖片 -->
+                    <div class="col-md-2 col-sm-3 mb-3 mb-sm-0">
+                      <div class="product-image">
+                        <img
+                          :src="item.image_url"
+                          :alt="item.product_name"
+                        >
+                      </div>
                     </div>
 
-                    <div class="mb-2 d-flex">
-                      <span>
-                        單價：
-                      </span>
+                    <!-- 商品資訊 -->
+                    <div class="col-md-4 col-sm-5 mb-3 mb-sm-0">
+                      <div class="fw-bold mb-2">
+                        {{ item.product_name }}
+                      </div>
 
-                      <span class="product-amount">
-                        $ {{ Number(item.price).toLocaleString() }}
-                      </span>
+                      <div
+                        v-if="item.spec_name"
+                        class="text-body-secondary"
+                      >
+                        規格：{{ item.spec_name }}
+                      </div>
                     </div>
 
-                    <div class="mb-2 d-flex">
-                      <span>
-                        數量：
-                      </span>
-
-                      <span class="product-amount">
-                        {{ item.quantity }}
+                    <!-- 單價 × 數量 -->
+                    <div class="col-md-3 col-sm-4 text-sm-end mb-3 mb-sm-0">
+                      <span class="text-body-secondary">
+                        $ {{ Number(item.price).toLocaleString() }} × {{ item.quantity }}
                       </span>
                     </div>
 
-                    <div class="fw-bold d-flex">
-                      <span>
-                        小計：
-                      </span>
-
-                      <span class="product-amount">
-                        $ {{ Number(item.subtotal).toLocaleString() }}
-                      </span>
+                    <!-- 小計 -->
+                    <div class="col-md-3 text-md-end fw-bold">
+                      $ {{ Number(item.subtotal).toLocaleString() }}
                     </div>
+
                   </div>
                 </div>
 
@@ -277,7 +268,7 @@
             <!-- 配送資訊 -->
             <CCard
               v-if="order.order_status !== 'pending'"
-              class="mb-4"
+              class="order-card mb-4"
             >
               <CCardBody>
                 <div class="section-title">
@@ -307,6 +298,7 @@
                     </span>
                   </div>
 
+                  <!-- 配送中才顯示預計出貨日期 -->
                   <div
                     v-if="order.delivery_status === 'shipping'"
                     class="order-info-item"
@@ -320,6 +312,7 @@
                     </span>
                   </div>
 
+                  <!-- 已送達才顯示預計送達日期 -->
                   <div
                     v-if="order.delivery_status === 'completed'"
                     class="order-info-item"
@@ -342,7 +335,7 @@
                 order.order_status !== 'pending'
                 && order.payment
               "
-              class="mb-4"
+              class="order-card mb-4"
             >
               <CCardBody>
                 <div class="section-title">
@@ -352,6 +345,7 @@
                 </div>
 
                 <div class="order-info-list">
+                  <!-- 付款方式 -->
                   <div class="order-info-item">
                     <span class="order-info-label">
                       付款方式
@@ -362,6 +356,7 @@
                     </span>
                   </div>
 
+                  <!-- 付款狀態 -->
                   <div class="order-info-item">
                     <span class="order-info-label">
                       付款狀態
@@ -372,11 +367,13 @@
                     </span>
                   </div>
 
+                  <!-- 已付款才顯示付款詳細資訊 -->
                   <template
                     v-if="
-                      order.payment.payment_status !== 'pending'
+                      order.payment.payment_status === 'paid'
                     "
                   >
+                    <!-- 付款金額 -->
                     <div class="order-info-item">
                       <span class="order-info-label">
                         付款金額
@@ -389,6 +386,18 @@
                       </span>
                     </div>
 
+                    <!-- 付款確認狀態 -->
+                    <div class="order-info-item">
+                      <span class="order-info-label">
+                        付款確認
+                      </span>
+
+                      <span class="order-info-value">
+                        {{ getPaymentConfirmText(order.payment.payment_confirm_status) }}
+                      </span>
+                    </div>
+
+                    <!-- 付款備註 -->
                     <div
                       v-if="order.payment.payment_note"
                       class="order-info-item"
@@ -402,6 +411,7 @@
                       </span>
                     </div>
 
+                    <!-- 付款時間 -->
                     <div
                       v-if="order.payment.paid_at"
                       class="order-info-item"
@@ -415,6 +425,7 @@
                       </span>
                     </div>
 
+                    <!-- 已確認才顯示確認時間 -->
                     <div
                       v-if="
                         order.payment.payment_confirm_status === 'confirmed'
@@ -437,8 +448,11 @@
 
             <!-- 退款資訊 -->
             <CCard
-              v-if="order.order_status !== 'pending'"
-              class="mb-4"
+              v-if="
+                order.order_status !== 'pending'
+                && order.payment?.payment_status !== 'pending'
+              "
+              class="order-card mb-4"
             >
               <CCardBody>
                 <div class="section-title">
@@ -447,6 +461,7 @@
                   </h5>
                 </div>
 
+                <!-- 店家關閉退款功能 -->
                 <div
                   v-if="!refundEnable"
                   class="text-body-secondary"
@@ -454,6 +469,7 @@
                   目前無開啟退款功能
                 </div>
 
+                <!-- 有退款資料 -->
                 <template v-else-if="order.refund">
                   <div class="order-info-list">
                     <div class="order-info-item">
@@ -507,6 +523,7 @@
                   </div>
                 </template>
 
+                <!-- 尚無退款資料 -->
                 <div
                   v-else
                   class="text-body-secondary"
@@ -557,11 +574,7 @@
           :disabled="cancelling"
           @click="cancelOrder"
         >
-          {{
-            cancelling
-              ? '取消中...'
-              : '取消訂單'
-          }}
+          {{ cancelling ? '取消中...' : '取消訂單' }}
         </CButton>
       </CModalFooter>
     </CModal>
@@ -644,7 +657,7 @@ const goBack = () => {
 
 const goOrderEdit = () => {
   router.push(
-    `/store-${storeId}/create_order?order_id=${orderId}`
+    `/store-${storeId}/checkout?order_id=${orderId}`
   )
 }
 
@@ -733,6 +746,16 @@ const getPaymentStatusText = (status) => {
   return map[status] || status
 }
 
+const getPaymentConfirmText = (status) => {
+  const map = {
+    waiting: '等待確認',
+    confirmed: '已確認',
+    rejected: '已拒絕'
+  }
+
+  return map[status] || status
+}
+
 const getDeliveryMethodText = (method) => {
   const map = {
     home_delivery: '宅配',
@@ -769,35 +792,35 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.product-image {
-  width: 100px;
-  height: 100px;
-  flex-shrink: 0;
+.page-header {
+  padding-top: 8px;
 }
 
-.product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 6px;
+.order-card {
+  border: 1px solid var(--cui-border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .section-title {
   padding-bottom: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
   border-bottom: 1px solid var(--cui-border-color);
 }
 
 .order-info-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 }
 
 .order-info-item {
   display: flex;
   align-items: flex-start;
   gap: 20px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  line-height: 1.6;
 }
 
 .order-info-label {
@@ -810,16 +833,41 @@ onMounted(() => {
   flex: 1;
 }
 
+.order-number {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.total-amount-row {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
 .amount-value {
   display: block;
   width: 120px;
   text-align: right;
 }
 
-.product-amount {
-  width: 120px;
-  text-align: right;
-  margin-left: 8px;
+.total-amount {
+  font-weight: 700;
+}
+
+.product-item:last-child {
+  border-bottom: 0 !important;
+}
+
+.product-image {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 :deep(.form-control),
@@ -828,6 +876,11 @@ onMounted(() => {
 }
 
 @media (max-width: 576px) {
+  .page-header .d-flex {
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+
   .order-info-item {
     flex-direction: column;
     gap: 4px;
@@ -835,6 +888,16 @@ onMounted(() => {
 
   .order-info-label {
     width: auto;
+  }
+
+  .amount-value {
+    width: auto;
+    text-align: left;
+  }
+
+  .product-image {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 }
 </style>
