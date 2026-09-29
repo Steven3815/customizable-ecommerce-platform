@@ -318,19 +318,16 @@
     <!-- 訂單成功 -->
     <CModal
       :visible="orderSuccessVisible"
-      alignment="center"
-      :backdrop="'static'"
-      :keyboard="false"
+      @close="orderSuccessVisible = false"
     >
       <CModalHeader class="border-0">
+        <CModalTitle>
+          訂單建立成功
+        </CModalTitle>
       </CModalHeader>
 
       <CModalBody>
-        <div class="text-center py-3">
-          <h5 class="mt-3 fw-bold">
-            訂單已建立成功
-          </h5>
-        </div>
+        可點擊查看訂單
       </CModalBody>
 
       <CModalFooter class="border-0">

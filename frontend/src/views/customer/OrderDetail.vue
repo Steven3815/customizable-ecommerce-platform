@@ -7,6 +7,7 @@
 
       <div class="body flex-grow-1">
         <CContainer class="px-4" lg>
+
           <!-- 標題 -->
           <div class="page-header mb-4">
             <div class="d-flex justify-content-between align-items-center">
@@ -22,7 +23,6 @@
 
               <CButton
                 color="secondary"
-                variant="outline"
                 @click="goBack"
               >
                 返回訂單
@@ -47,6 +47,7 @@
           </CAlert>
 
           <template v-else-if="order">
+
             <!-- 訂單資訊 -->
             <CCard class="order-card mb-4">
               <CCardBody>
@@ -139,7 +140,6 @@
                 >
                   <CButton
                     color="danger"
-                    variant="outline"
                     @click="openCancelModal"
                   >
                     取消訂單
@@ -345,6 +345,7 @@
                 </div>
 
                 <div class="order-info-list">
+
                   <!-- 付款方式 -->
                   <div class="order-info-item">
                     <span class="order-info-label">
@@ -373,18 +374,6 @@
                       order.payment.payment_status === 'paid'
                     "
                   >
-                    <!-- 付款金額 -->
-                    <div class="order-info-item">
-                      <span class="order-info-label">
-                        付款金額
-                      </span>
-
-                      <span class="order-info-value fw-semibold">
-                        <span class="amount-value">
-                          $ {{ Number(order.payment.amount).toLocaleString() }}
-                        </span>
-                      </span>
-                    </div>
 
                     <!-- 付款確認狀態 -->
                     <div class="order-info-item">
@@ -532,6 +521,7 @@
                 </div>
               </CCardBody>
             </CCard>
+
           </template>
         </CContainer>
       </div>
@@ -578,6 +568,7 @@
         </CButton>
       </CModalFooter>
     </CModal>
+
   </div>
 </template>
 

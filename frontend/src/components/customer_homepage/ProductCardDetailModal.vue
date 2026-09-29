@@ -1,21 +1,17 @@
 <template>
-  <CModal
-    :visible="visible"
-    @close="closeModal"
-    alignment="center"
-    class="product-modal"
-  >
-    <CModalHeader class="border-0">
+  <div>
+    <!-- 商品詳細 Modal -->
+    <CModal
+      :visible="visible"
+      @close="closeModal"
+      alignment="center"
+      class="product-modal"
+    >
+      <CModalHeader class="border-0">
 
-    </CModalHeader>
+      </CModalHeader>
 
-    <CModalBody>
-
-      <div v-if="addedMessage" class="added-message">
-        已加入 {{ addedQuantity }} 件
-      </div>
-
-      <template v-else>
+      <CModalBody>
 
         <!-- 載入登入狀態 -->
         <div
@@ -348,30 +344,56 @@
           無法取得商品資料
         </div>
 
-      </template>
+      </CModalBody>
 
-    </CModalBody>
+      <CModalFooter class="border-0">
 
-    <CModalFooter class="border-0">
+        <CButton
+          color="secondary"
+          @click="closeModal"
+        >
+          關閉
+        </CButton>
 
-      <CButton
-        color="secondary"
-        @click="closeModal"
-      >
-        {{ addedMessage ? '確認' : '關閉' }}
-      </CButton>
+        <CButton
+          v-if="isLoggedIn && product"
+          color="primary"
+          @click="addToCart"
+        >
+          加入購物車
+        </CButton>
 
-      <CButton
-        v-if="!addedMessage && isLoggedIn && product"
-        color="primary"
-        @click="addToCart"
-      >
-        加入購物車
-      </CButton>
+      </CModalFooter>
 
-    </CModalFooter>
+    </CModal>
 
-  </CModal>
+
+    <!-- 加入購物車成功 Modal -->
+    <CModal
+      :visible="addedMessage"
+      @close="addedMessage = false"
+    >
+      <CModalHeader class="border-0">
+        <CModalTitle>
+          加入購物車成功
+        </CModalTitle>
+      </CModalHeader>
+
+      <CModalBody>
+        已加入 {{ addedQuantity }} 件商品
+      </CModalBody>
+
+      <CModalFooter class="border-0">
+        <CButton
+          color="primary"
+          @click="addedMessage = false"
+        >
+          確認
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
+  </div>
 </template>
 
 
@@ -382,6 +404,7 @@ import { useRouter } from 'vue-router'
 import {
   CModal,
   CModalHeader,
+  CModalTitle,
   CModalBody,
   CModalFooter,
   CFormSelect,
@@ -536,7 +559,6 @@ watch(
     isLoggedIn.value = false
     selectedSpecId.value = null
     quantity.value = 1
-    addedMessage.value = false
     addedQuantity.value = 0
     currentImageIndex.value = 0
 
@@ -693,6 +715,11 @@ const addToCart = async () => {
     )
 
     addedQuantity.value = quantity.value
+
+    // 先關閉商品詳細 Modal
+    closeModal()
+
+    // 顯示加入成功 Modal
     addedMessage.value = true
 
   } catch (error) {
@@ -840,15 +867,6 @@ const addToCart = async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.added-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 120px;
-  font-size: 1.2rem;
-  font-weight: 600;
 }
 
 :deep(input[type='number']::-webkit-inner-spin-button),

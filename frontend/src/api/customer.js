@@ -657,4 +657,54 @@ export async function createCustomerPayment(
     throw error
   }
 }
+export async function payCustomerCreditCard(
+  storeId,
+  orderId,
+  transactionAmount,
+  cardNumber,
+  expiryDate,
+  phone
+) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/payment/credit_card.php`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          store_id: storeId,
+          order_id: orderId,
+          transaction_amount: transactionAmount,
+          card_number: cardNumber,
+          expiry_date: expiryDate,
+          phone
+        })
+      }
+    )
 
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '信用卡付款失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '信用卡付款失敗:',
+      error
+    )
+
+    throw error
+  }
+}

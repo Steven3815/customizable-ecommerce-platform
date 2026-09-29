@@ -30,7 +30,6 @@ if (
     !isset($data["transaction_amount"]) ||
     !isset($data["card_number"]) ||
     !isset($data["expiry_date"]) ||
-    !isset($data["cvv"]) ||
     !isset($data["phone"])
 ) {
     http_response_code(400);
@@ -47,7 +46,6 @@ $transaction_amount = $data["transaction_amount"];
 
 $card_number = trim($data["card_number"]);
 $expiry_date = trim($data["expiry_date"]);
-$cvv = trim($data["cvv"]);
 $phone = trim($data["phone"]);
 
 // 檢查 Order ID
@@ -121,19 +119,6 @@ if ($expiry_date === "") {
     http_response_code(400);
     echo json_encode([
         "error" => "Card expiry date is required"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-// 檢查 CVV
-if (!preg_match(
-    '/^\d{3}$/',
-    $cvv
-)) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Invalid CVV"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
