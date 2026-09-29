@@ -541,10 +541,6 @@ async function submitOrder() {
         data
       )
 
-      alert(
-        '訂單建立成功'
-      )
-
       router.push(
         `/store-${storeId}/order/${orderId}/payment`
       )

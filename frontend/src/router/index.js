@@ -17,6 +17,7 @@ import CustomerProductSearch from '../views/customer/ProductSearch.vue'
 import CustomerOrderCreate from '../views/customer/OrderCreate.vue'
 import CustomerOrderList from '../views/customer/OrderList.vue'
 import CustomerOrderDetail from '../views/customer/OrderDetail.vue'
+import CustomerPayment from '../views/customer/Payment.vue'
 
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
@@ -133,6 +134,24 @@ const router = createRouter({
       beforeEnter: (to) => {
         if (
           !/^[1-9]\d*$/.test(to.params.storeId)
+        ) {
+          return '/404'
+        }
+      },
+    },
+    {
+      path: '/store-:storeId/order/:orderId/payment',
+      name: 'CustomerPayment',
+      component: CustomerPayment,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId)
+        ) {
+          return '/404'
+        }
+
+        if (
+          !/^[1-9]\d*$/.test(to.params.orderId)
         ) {
           return '/404'
         }

@@ -536,3 +536,87 @@ export async function deleteCustomerOrder(
     throw error
   }
 }
+
+// Payment
+export async function getCustomerPayment(
+  storeId,
+  orderId
+) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/payment/get_payment.php?store_id=${storeId}&order_id=${orderId}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得付款資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得付款資料失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function createCustomerPayment(
+  storeId,
+  orderId,
+  paymentMethod
+) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/payment/create_payment.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          store_id: storeId,
+          order_id: orderId,
+          payment_method: paymentMethod
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '建立付款失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '建立付款失敗:',
+      error
+    )
+
+    throw error
+  }
+}
