@@ -708,3 +708,95 @@ export async function payCustomerCreditCard(
     throw error
   }
 }
+
+export async function getCustomerTransferPayment(orderId) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/payment/get_transfer.php`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          order_id: orderId
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得轉帳資訊失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得轉帳資訊失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function submitCustomerTransferPayment(
+  orderId,
+  paymentProofImage
+) {
+  try {
+    const formData = new FormData()
+
+    formData.append(
+      'order_id',
+      orderId
+    )
+
+    if (paymentProofImage) {
+      formData.append(
+        'payment_proof_image',
+        paymentProofImage
+      )
+    }
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/payment/transfer_confirm.php`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '轉帳確認失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '轉帳確認失敗:',
+      error
+    )
+
+    throw error
+  }
+}

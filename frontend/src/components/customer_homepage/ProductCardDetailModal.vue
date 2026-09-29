@@ -160,8 +160,11 @@
 
             </CRow>
 
-            <!-- 庫存 -->
-            <CRow class="align-items-center mb-3">
+            <!-- 庫存：只有庫存 < 11 才顯示 -->
+            <CRow
+              v-if="Number(product.stock) < 11"
+              class="align-items-center mb-3"
+            >
 
               <CCol :md="3">
                 <div class="form-label mb-0">
@@ -227,8 +230,8 @@
                       （無庫存）
                     </template>
 
-                    <template v-else-if="Number(spec.stock) <= 5">
-                      （現在庫存：{{ Number(spec.stock) }}）
+                    <template v-else-if="Number(spec.stock) < 11">
+                      （庫存：{{ Number(spec.stock) }} 件）
                     </template>
                   </option>
 
@@ -260,9 +263,12 @@
 
             </CRow>
 
-            <!-- 選擇規格後的庫存 -->
+            <!-- 選擇規格後的庫存：只有庫存 < 11 才顯示 -->
             <CRow
-              v-if="selectedSpec"
+              v-if="
+                selectedSpec &&
+                Number(selectedSpec.stock) < 11
+              "
               class="align-items-center mb-3"
             >
 
@@ -367,7 +373,6 @@
 
     </CModal>
 
-
     <!-- 加入購物車成功 Modal -->
     <CModal
       :visible="addedMessage"
@@ -395,7 +400,6 @@
 
   </div>
 </template>
-
 
 <script setup>
 import { ref, computed, watch } from 'vue'
@@ -661,8 +665,7 @@ const nextImage = () => {
   }
 
   currentImageIndex.value =
-    (currentImageIndex.value + 1) %
-    product.value.images.length
+    (currentImageIndex.value + 1) % product.value.images.length
 
 }
 
@@ -733,7 +736,6 @@ const addToCart = async () => {
 
 }
 </script>
-
 
 <style scoped>
 

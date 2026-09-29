@@ -368,6 +368,31 @@
                     </span>
                   </div>
 
+                  <!-- 轉帳截圖 -->
+                  <div
+                    v-if="
+                      (
+                        order.payment.payment_method === 'atm' ||
+                        order.payment.payment_method === 'post_office'
+                      ) &&
+                      order.payment.payment_proof_image
+                    "
+                    class="order-info-item"
+                  >
+                    <span class="order-info-label">
+                      轉帳截圖
+                    </span>
+
+                    <div class="order-info-value">
+                      <div class="payment-proof-image">
+                        <img
+                          :src="getImageUrl(order.payment.payment_proof_image)"
+                          alt="轉帳截圖"
+                        >
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- 已付款才顯示付款詳細資訊 -->
                   <template
                     v-if="
@@ -704,6 +729,22 @@ const cancelOrder = async () => {
   }
 }
 
+// 圖片網址
+const getImageUrl = (url) => {
+  if (!url) {
+    return null
+  }
+
+  if (
+    url.startsWith('http://') ||
+    url.startsWith('https://')
+  ) {
+    return url
+  }
+
+  return `http://localhost/ecommerce-platform/backend${url}`
+}
+
 const getOrderStatusText = (status) => {
   const map = {
     pending: '未完成',
@@ -858,6 +899,23 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 8px;
+}
+
+.payment-proof-image {
+  width: 100%;
+  max-width: 500px;
+  max-height: 600px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.payment-proof-image img {
+  width: 100%;
+  max-height: 600px;
+  object-fit: contain;
+  display: block;
+  border: 1px solid var(--cui-border-color);
   border-radius: 8px;
 }
 

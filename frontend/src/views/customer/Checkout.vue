@@ -327,7 +327,7 @@
       </CModalHeader>
 
       <CModalBody>
-        可點擊查看訂單
+        可查看訂單
       </CModalBody>
 
       <CModalFooter class="border-0">
@@ -773,25 +773,19 @@ async function submitCheckout() {
     // 信用卡
     if (nextAction === 'credit_card') {
       router.replace(
-        `/store-${storeId}/order/${currentOrderId}/payment/credit-card`
+        `/store-${storeId}/order/${currentOrderId}/payment/credit_card`
       )
 
       return
     }
 
-    // ATM 銀行轉帳
-    if (nextAction === 'bank_transfer') {
+    // ATM / 郵局轉帳
+    if (
+      nextAction === 'bank_transfer' ||
+      nextAction === 'post_office_transfer'
+    ) {
       router.replace(
-        `/store-${storeId}/order/${currentOrderId}/payment/bank-transfer`
-      )
-
-      return
-    }
-
-    // 郵局轉帳
-    if (nextAction === 'post_office_transfer') {
-      router.replace(
-        `/store-${storeId}/order/${currentOrderId}/payment/post-office-transfer`
+        `/store-${storeId}/order/${currentOrderId}/payment/transfer_payment`
       )
 
       return

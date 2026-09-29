@@ -38,31 +38,24 @@ if (
 $order_id = (int)$order_id; 
 
 // 取得付款證明圖片
-if (
-    !isset($_FILES["payment_proof_image"]) ||
-    !is_array($_FILES["payment_proof_image"])
-) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Payment proof image is required"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
-if (
-    !isset($_FILES["payment_proof_image"]["error"]) ||
-    $_FILES["payment_proof_image"]["error"] !== UPLOAD_ERR_OK
-) {
-    http_response_code(400);
-    echo json_encode([
-        "error" => "Payment proof image upload failed"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
 $uploaded_image_url = null;
+
+if (
+    isset($_FILES["payment_proof_image"]) &&
+    is_array($_FILES["payment_proof_image"])
+) {
+    if (
+        !isset($_FILES["payment_proof_image"]["error"]) ||
+        $_FILES["payment_proof_image"]["error"] !== UPLOAD_ERR_OK
+    ) {
+        http_response_code(400);
+        echo json_encode([
+            "error" => "Payment proof image upload failed"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
+}
  
 // 取得 Order 與 Payment 
 $sql = " 
@@ -179,10 +172,15 @@ try {
     $pdo->beginTransaction(); 
 
     // 上傳付款證明圖片
-    $uploaded_image_url = uploadImage(
-        $_FILES["payment_proof_image"],
-        "payment_proofs"
-    );
+    if (
+        isset($_FILES["payment_proof_image"]) &&
+        is_array($_FILES["payment_proof_image"])
+    ) {
+        $uploaded_image_url = uploadImage(
+            $_FILES["payment_proof_image"],
+            "payment_proofs"
+        );
+    }
  
     // 更新付款狀態 
     $sql = " 

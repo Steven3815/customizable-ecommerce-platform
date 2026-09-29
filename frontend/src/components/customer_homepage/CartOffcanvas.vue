@@ -74,7 +74,7 @@
 
         <CButton
           color="primary"
-          @click="goToCart"
+          @click="goToHome"
         >
           繼續購物
         </CButton>
@@ -306,6 +306,11 @@ const close = () => {
 const goToLogin = () => {
   close()
   router.push(`/store-${props.storeId}/login`)
+}
+
+const goToHome = () => {
+  close()
+  router.push(`/store-${props.storeId}`)
 }
 
 const goToCart = () => {
