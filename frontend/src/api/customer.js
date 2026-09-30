@@ -1032,3 +1032,81 @@ export async function deleteCustomerService(
     throw error
   }
 }
+
+export async function createCustomerRefund(
+  orderId,
+  refundReason,
+  refundDescription,
+  refundImage
+) {
+  try {
+    const formData = new FormData()
+
+    formData.append('order_id', orderId)
+    formData.append('refund_reason', refundReason)
+    formData.append('refund_description', refundDescription)
+
+    if (refundImage) {
+      formData.append('refund_image', refundImage)
+    }
+
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/refund/create_refund.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '建立退款申請失敗'
+      )
+
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error(
+      '建立退款申請失敗:',
+      error
+    )
+    throw error
+  }
+}
+
+export async function getCustomerRefunds(storeId) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/refund/get_refunds.php?store_id=${storeId}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得退款列表失敗'
+      )
+
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error(
+      '取得退款列表失敗:',
+      error
+    )
+    throw error
+  }
+}

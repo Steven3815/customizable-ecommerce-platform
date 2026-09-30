@@ -12,7 +12,7 @@
           <div class="mb-4">
             <div class="d-flex justify-content-between align-items-center">
               <h2 class="mb-0">
-                建立客服
+                申請退款
               </h2>
 
               <CButton
@@ -24,72 +24,54 @@
             </div>
           </div>
 
-          <!-- 載入中 -->
+          <!-- 載入訂單中 -->
           <div
-            v-if="checkingService"
+            v-if="loadingOrder"
             class="text-center py-5"
           >
             載入中...
           </div>
 
-          <!-- 客服案件 -->
+          <!-- 退款申請 -->
           <CCard
-            v-else-if="canCreateService"
+            v-else-if="order && canRefund"
             class="mb-4"
           >
             <CCardBody>
               <h4 class="mb-4">
-                客服案件
+                訂單編號: {{ order.order_number }}
               </h4>
 
-              <!-- 問題類型 -->
+              <!-- 退款原因 -->
               <CRow class="mb-4">
                 <CCol :md="6">
-                  <div class="d-flex align-items-center">
-                    <CFormLabel class="mb-0 me-3 text-nowrap">
-                      問題類型
-                    </CFormLabel>
+                  <CFormLabel>
+                    退款原因
+                  </CFormLabel>
 
-                    <CFormSelect
-                      v-model="problemType"
-                      :options="problemTypeOptions"
-                    />
-                  </div>
+                  <CFormSelect
+                    v-model="refundReason"
+                    :options="refundReasonOptions"
+                  />
                 </CCol>
               </CRow>
 
-              <!-- 關聯訂單 -->
-              <CRow class="mb-4">
-                <CCol :md="6">
-                  <div class="d-flex align-items-center">
-                    <CFormLabel class="mb-0 me-3 text-nowrap">
-                      關聯訂單
-                    </CFormLabel>
-
-                    <CFormSelect
-                      v-model="orderId"
-                      :options="orderOptions"
-                    />
-                  </div>
-                </CCol>
-              </CRow>
-
-              <!-- 問題描述 -->
+              <!-- 退款說明 -->
               <CRow class="mb-4">
                 <CCol>
                   <CFormLabel>
-                    問題描述
+                    退款說明
                   </CFormLabel>
 
                   <CFormTextarea
-                    v-model="description"
+                    v-model="refundDescription"
                     rows="8"
                     maxlength="1000"
-                    placeholder="請詳細描述您遇到的問題"
+                    placeholder="請詳細說明退款原因"
                   />
 
                   <div class="text-body-secondary mt-2">
-                    {{ description.length }} / 1000
+                    {{ refundDescription.length }} / 1000
                   </div>
                 </CCol>
               </CRow>
@@ -98,7 +80,7 @@
               <CRow>
                 <CCol :md="6">
                   <CFormLabel>
-                    問題圖片
+                    退款圖片
                   </CFormLabel>
 
                   <CFormInput
@@ -119,7 +101,7 @@
                   >
                     <img
                       :src="imagePreview"
-                      alt="客服圖片預覽"
+                      alt="退款圖片預覽"
                       class="image-preview"
                     >
 
@@ -139,36 +121,36 @@
             </CCardBody>
           </CCard>
 
-          <!-- 無法建立客服 -->
+          <!-- 無法申請退款 -->
           <CCard
-            v-else
+            v-else-if="order && !canRefund"
             class="mb-4"
           >
             <CCardBody>
               <h4 class="mb-4">
-                無法建立客服
+                訂單編號: {{ order.order_number }}
               </h4>
 
               <div class="text-body-secondary">
-                {{ serviceUnavailableMessage }}
+                {{ refundUnavailableMessage }}
               </div>
             </CCardBody>
           </CCard>
 
-          <!-- 建立客服案件 -->
+          <!-- 建立退款申請 -->
           <div
-            v-if="canCreateService"
+            v-if="order && canRefund"
             class="d-flex justify-content-end mb-4"
           >
             <CButton
               color="primary"
-              :disabled="loading || checkingService"
-              @click="submitService"
+              :disabled="loading || loadingOrder"
+              @click="submitRefund"
             >
               {{
                 loading
                   ? '處理中...'
-                  : '建立客服案件'
+                  : '送出申請'
               }}
             </CButton>
           </div>
@@ -180,7 +162,7 @@
       <Createdby />
     </div>
 
-    <!-- 錯誤提示視窗 -->
+    <!-- 錯誤提示 -->
     <CModal
       :visible="errorVisible"
       @close="errorVisible = false"
@@ -207,48 +189,48 @@
 
     <!-- 建立成功 -->
     <CModal
-      :visible="serviceSuccessVisible"
-      @close="serviceSuccessVisible = false"
+      :visible="refundSuccessVisible"
+      @close="refundSuccessVisible = false"
     >
       <CModalHeader class="border-0">
         <CModalTitle>
-          客服案件建立成功
+          退款申請成功
         </CModalTitle>
       </CModalHeader>
 
       <CModalBody>
-        您的客服案件已建立，請等待客服人員處理
+        您的退款申請已送出，請等待商家處理。
       </CModalBody>
 
       <CModalFooter class="border-0">
         <CButton
           color="primary"
-          @click="goServiceDetail"
+          @click="goOrderDetail"
         >
-          查看客服案件
+          查看訂單
         </CButton>
       </CModalFooter>
     </CModal>
 
-    <!-- 無法建立客服 -->
+    <!-- 無法申請退款 -->
     <CModal
-      :visible="serviceUnavailableVisible"
-      @close="closeServiceUnavailableModal"
+      :visible="refundUnavailableVisible"
+      @close="closeRefundUnavailableModal"
     >
       <CModalHeader class="border-0">
         <CModalTitle>
-          無法建立客服
+          無法申請退款
         </CModalTitle>
       </CModalHeader>
 
       <CModalBody>
-        {{ serviceUnavailableMessage }}
+        {{ refundUnavailableMessage }}
       </CModalBody>
 
       <CModalFooter class="border-0">
         <CButton
           color="primary"
-          @click="closeServiceUnavailableModal"
+          @click="closeRefundUnavailableModal"
         >
           確定
         </CButton>
@@ -294,105 +276,94 @@ import Createdby from '../../../components/customer_homepage/Createdby.vue'
 
 import {
   getCustomerHome,
-  getCustomerOrders,
-  getCustomerServices,
-  createCustomerService
+  getCustomerOrder,
+  createCustomerRefund
 } from '../../../api/customer.js'
 
 const route = useRoute()
 const router = useRouter()
 
 const storeId = route.params.storeId
+const orderId = Number(route.query.orderId)
 
 const home = ref(null)
-const orders = ref([])
+const order = ref(null)
 
-const problemType = ref('')
-const orderId = ref('')
-const description = ref('')
+const refundReason = ref('')
+const refundDescription = ref('')
 
-const serviceImage = ref(null)
+const refundImage = ref(null)
 const imagePreview = ref('')
 const imageInputKey = ref(0)
 
-const serviceId = ref(null)
-
+const loadingOrder = ref(true)
 const loading = ref(false)
-const checkingService = ref(true)
+
+const refundId = ref(null)
 
 const errorMessage = ref('')
 const errorVisible = ref(false)
 
-const serviceSuccessVisible = ref(false)
+const refundSuccessVisible = ref(false)
 
-const canCreateService = ref(true)
+const canRefund = ref(true)
 
-const serviceUnavailableVisible = ref(false)
-const serviceUnavailableMessage = ref('')
+const refundUnavailableVisible = ref(false)
+const refundUnavailableMessage = ref('')
 
-const problemTypeOptions = [
+const refundReasonOptions = [
   {
-    label: '請選擇問題類型',
+    label: '請選擇退款原因',
     value: ''
   },
   {
-    label: '商品問題',
-    value: 'product'
+    label: '商品瑕疵',
+    value: 'product_defect'
   },
   {
-    label: '訂單問題',
-    value: 'order'
+    label: '商品與描述不符',
+    value: 'product_not_as_described'
   },
   {
-    label: '付款問題',
-    value: 'payment'
+    label: '商品損壞',
+    value: 'product_damaged'
   },
   {
-    label: '配送問題',
-    value: 'delivery'
+    label: '商品缺少或錯誤',
+    value: 'product_missing_or_wrong'
   },
   {
-    label: '退款問題',
-    value: 'refund'
-  },
-  {
-    label: '其他問題',
+    label: '其他',
     value: 'other'
   }
 ]
-
-const orderOptions = ref([
-  {
-    label: '無',
-    value: ''
-  }
-])
 
 function showError(message) {
   errorMessage.value = message
   errorVisible.value = true
 }
 
-function showServiceUnavailable(message) {
-  canCreateService.value = false
-  serviceUnavailableMessage.value = message
-  serviceUnavailableVisible.value = true
+function showRefundUnavailable(message) {
+  canRefund.value = false
+  refundUnavailableMessage.value = message
+  refundUnavailableVisible.value = true
 }
 
+// 返回上頁
 function goBack() {
   router.back()
 }
 
-// 關閉無法建立客服 Modal
-function closeServiceUnavailableModal() {
-  serviceUnavailableVisible.value = false
+// 關閉無法申請退款 Modal
+function closeRefundUnavailableModal() {
+  refundUnavailableVisible.value = false
 }
 
-function goServiceDetail() {
-  serviceSuccessVisible.value = false
+function goOrderDetail() {
+  refundSuccessVisible.value = false
 
   router.replace(
-    `/store-${storeId}/service/${serviceId.value}`
+    `/store-${storeId}/order/${orderId}`
   )
 }
 
@@ -417,78 +388,36 @@ async function loadHome() {
   }
 }
 
-// 檢查是否已有處理中的客服案件
-async function checkPendingService() {
-  checkingService.value = true
+// 取得訂單
+async function loadOrder() {
+  loadingOrder.value = true
 
   try {
     const data =
-      await getCustomerServices(
+      await getCustomerOrder(
         storeId,
-        'pending'
+        orderId
       )
 
-    const pendingServices =
-      data.services || []
+    order.value =
+      data.order || null
 
-    if (pendingServices.length > 0) {
-      showServiceUnavailable(
-        '您目前已有處理中的客服案件，請等待案件處理完成後再建立新的案件'
-      )
-    }
-
-  } catch (error) {
-    console.error(
-      '檢查客服案件失敗:',
-      error
-    )
-
-    if (error.status === 401) {
-      router.replace('/401')
-      return
-    }
-
-    if (error.status === 404) {
+    if (!order.value) {
       router.replace('/404')
       return
     }
 
-    showError(
-      error.message ||
-      '檢查客服案件失敗'
-    )
-
-  } finally {
-    checkingService.value = false
-  }
-}
-
-// 取得訂單
-async function loadOrders() {
-  try {
-    const data =
-      await getCustomerOrders(
-        storeId,
-        'all',
-        'all',
-        'all',
-        'all',
-        'all'
+    // 確認訂單已送達
+    if (
+      order.value.delivery_status !==
+      'completed'
+    ) {
+      showRefundUnavailable(
+        '訂單尚未送達，無法申請退款'
       )
 
-    orders.value =
-      data.orders || []
-
-    orderOptions.value = [
-      {
-        label: '無',
-        value: ''
-      },
-      ...orders.value.map(order => ({
-        label: `訂單 #${order.order_number}`,
-        value: String(order.order_id)
-      }))
-    ]
+      return
+    }
 
   } catch (error) {
     console.error(
@@ -510,6 +439,9 @@ async function loadOrders() {
       error.message ||
       '取得訂單失敗'
     )
+
+  } finally {
+    loadingOrder.value = false
   }
 }
 
@@ -517,7 +449,7 @@ async function loadOrders() {
 function handleImageChange(event) {
   const file = event.target.files[0]
 
-  serviceImage.value = file || null
+  refundImage.value = file || null
 
   if (imagePreview.value) {
     URL.revokeObjectURL(imagePreview.value)
@@ -532,7 +464,7 @@ function handleImageChange(event) {
 
 // 清除圖片
 function clearImage() {
-  serviceImage.value = null
+  refundImage.value = null
 
   if (imagePreview.value) {
     URL.revokeObjectURL(imagePreview.value)
@@ -542,26 +474,27 @@ function clearImage() {
   imageInputKey.value++
 }
 
-function validateService() {
-  if (!problemType.value) {
+// 驗證退款資料
+function validateRefund() {
+  if (!refundReason.value) {
     showError(
-      '請選擇問題類型'
+      '請選擇退款原因'
     )
 
     return false
   }
 
-  if (!description.value.trim()) {
+  if (!refundDescription.value.trim()) {
     showError(
-      '請輸入問題描述'
+      '請輸入退款說明'
     )
 
     return false
   }
 
-  if (description.value.trim().length > 1000) {
+  if (refundDescription.value.trim().length > 1000) {
     showError(
-      '問題描述不可超過 1000 個字'
+      '退款說明不可超過 1000 個字'
     )
 
     return false
@@ -570,66 +503,39 @@ function validateService() {
   return true
 }
 
-async function submitService() {
+// 建立退款申請
+async function submitRefund() {
   errorMessage.value = ''
   errorVisible.value = false
 
-  if (!validateService()) {
+  if (!validateRefund()) {
     return
   }
 
   loading.value = true
 
   try {
-    const formData = new FormData()
-
-    formData.append(
-      'store_id',
-      storeId
-    )
-
-    formData.append(
-      'problem_type',
-      problemType.value
-    )
-
-    formData.append(
-      'description',
-      description.value.trim()
-    )
-
-    if (orderId.value) {
-      formData.append(
-        'order_id',
-        orderId.value
-      )
-    }
-
-    if (serviceImage.value) {
-      formData.append(
-        'service_image',
-        serviceImage.value
-      )
-    }
-
     const data =
-      await createCustomerService(
-        formData
+      await createCustomerRefund(
+        orderId,
+        refundReason.value,
+        refundDescription.value.trim(),
+        refundImage.value
       )
 
-    serviceId.value =
-      data.service.service_id
+    refundId.value =
+      data.refund.refund_id
 
     console.log(
-      '建立客服案件成功:',
+      '建立退款申請成功:',
       data
     )
 
-    serviceSuccessVisible.value = true
+    refundSuccessVisible.value = true
 
   } catch (error) {
     console.error(
-      '建立客服案件失敗:',
+      '建立退款申請失敗:',
       error
     )
 
@@ -643,9 +549,19 @@ async function submitService() {
       return
     }
 
+    if (error.status === 403) {
+      showError(
+        error.message ||
+        '目前無法申請退款'
+      )
+
+      return
+    }
+
     if (error.status === 409) {
-      showServiceUnavailable(
-        '您目前已有處理中的客服案件，請等待案件處理完成後再建立新的案件'
+      showError(
+        error.message ||
+        '目前無法申請退款'
       )
 
       return
@@ -653,7 +569,7 @@ async function submitService() {
 
     showError(
       error.message ||
-      '建立客服案件失敗'
+      '建立退款申請失敗'
     )
 
   } finally {
@@ -662,7 +578,11 @@ async function submitService() {
 }
 
 onMounted(async () => {
-  if (!/^[1-9]\d*$/.test(storeId)) {
+  if (
+    !/^[1-9]\d*$/.test(storeId) ||
+    !Number.isInteger(orderId) ||
+    orderId <= 0
+  ) {
     router.replace('/404')
     return
   }
@@ -673,13 +593,7 @@ onMounted(async () => {
     return
   }
 
-  await checkPendingService()
-
-  if (errorVisible.value) {
-    return
-  }
-
-  await loadOrders()
+  await loadOrder()
 })
 </script>
 

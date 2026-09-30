@@ -23,6 +23,8 @@ import CustomerProfile from '../views/customer/Profile.vue'
 import CustomerServiceList from '../views/customer/service/ServiceList.vue'
 import CustomerServiceDetail from '../views/customer/service/ServiceDetail.vue'
 import CustomerCreateService from '../views/customer/service/CreateService.vue'
+import CustomerRefundList from '../views/customer/refund/RefundList.vue'
+import CustomerCreateRefund from '../views/customer/refund/CreateRefund.vue'
 
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
@@ -221,7 +223,31 @@ const router = createRouter({
         }
       },
     },
-
+    {
+      path: '/store-:storeId/refund_list',
+      name: 'CustomerRefundList',
+      component: CustomerRefundList,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId)
+        ) {
+          return '/404'
+        }
+      },
+    },
+    {
+      path: '/store-:storeId/refund/create',
+      name: 'CustomerCreateRefund',
+      component: CustomerCreateRefund,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId) ||
+          !/^[1-9]\d*$/.test(to.query.orderId)
+        ) {
+          return '/404'
+        }
+      },
+    },
     {
       path: '/store-:storeId/login',
       name: 'CustomerLogin',

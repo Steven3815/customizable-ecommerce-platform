@@ -173,10 +173,6 @@ foreach ($refunds as $refund) {
 
     FROM ORDER_ITEM oi
 
-    JOIN ORDERS o
-        ON oi.order_id = o.order_id
-        AND oi.store_id = o.store_id
-
     WHERE oi.order_id = ?
     AND oi.store_id = ?
 
@@ -218,6 +214,7 @@ $result[] = [
         "store_name" => $store["store_name"]
     ],
     "order" => [
+        "order_id" => $order_id,
         "order_number" => $refund["order_number"],
         "total_amount" => $total_amount
     ],

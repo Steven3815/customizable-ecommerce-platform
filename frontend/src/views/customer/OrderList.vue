@@ -164,12 +164,14 @@
                       {{ order.order_date }}
                     </div>
 
-                    <div>
+                    <div v-if="order.order_status !== 'confirmed'">
                       <span>訂單狀態：</span>
 
                       <span
                         :class="{
-                          'text-danger fw-bold': order.order_status === 'pending'
+                          'text-danger fw-bold': order.order_status === 'pending',
+                          'text-success fw-bold': order.order_status === 'confirmed',
+                          'text-secondary fw-bold': order.order_status === 'cancelled'
                         }"
                       >
                         {{ getOrderStatusText(order.order_status) }}
@@ -246,7 +248,23 @@
                       <!-- 付款狀態 -->
                       <div class="mb-3">
                         <span>付款狀態：</span>
-                        {{ getPaymentText(order.payment?.payment_status) }}
+
+                        <span
+                          :style="{
+                            color:
+                              order.payment?.payment_status === 'pending' ||
+                              order.payment?.payment_status === 'failed'
+                                ? 'var(--cui-danger)'
+                                : order.payment?.payment_status === 'processing'
+                                  ? 'var(--cui-warning)'
+                                  : order.payment?.payment_status === 'paid'
+                                    ? 'var(--cui-success)'
+                                    : '',
+                            fontWeight: '700'
+                          }"
+                        >
+                          {{ getPaymentText(order.payment?.payment_status) }}
+                        </span>
                       </div>
 
                       <!-- 只有已付款才顯示付款確認 -->
@@ -255,25 +273,58 @@
                         class="mb-3"
                       >
                         <span>付款確認：</span>
-                        {{ getPaymentConfirmText(order.payment?.payment_confirm_status) }}
+
+                        <span
+                          :class="{
+                            'text-danger fw-bold':
+                              order.payment?.payment_confirm_status === 'waiting',
+                            'text-success fw-bold':
+                              order.payment?.payment_confirm_status === 'confirmed',
+                            'text-danger fw-bold':
+                              order.payment?.payment_confirm_status === 'rejected'
+                          }"
+                        >
+                          {{ getPaymentConfirmText(order.payment?.payment_confirm_status) }}
+                        </span>
                       </div>
 
                       <!-- 配送狀態 -->
                       <div class="mb-3">
                         <span>配送狀態：</span>
-                        {{ getDeliveryText(order.delivery_status) }}
+
+                        <span
+                          :class="{
+                            'text-danger fw-bold':
+                              order.delivery_status === 'pending',
+                            'text-primary fw-bold':
+                              order.delivery_status === 'shipping',
+                            'text-success fw-bold':
+                              order.delivery_status === 'completed'
+                          }"
+                        >
+                          {{ getDeliveryText(order.delivery_status) }}
+                        </span>
                       </div>
 
-                      <!-- 只有已付款且商店開啟退款功能才顯示退款 -->
+                      <!-- 只有已申請退款才顯示退款狀態 -->
                       <div
-                        v-if="
-                          refundEnable &&
-                          order.payment?.payment_status === 'paid'
-                        "
+                        v-if="order.refund?.refund_status"
                         class="mb-3"
                       >
                         <span>退款狀態：</span>
-                        {{ getRefundText(order.refund?.refund_status) }}
+
+                        <span
+                          :class="{
+                            'text-danger fw-bold':
+                              order.refund.refund_status === 'pending',
+                            'text-success fw-bold':
+                              order.refund.refund_status === 'approved',
+                            'text-danger fw-bold':
+                              order.refund.refund_status === 'rejected'
+                          }"
+                        >
+                          {{ getRefundText(order.refund.refund_status) }}
+                        </span>
                       </div>
                     </div>
                   </template>

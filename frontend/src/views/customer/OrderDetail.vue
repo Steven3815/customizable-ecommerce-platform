@@ -68,7 +68,10 @@
                     </span>
                   </div>
 
-                  <div class="order-info-item">
+                  <div
+                    v-if="order.order_status !== 'confirmed'"
+                    class="order-info-item"
+                  >
                     <span class="order-info-label">
                       訂單狀態
                     </span>
@@ -77,7 +80,11 @@
                       class="order-info-value"
                       :class="{
                         'text-danger fw-bold':
-                          order.order_status === 'pending'
+                          order.order_status === 'pending',
+                        'text-success fw-bold':
+                          order.order_status === 'confirmed',
+                        'text-secondary fw-bold':
+                          order.order_status === 'cancelled'
                       }"
                     >
                       {{ getOrderStatusText(order.order_status) }}
@@ -293,7 +300,17 @@
                       配送狀態
                     </span>
 
-                    <span class="order-info-value">
+                    <span
+                      class="order-info-value"
+                      :class="{
+                        'text-danger fw-bold':
+                          order.delivery_status === 'pending',
+                        'text-primary fw-bold':
+                          order.delivery_status === 'shipping',
+                        'text-success fw-bold':
+                          order.delivery_status === 'completed'
+                      }"
+                    >
                       {{ getDeliveryStatusText(order.delivery_status) }}
                     </span>
                   </div>
@@ -363,7 +380,18 @@
                       付款狀態
                     </span>
 
-                    <span class="order-info-value">
+                    <span
+                      class="order-info-value"
+                      :class="{
+                        'text-danger fw-bold':
+                          order.payment.payment_status === 'pending' ||
+                          order.payment.payment_status === 'failed',
+                        'text-warning fw-bold':
+                          order.payment.payment_status === 'processing',
+                        'text-success fw-bold':
+                          order.payment.payment_status === 'paid'
+                      }"
+                    >
                       {{ getPaymentStatusText(order.payment.payment_status) }}
                     </span>
                   </div>
@@ -406,7 +434,16 @@
                         付款確認
                       </span>
 
-                      <span class="order-info-value">
+                      <span
+                        class="order-info-value"
+                        :class="{
+                          'text-danger fw-bold':
+                            order.payment.payment_confirm_status === 'waiting' ||
+                            order.payment.payment_confirm_status === 'rejected',
+                          'text-success fw-bold':
+                            order.payment.payment_confirm_status === 'confirmed'
+                        }"
+                      >
                         {{ getPaymentConfirmText(order.payment.payment_confirm_status) }}
                       </span>
                     </div>
@@ -486,16 +523,28 @@
                 <!-- 有退款資料 -->
                 <template v-else-if="order.refund">
                   <div class="order-info-list">
+
+                    <!-- 退款狀態 -->
                     <div class="order-info-item">
                       <span class="order-info-label">
                         退款狀態
                       </span>
 
-                      <span class="order-info-value">
+                      <span
+                        class="order-info-value"
+                        :class="{
+                          'text-danger fw-bold':
+                            order.refund.refund_status === 'pending' ||
+                            order.refund.refund_status === 'rejected',
+                          'text-success fw-bold':
+                            order.refund.refund_status === 'approved'
+                        }"
+                      >
                         {{ getRefundText(order.refund.refund_status) }}
                       </span>
                     </div>
 
+                    <!-- 退款原因 -->
                     <div
                       v-if="order.refund.refund_reason"
                       class="order-info-item"
@@ -505,10 +554,11 @@
                       </span>
 
                       <span class="order-info-value">
-                        {{ order.refund.refund_reason }}
+                        {{ getRefundReasonText(order.refund.refund_reason) }}
                       </span>
                     </div>
 
+                    <!-- 退款說明 -->
                     <div
                       v-if="order.refund.refund_description"
                       class="order-info-item"
@@ -522,6 +572,7 @@
                       </span>
                     </div>
 
+                    <!-- 商家回覆 -->
                     <div
                       v-if="order.refund.admin_reply"
                       class="order-info-item"
@@ -534,16 +585,25 @@
                         {{ order.refund.admin_reply }}
                       </span>
                     </div>
+
                   </div>
                 </template>
 
                 <!-- 尚無退款資料 -->
-                <div
-                  v-else
-                  class="text-body-secondary"
-                >
-                  尚無退款資料
-                </div>
+                <template v-else>
+                  <div class="text-body-secondary">
+                    尚無退款資料
+                  </div>
+
+                  <div class="d-flex mt-4">
+                    <CButton
+                      color="primary"
+                      @click="goCreateRefund"
+                    >
+                      申請退款
+                    </CButton>
+                  </div>
+                </template>
               </CCardBody>
             </CCard>
 
@@ -637,6 +697,33 @@ const order = ref(null)
 const refundEnable = ref(false)
 const showCancelModal = ref(false)
 
+const refundReasonOptions = [
+  {
+    label: '請選擇退款原因',
+    value: ''
+  },
+  {
+    label: '商品瑕疵',
+    value: 'product_defect'
+  },
+  {
+    label: '商品與描述不符',
+    value: 'product_not_as_described'
+  },
+  {
+    label: '商品損壞',
+    value: 'product_damaged'
+  },
+  {
+    label: '商品缺少或錯誤',
+    value: 'product_missing_or_wrong'
+  },
+  {
+    label: '其他',
+    value: 'other'
+  }
+]
+
 const loadOrder = async () => {
   loading.value = true
   error.value = ''
@@ -674,6 +761,12 @@ const goBack = () => {
 const goOrderEdit = () => {
   router.push(
     `/store-${storeId}/checkout?order_id=${orderId}`
+  )
+}
+
+const goCreateRefund = () => {
+  router.push(
+    `/store-${storeId}/refund/create?orderId=${orderId}`
   )
 }
 
@@ -758,8 +851,8 @@ const getOrderStatusText = (status) => {
 const getPaymentMethodText = (method) => {
   const map = {
     credit_card: '信用卡',
-    atm: 'ATM',
-    post_office: '郵局',
+    atm: 'ATM轉帳',
+    post_office: '郵局轉帳',
     cash_on_delivery: '貨到付款',
     in_store: '店內付款'
   }
@@ -810,12 +903,21 @@ const getDeliveryStatusText = (status) => {
 
 const getRefundText = (status) => {
   const map = {
-    pending: '申請中',
+    pending: '處理中',
     approved: '已核准',
     rejected: '已拒絕'
   }
 
   return map[status] || status
+}
+
+const getRefundReasonText = (reason) => {
+  const option =
+    refundReasonOptions.find(
+      item => item.value === reason
+    )
+
+  return option?.label || reason
 }
 
 onMounted(() => {
