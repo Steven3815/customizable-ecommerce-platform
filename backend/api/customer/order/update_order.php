@@ -170,12 +170,11 @@ $delivery_method = trim($data["delivery_method"]);
 // 檢查收件資料
 if (
     $receiver_name === "" ||
-    $receiver_phone === "" ||
-    $receiver_address === ""
+    $receiver_phone === ""
 ) {
     http_response_code(400);
     echo json_encode([
-        "error" => "Receiver information is required"
+        "error" => "Receiver name and phone are required"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -189,6 +188,24 @@ if ($delivery_method === "") {
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
+}
+
+// 宅配才需要收件地址
+if (
+    $delivery_method === "home_delivery" &&
+    $receiver_address === ""
+) {
+    http_response_code(400);
+    echo json_encode([
+        "error" => "Receiver address is required for home delivery"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+// 非宅配不需要地址
+if ($delivery_method !== "home_delivery") {
+    $receiver_address = "";
 }
 
 // 驗證商店是否啟用此配送方式

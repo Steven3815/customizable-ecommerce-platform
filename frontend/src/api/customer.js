@@ -800,3 +800,106 @@ export async function submitCustomerTransferPayment(
     throw error
   }
 }
+
+// Customer Profile
+
+export async function getCustomerProfile() {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/profile/get_profile.php',
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得會員資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('取得會員資料失敗:', error)
+
+    throw error
+  }
+}
+
+export async function updateCustomerProfile(profile) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/profile/update_profile.php',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(profile)
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '更新會員資料失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('更新會員資料失敗:', error)
+
+    throw error
+  }
+}
+
+export async function changeCustomerPassword(passwordData) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/profile/update_password.php',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(passwordData)
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '修改密碼失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('修改密碼失敗:', error)
+
+    throw error
+  }
+}

@@ -90,7 +90,7 @@
                   <CCol :md="6">
                     <div class="d-flex align-items-center">
                       <CFormLabel class="mb-0 me-3 text-nowrap">
-                        銀行帳號
+                        店家銀行帳號
                       </CFormLabel>
 
                       <CFormInput
@@ -110,7 +110,7 @@
                   <CCol :md="6">
                     <div class="d-flex align-items-center">
                       <CFormLabel class="mb-0 me-3 text-nowrap">
-                        郵局帳號
+                        店家郵局帳號
                       </CFormLabel>
 
                       <CFormInput

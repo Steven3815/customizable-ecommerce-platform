@@ -99,7 +99,6 @@ $address = $customer["address"];
 $preferred_payment = $customer["preferred_payment"];
 $preferred_delivery = $customer["preferred_delivery"];
 
-
 // 修改姓名
 if (array_key_exists("name", $data)) {
 
@@ -138,6 +137,7 @@ if (array_key_exists("preferred_payment", $data)) {
     ];
 
     if (
+        $preferred_payment !== "" &&
         !in_array(
             $preferred_payment,
             $allowed_payment_methods,
@@ -150,6 +150,10 @@ if (array_key_exists("preferred_payment", $data)) {
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
+    }
+
+    if ($preferred_payment === "") {
+        $preferred_payment = null;
     }
 }
 
@@ -166,6 +170,7 @@ if (array_key_exists("preferred_delivery", $data)) {
     ];
 
     if (
+        $preferred_delivery !== "" &&
         !in_array(
             $preferred_delivery,
             $allowed_delivery_methods,
@@ -178,6 +183,10 @@ if (array_key_exists("preferred_delivery", $data)) {
         ], JSON_UNESCAPED_UNICODE);
 
         exit;
+    }
+
+    if ($preferred_delivery === "") {
+        $preferred_delivery = null;
     }
 }
 

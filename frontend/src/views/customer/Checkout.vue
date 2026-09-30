@@ -187,7 +187,8 @@
                 </CCol>
               </CRow>
 
-              <CRow>
+              <!-- 宅配才需要地址 -->
+              <CRow v-if="deliveryMethod === 'home_delivery'">
                 <CCol :md="6">
                   <div class="d-flex align-items-center">
                     <CFormLabel class="mb-0 me-3 text-nowrap">
@@ -383,6 +384,7 @@ import {
   getCustomerOrder,
   getCustomerPayment,
   getCustomerPaymentMethods,
+  getCustomerProfile,
   createCustomerOrder,
   updateCustomerOrder,
   createCustomerPayment
@@ -478,6 +480,42 @@ async function loadHome() {
   }
 }
 
+async function loadCustomerProfile() {
+  if (isEditMode) {
+    return
+  }
+
+  try {
+    const data = await getCustomerProfile()
+
+    const customer = data.customer
+
+    receiverName.value = customer.name || ''
+    receiverPhone.value = customer.phone || ''
+    receiverAddress.value = customer.address || ''
+  } catch (error) {
+    console.error(
+      '取得會員資料失敗:',
+      error
+    )
+
+    if (error.status === 401) {
+      router.replace('/401')
+      return
+    }
+
+    if (error.status === 404) {
+      router.replace('/404')
+      return
+    }
+
+    showError(
+      error.message ||
+      '取得會員資料失敗'
+    )
+  }
+}
+
 async function loadPaymentMethods() {
   try {
     paymentMethodsData.value =
@@ -499,6 +537,10 @@ async function loadPaymentMethods() {
 
       deliveryMethod.value =
         preferredDelivery?.delivery_method || ''
+
+      if (deliveryMethod.value !== 'home_delivery') {
+        receiverAddress.value = ''
+      }
     }
   } catch (error) {
     console.error(
@@ -666,17 +708,20 @@ function validateCheckout() {
     return false
   }
 
-  if (!receiverAddress.value.trim()) {
+  if (!deliveryMethod.value) {
     showError(
-      '請輸入收件地址'
+      '請選擇配送方式'
     )
 
     return false
   }
 
-  if (!deliveryMethod.value) {
+  if (
+    deliveryMethod.value === 'home_delivery' &&
+    !receiverAddress.value.trim()
+  ) {
     showError(
-      '請選擇配送方式'
+      '宅配請輸入收件地址'
     )
 
     return false
@@ -717,6 +762,11 @@ async function submitCheckout() {
   try {
     let currentOrderId = orderId
 
+    const address =
+      deliveryMethod.value === 'home_delivery'
+        ? receiverAddress.value.trim()
+        : ''
+
     // 編輯既有訂單
     if (isEditMode) {
       await updateCustomerOrder(
@@ -724,7 +774,7 @@ async function submitCheckout() {
         orderId,
         receiverName.value,
         receiverPhone.value,
-        receiverAddress.value,
+        address,
         deliveryMethod.value
       )
     }
@@ -736,7 +786,7 @@ async function submitCheckout() {
           selectedItems.value,
           receiverName.value,
           receiverPhone.value,
-          receiverAddress.value,
+          address,
           deliveryMethod.value
         )
 
@@ -845,6 +895,7 @@ onMounted(async () => {
   }
 
   await loadHome()
+  await loadCustomerProfile()
   await loadPaymentMethods()
   await loadCart()
 
