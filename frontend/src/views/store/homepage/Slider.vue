@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 import {
   CContainer,
@@ -47,6 +47,7 @@ const showDescription = ref(false)
 
 const selectedImage = ref(null)
 const imagePreview = ref(null)
+const imageInputKey = ref(0)
 
 const title = ref('')
 const editingImageId = ref(null)
@@ -143,22 +144,28 @@ function handleImageChange(event) {
     return
   }
 
-  selectedImage.value = file
-
   if (imagePreview.value) {
     URL.revokeObjectURL(imagePreview.value)
   }
+
+  selectedImage.value = file
 
   imagePreview.value = URL.createObjectURL(file)
 }
 
 function clearSelectedImage() {
-  if (imagePreview.value) {
+  if (
+    imagePreview.value &&
+    imagePreview.value.startsWith('blob:')
+  ) {
     URL.revokeObjectURL(imagePreview.value)
   }
 
   selectedImage.value = null
   imagePreview.value = null
+
+  // 重新建立 file input，清除已選擇檔案名稱
+  imageInputKey.value++
 }
 
 async function saveSlider() {
@@ -288,6 +295,15 @@ async function moveSlider(index, direction) {
 onMounted(() => {
   loadSlider()
 })
+
+onBeforeUnmount(() => {
+  if (
+    imagePreview.value &&
+    imagePreview.value.startsWith('blob:')
+  ) {
+    URL.revokeObjectURL(imagePreview.value)
+  }
+})
 </script>
 
 <template>
@@ -405,6 +421,7 @@ onMounted(() => {
                       </CFormLabel>
 
                       <CFormInput
+                        :key="imageInputKey"
                         type="file"
                         accept="image/*"
                         @change="handleImageChange"
@@ -426,6 +443,20 @@ onMounted(() => {
                           alt="圖片預覽"
                           class="slider-preview-image"
                         >
+                      </div>
+
+                      <!-- 清除圖片 -->
+                      <div
+                        v-if="selectedImage"
+                        class="mt-4"
+                      >
+                        <CButton
+                          color="danger"
+                          :disabled="saving"
+                          @click="clearSelectedImage"
+                        >
+                          清除圖片
+                        </CButton>
                       </div>
 
                       <!-- 編輯時的原圖片 -->

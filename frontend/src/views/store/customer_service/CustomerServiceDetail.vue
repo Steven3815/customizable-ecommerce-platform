@@ -531,7 +531,7 @@ onMounted(() => {
       </CModalHeader>
 
       <CModalBody>
-        是否確認送出客服回覆？送出後將無法修改。
+        是否確認送出客服回覆？送出後將無法修改
       </CModalBody>
 
       <CModalFooter class="border-0">

@@ -259,7 +259,7 @@ onMounted(() => {
                 :visible="showDescription"
               >
                 <small class="d-block text-body-secondary">
-                  客戶清單只顯示有在目前 Store 下過訂單的客戶。
+                  客戶清單只顯示有在目前 Store 下過訂單的客戶
                 </small>
               </CCollapse>
             </div>

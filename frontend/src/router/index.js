@@ -20,6 +20,9 @@ import CustomerCheckout from '../views/customer/Checkout.vue'
 import CustomerCreditCard from '../views/customer/CreditCard.vue'
 import CustomerTransferPayment from '../views/customer/TransferPayment.vue'
 import CustomerProfile from '../views/customer/Profile.vue'
+import CustomerServiceList from '../views/customer/service/ServiceList.vue'
+import CustomerServiceDetail from '../views/customer/service/ServiceDetail.vue'
+import CustomerCreateService from '../views/customer/service/CreateService.vue'
 
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
@@ -162,7 +165,8 @@ const router = createRouter({
       component: CustomerOrderDetail,
       beforeEnter: (to) => {
         if (
-          !/^[1-9]\d*$/.test(to.params.storeId)
+          !/^[1-9]\d*$/.test(to.params.storeId) ||
+          !/^[1-9]\d*$/.test(to.params.orderId)
         ) {
           return '/404'
         }
@@ -172,6 +176,43 @@ const router = createRouter({
       path: '/store-:storeId/profile',
       name: 'CustomerProfile',
       component: CustomerProfile,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId)
+        ) {
+          return '/404'
+        }
+      },
+    },
+    {
+      path: '/store-:storeId/service_list',
+      name: 'CustomerServiceList',
+      component: CustomerServiceList,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId)
+        ) {
+          return '/404'
+        }
+      },
+    },
+    {
+      path: '/store-:storeId/service/:serviceId',
+      name: 'CustomerServiceDetail',
+      component: CustomerServiceDetail,
+      beforeEnter: (to) => {
+        if (
+          !/^[1-9]\d*$/.test(to.params.storeId) ||
+          !/^[1-9]\d*$/.test(to.params.serviceId)
+        ) {
+          return '/404'
+        }
+      },
+    },
+    {
+      path: '/store-:storeId/service/create',
+      name: 'CustomerCreateService',
+      component: CustomerCreateService,
       beforeEnter: (to) => {
         if (
           !/^[1-9]\d*$/.test(to.params.storeId)

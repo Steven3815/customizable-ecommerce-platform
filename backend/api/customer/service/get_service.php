@@ -176,6 +176,7 @@ LEFT JOIN ORDERS o
 WHERE cs.service_id = ?
 AND cs.customer_id = ?
 AND cs.store_id = ?
+AND cs.status != 'cancelled'
 ";
 
 $stmt = $pdo->prepare($sql);

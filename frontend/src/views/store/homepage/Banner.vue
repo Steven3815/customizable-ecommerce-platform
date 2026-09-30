@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 
 import {
   CContainer,
@@ -43,6 +43,7 @@ const saving = ref(false)
 const imageSource = ref('default')
 const defaultBannerId = ref('')
 const selectedImage = ref(null)
+const imageInputKey = ref(0)
 
 const title = ref('')
 const description = ref('')
@@ -86,10 +87,23 @@ function closeErrorModal() {
   errorMessage.value = ''
 }
 
+// 清除圖片預覽 Blob URL
+function clearImagePreview() {
+  if (
+    imagePreview.value &&
+    imagePreview.value.startsWith('blob:')
+  ) {
+    URL.revokeObjectURL(imagePreview.value)
+  }
+
+  imagePreview.value = null
+}
+
 // 更新預設 Banner 預覽
 function updateDefaultBannerPreview() {
+  clearImagePreview()
+
   if (!defaultBannerId.value) {
-    imagePreview.value = null
     return
   }
 
@@ -100,7 +114,6 @@ function updateDefaultBannerPreview() {
   )
 
   if (!selectedBanner) {
-    imagePreview.value = null
     return
   }
 
@@ -185,16 +198,27 @@ function cancelChanges() {
 
 // 選擇圖片
 function handleImageChange(event) {
-  const file = event.target.files[0]
+  const file = event.target.files?.[0] || null
 
   if (!file) {
     return
   }
 
+  clearImagePreview()
+
   selectedImage.value = file
 
   imagePreview.value =
     URL.createObjectURL(file)
+}
+
+// 清除目前選擇的圖片
+function clearSelectedImage() {
+  selectedImage.value = null
+
+  clearImagePreview()
+
+  imageInputKey.value++
 }
 
 // 切換圖片來源
@@ -203,9 +227,13 @@ function changeImageSource(source) {
 
   selectedImage.value = null
 
+  // 重新建立 file input，清除已選擇檔案名稱
+  imageInputKey.value++
+
+  clearImagePreview()
+
   if (source === 'default') {
     defaultBannerId.value = ''
-    imagePreview.value = null
     return
   }
 
@@ -220,8 +248,6 @@ function changeImageSource(source) {
       getImageUrl(
         banner.value.image_url
       )
-  } else {
-    imagePreview.value = null
   }
 }
 
@@ -314,6 +340,9 @@ async function saveBanner() {
     banner.value = data.banner
     selectedImage.value = null
 
+    // 清除 file input 的檔名
+    imageInputKey.value++
+
     if (
       data.banner.image_source === 'default'
     ) {
@@ -322,9 +351,15 @@ async function saveBanner() {
       defaultBannerId.value =
         data.banner.default_banner_id || ''
 
+      clearImagePreview()
+
+      updateDefaultBannerPreview()
+
     } else {
       imageSource.value = 'upload'
       defaultBannerId.value = ''
+
+      clearImagePreview()
 
       imagePreview.value =
         getImageUrl(
@@ -380,8 +415,12 @@ async function removeBannerImage() {
       banner.value.banner_id
     )
 
-    imagePreview.value = null
+    clearImagePreview()
+
     selectedImage.value = null
+
+    // 清除 file input 的檔名
+    imageInputKey.value++
 
     banner.value.image_url = null
     banner.value.image_source = 'upload'
@@ -430,8 +469,13 @@ async function removeBanner() {
     const data = await deleteHomepageBanner()
 
     banner.value = null
-    imagePreview.value = null
+
+    clearImagePreview()
+
     selectedImage.value = null
+
+    // 清除 file input 的檔名
+    imageInputKey.value++
 
     title.value = ''
     description.value = ''
@@ -458,6 +502,15 @@ async function removeBanner() {
     saving.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  if (
+    imagePreview.value &&
+    imagePreview.value.startsWith('blob:')
+  ) {
+    URL.revokeObjectURL(imagePreview.value)
+  }
+})
 </script>
 
 <template>
@@ -620,6 +673,7 @@ async function removeBanner() {
                     </CFormLabel>
 
                     <CFormInput
+                      :key="imageInputKey"
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
                       @change="
@@ -648,19 +702,33 @@ async function removeBanner() {
                     />
                   </div>
 
+                  <!-- 清除目前選擇的圖片 -->
+                  <div
+                    v-if="selectedImage"
+                    class="mt-4"
+                  >
+                    <CButton
+                      color="danger"
+                      :disabled="saving"
+                      @click="clearSelectedImage"
+                    >
+                      清除圖片
+                    </CButton>
+                  </div>
+
                   <!-- 刪除圖片 -->
                   <div
                     v-if="
                       banner &&
                       imageSource === 'upload' &&
                       banner.image_source === 'upload' &&
-                      banner.image_url
+                      banner.image_url &&
+                      !selectedImage
                     "
-                    class="mt-2"
+                    class="mt-4"
                   >
                     <CButton
                       color="danger"
-                      variant="outline"
                       :disabled="saving"
                       @click="removeBannerImage"
                     >

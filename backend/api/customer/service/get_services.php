@@ -109,6 +109,7 @@ SELECT
 FROM CUSTOMER_SERVICE
 WHERE customer_id = ?
 AND store_id = ?
+AND status != 'cancelled'
 ";
 
 $params = [
@@ -117,17 +118,13 @@ $params = [
 ];
 
 // 狀態篩選
-if ($status === "pending") {
+if ($status !== "all") {
 
     $sql .= "
-    AND status = 'pending'
+    AND status = ?
     ";
 
-} elseif ($status === "resolved") {
-
-    $sql .= "
-    AND status = 'resolved'
-    ";
+    $params[] = $status;
 }
 
 // 排序

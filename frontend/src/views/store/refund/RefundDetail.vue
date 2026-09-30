@@ -641,7 +641,7 @@ onMounted(() => {
         是否確認將此退款案件處理為
         「{{ getRefundStatusText(refundStatus) }}」？
         <br>
-        處理後將無法修改。
+        處理後將無法修改
       </CModalBody>
 
       <CModalFooter class="border-0">

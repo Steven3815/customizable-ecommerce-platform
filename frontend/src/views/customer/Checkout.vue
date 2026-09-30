@@ -25,7 +25,7 @@
                 color="secondary"
                 @click="goBack"
               >
-                返回上一頁
+                返回上頁
               </CButton>
             </div>
           </div>

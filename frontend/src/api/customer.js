@@ -801,7 +801,7 @@ export async function submitCustomerTransferPayment(
   }
 }
 
-// Customer Profile
+// Profile
 
 export async function getCustomerProfile() {
   try {
@@ -900,6 +900,135 @@ export async function changeCustomerPassword(passwordData) {
   } catch (error) {
     console.error('修改密碼失敗:', error)
 
+    throw error
+  }
+}
+
+// Service
+
+export async function getCustomerServices(
+  storeId,
+  status = 'all'
+) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/service/get_services.php?store_id=${storeId}&status=${status}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得客服案件失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '取得客服案件失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function getCustomerService(storeId, serviceId) {
+  const response = await fetch(
+    `http://localhost/ecommerce-platform/backend/api/customer/service/get_service.php?store_id=${storeId}&service_id=${serviceId}`,
+    {
+      method: 'GET',
+      credentials: 'include'
+    }
+  )
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = new Error(data.error || '取得客服案件失敗')
+    error.status = response.status
+    error.message = data.error || '取得客服案件失敗'
+    throw error
+  }
+
+  return data
+}
+
+export async function createCustomerService(serviceData) {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/service/create_service.php',
+      {
+        method: 'POST',
+        credentials: 'include',
+        body: serviceData
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '建立客服案件失敗'
+      )
+
+      error.status = response.status
+
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error(
+      '建立客服案件失敗:',
+      error
+    )
+
+    throw error
+  }
+}
+
+export async function deleteCustomerService(
+  storeId,
+  serviceId
+) {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/service/delete_service.php?store_id=${storeId}&service_id=${serviceId}`,
+      {
+        method: 'PUT',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取消客服案件失敗'
+      )
+
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error(
+      '取消客服案件失敗:',
+      error
+    )
     throw error
   }
 }

@@ -1,3 +1,4 @@
+```vue
 <template>
   <div>
     <Sidebar />
@@ -139,6 +140,7 @@
                     </CFormLabel>
 
                     <CFormInput
+                      :key="paymentProofInputKey"
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
                       :disabled="loading"
@@ -149,7 +151,7 @@
               </CRow>
 
               <div class="text-body-secondary mt-3">
-                付款證明為選填，完成轉帳後可上傳轉帳截圖。
+                付款證明為選填，完成轉帳後可上傳轉帳截圖
               </div>
 
               <div
@@ -160,7 +162,10 @@
               </div>
 
               <!-- 圖片預覽 -->
-              <div v-if="paymentProofPreview" class="mt-4">
+              <div
+                v-if="paymentProofPreview"
+                class="mt-4"
+              >
                 <CFormLabel>
                   圖片預覽
                 </CFormLabel>
@@ -286,7 +291,7 @@
       </CModalHeader>
 
       <CModalBody>
-        已送出轉帳確認，等待商家確認付款。
+        已送出轉帳確認，等待商家確認付款
       </CModalBody>
 
       <CModalFooter class="border-0">
@@ -352,6 +357,7 @@ const payment = ref(null)
 
 const paymentProofImage = ref(null)
 const paymentProofPreview = ref(null)
+const paymentProofInputKey = ref(0)
 
 const loading = ref(false)
 
@@ -479,7 +485,9 @@ async function loadPayment() {
 
 // 選擇付款證明
 function handleFileChange(event) {
-  const file = event.target.files?.[0] || null
+  const file =
+    event.target.files?.[0] ||
+    null
 
   if (!file) {
     return
@@ -507,6 +515,8 @@ function removePaymentProof() {
 
   paymentProofImage.value = null
   paymentProofPreview.value = null
+
+  paymentProofInputKey.value++
 }
 
 // 提交轉帳確認

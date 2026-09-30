@@ -1239,7 +1239,7 @@ function cancelChanges() {
       </CModalHeader>
 
       <CModalBody>
-        確定要刪除此商品嗎？刪除後將無法恢復。
+        確定要刪除此商品嗎？刪除後將無法恢復
       </CModalBody>
 
       <CModalFooter class="border-0">

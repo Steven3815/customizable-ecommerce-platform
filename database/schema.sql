@@ -320,7 +320,7 @@ CREATE TABLE CUSTOMER_SERVICE (
     problem_type VARCHAR(100),
     description TEXT,
     image_url VARCHAR(500),
-    status ENUM('pending', 'resolved') DEFAULT 'pending',
+    status ENUM('pending', 'resolved', 'cancelled') DEFAULT 'pending',
     admin_reply TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
