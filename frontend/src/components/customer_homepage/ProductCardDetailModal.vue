@@ -110,7 +110,6 @@
             class="description-button"
             @click="toggleDescription"
           >
-
             <CIcon
               :icon="
                 descriptionExpanded
@@ -125,7 +124,6 @@
                 ? '收合'
                 : '展開'
             }}
-
           </CButton>
 
           <!-- 無規格商品 -->
@@ -425,7 +423,10 @@ import {
   getCustomerLoginStatus
 } from '../../api/customer.js'
 
+import { useCartStore } from '../../stores/cart.js'
+
 const router = useRouter()
+const cartStore = useCartStore()
 
 const props = defineProps({
   visible: {
@@ -715,6 +716,11 @@ const addToCart = async () => {
     console.log(
       '加入購物車成功:',
       data
+    )
+
+    // 更新 Header 購物車金額
+    await cartStore.loadCartTotal(
+      props.storeId
     )
 
     addedQuantity.value = quantity.value

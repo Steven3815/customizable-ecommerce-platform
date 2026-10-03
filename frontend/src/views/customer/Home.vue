@@ -21,7 +21,7 @@
           :sliders="home?.sliders || []"
         />
 
-        <ProductSearch class="py-5"/>
+        <ProductSearch class="mt-4 py-5"/>
 
         <section
           v-for="category in categories.filter(category => category.products.some(product => product.display_price !== null))"

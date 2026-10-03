@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useColorModes } from '@coreui/vue'
 
 import AppHeaderDropdownAccnt from './HeaderDropdownAccnt.vue'
 import CartOffcanvas from './CartOffcanvas.vue'
 import { useSidebarStore } from '../../stores/sidebar.js'
+import { useCartStore } from '../../stores/cart.js'
 
 const headerClassNames = ref('mb-4 p-0')
 const cartOffcanvas = ref(null)
@@ -14,6 +15,7 @@ const { colorMode, setColorMode } = useColorModes(
 )
 
 const sidebar = useSidebarStore()
+const cartStore = useCartStore()
 
 const props = defineProps({
   store: {
@@ -25,9 +27,25 @@ const props = defineProps({
   }
 })
 
-const openCart = () => {
-  cartOffcanvas.value?.open()
+const openCart = async () => {
+  await cartOffcanvas.value?.open()
+
+  await cartStore.loadCartTotal(
+    props.store.store_id
+  )
 }
+
+watch(
+  () => props.store.store_id,
+  (storeId) => {
+    if (storeId) {
+      cartStore.loadCartTotal(storeId)
+    }
+  },
+  {
+    immediate: true
+  }
+)
 
 onMounted(() => {
   document.addEventListener('scroll', () => {
@@ -95,6 +113,8 @@ onMounted(() => {
       </CHeaderNav>
 
       <div class="cart-container">
+
+        <!-- 手機版 -->
         <CButton
           class="header-icon d-lg-none"
           @click="openCart"
@@ -102,8 +122,9 @@ onMounted(() => {
           <CIcon icon="cil-basket" />
         </CButton>
 
+        <!-- 桌面版 -->
         <CButton
-          class="cart-button d-none d-lg-flex align-items-center gap-2"
+          class="cart-button d-none d-lg-flex"
           @click="openCart"
         >
           <CIcon
@@ -112,9 +133,10 @@ onMounted(() => {
           />
 
           <strong>
-            $1290.00
+            ${{ cartStore.cartTotal.toLocaleString() }}
           </strong>
         </CButton>
+
       </div>
     </CContainer>
 
@@ -140,18 +162,23 @@ onMounted(() => {
 
 .cart-container {
   margin-left: 0.5rem;
+  width: 120px;
+  flex-shrink: 0;
 }
 
 .cart-button {
+  width: 120px;
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
 }
 
 .cart-button strong {
   font-size: 1.1rem;
+  min-width: 0;
 }
 
 .header-icon {

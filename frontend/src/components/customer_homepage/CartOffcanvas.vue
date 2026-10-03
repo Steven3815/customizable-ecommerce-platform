@@ -108,10 +108,10 @@
           </div>
 
           <!-- 商品資訊 -->
-          <div class="flex-grow-1">
+          <div class="flex-grow-1 min-width-0">
 
             <!-- 商品名稱 -->
-            <div class="fw-semibold mb-1">
+            <div class="fw-semibold text-break mb-1">
               {{ item.product_name }}
             </div>
 
@@ -135,14 +135,45 @@
 
           </div>
 
-          <!-- 小計 -->
-          <div class="fw-semibold text-nowrap">
-            $
-            {{
-              (
-                Number(item.price) * Number(item.quantity)
-              ).toLocaleString()
-            }}
+          <!-- 右側操作 -->
+          <div
+            class="cart-actions d-flex flex-column align-items-end justify-content-end"
+          >
+
+            <!-- 小計 -->
+            <div class="fw-semibold text-nowrap mb-2">
+              $
+              {{
+                (
+                  Number(item.price) *
+                  Number(item.quantity)
+                ).toLocaleString()
+              }}
+            </div>
+
+            <!-- 移除 -->
+            <CButton
+              color="danger"
+              size="sm"
+              :disabled="
+                deletingItemId === item.cart_item_id
+              "
+              @click="
+                deleteItem(item.cart_item_id)
+              "
+            >
+              <CSpinner
+                v-if="
+                  deletingItemId === item.cart_item_id
+                "
+                size="sm"
+              />
+
+              <span v-else>
+                移除
+              </span>
+            </CButton>
+
           </div>
 
         </div>
@@ -163,7 +194,9 @@
         </div>
 
         <!-- 總計 -->
-        <div class="d-flex justify-content-between fw-semibold fs-5">
+        <div
+          class="d-flex justify-content-between fw-semibold fs-5"
+        >
 
           <span>
             總計
@@ -206,10 +239,14 @@ import {
 
 import {
   getCustomerLoginStatus,
-  getCustomerCart
+  getCustomerCart,
+  deleteCustomerCart
 } from '../../api/customer.js'
 
+import { useCartStore } from '../../stores/cart.js'
+
 const router = useRouter()
+const cartStore = useCartStore()
 
 const props = defineProps({
   storeId: {
@@ -224,6 +261,7 @@ const loading = ref(false)
 const error = ref('')
 const cart = ref(null)
 const isLoggedIn = ref(false)
+const deletingItemId = ref(null)
 
 const cartSubtotal = computed(() => {
 
@@ -233,7 +271,9 @@ const cartSubtotal = computed(() => {
 
   return cart.value.items.reduce(
     (total, item) =>
-      total + Number(item.price) * Number(item.quantity),
+      total +
+      Number(item.price) *
+      Number(item.quantity),
     0
   )
 
@@ -248,13 +288,61 @@ async function loadCart() {
 
   try {
 
-    cart.value = await getCustomerCart(props.storeId)
+    cart.value = await getCustomerCart(
+      props.storeId
+    )
 
   } catch (err) {
 
-    console.error('取得購物車資料失敗:', err)
+    console.error(
+      '取得購物車資料失敗:',
+      err
+    )
 
-    error.value = err.message || '取得購物車資料失敗'
+    error.value =
+      err.message || '取得購物車資料失敗'
+
+  }
+
+}
+
+const deleteItem = async (cartItemId) => {
+
+  if (deletingItemId.value) {
+    return
+  }
+
+  try {
+
+    deletingItemId.value = cartItemId
+    error.value = ''
+
+    await deleteCustomerCart(
+      cartItemId,
+      props.storeId
+    )
+
+    // 重新取得購物車
+    await loadCart()
+
+    // 更新 Header 購物車金額
+    await cartStore.loadCartTotal(
+      props.storeId
+    )
+
+  } catch (err) {
+
+    console.error(
+      '刪除購物車商品失敗:',
+      err
+    )
+
+    error.value =
+      err.message || '刪除購物車商品失敗'
+
+  } finally {
+
+    deletingItemId.value = null
 
   }
 
@@ -270,9 +358,11 @@ const open = async () => {
 
   try {
 
-    const loginStatus = await getCustomerLoginStatus()
+    const loginStatus =
+      await getCustomerLoginStatus()
 
-    isLoggedIn.value = loginStatus.loggedIn
+    isLoggedIn.value =
+      loginStatus.loggedIn
 
     if (!loginStatus.loggedIn) {
       return
@@ -287,9 +377,13 @@ const open = async () => {
 
   } catch (err) {
 
-    console.error('取得登入狀態失敗:', err)
+    console.error(
+      '取得登入狀態失敗:',
+      err
+    )
 
-    error.value = err.message || '取得登入狀態失敗'
+    error.value =
+      err.message || '取得登入狀態失敗'
 
   } finally {
 
@@ -305,28 +399,42 @@ const close = () => {
 
 const goToLogin = () => {
   close()
-  router.push(`/store-${props.storeId}/login`)
+
+  router.push(
+    `/store-${props.storeId}/login`
+  )
 }
 
 const goToHome = () => {
   close()
-  router.push(`/store-${props.storeId}`)
+
+  router.push(
+    `/store-${props.storeId}`
+  )
 }
 
 const goToCart = () => {
   close()
-  router.push(`/store-${props.storeId}/cart`)
+
+  router.push(
+    `/store-${props.storeId}/cart`
+  )
 }
 
 defineExpose({
   open,
-  close
+  close,
+  cartSubtotal
 })
 </script>
 
 <style scoped>
 
 .cart-item {
+  min-width: 0;
+}
+
+.min-width-0 {
   min-width: 0;
 }
 
@@ -353,6 +461,10 @@ defineExpose({
   color: var(--cui-secondary-color);
   border-radius: 6px;
   font-size: 12px;
+}
+
+.cart-actions {
+  flex-shrink: 0;
 }
 
 </style>

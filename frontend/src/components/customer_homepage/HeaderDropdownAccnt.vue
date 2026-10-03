@@ -7,6 +7,10 @@ const router = useRouter()
 
 const itemsCount = 42
 
+async function goProfile() {
+  router.push(`/store-${route.params.storeId}/profile`)
+}
+
 async function logout() {
   try {
     await customerLogout()
@@ -59,7 +63,7 @@ async function logout() {
         設定
       </CDropdownHeader>
 
-      <CDropdownItem>
+      <CDropdownItem @click="goProfile">
         <CIcon icon="cil-user" />
         基本資料
       </CDropdownItem>
@@ -78,6 +82,6 @@ async function logout() {
 
 <style scoped>
 :deep(.dropdown-item) {
-  cursor: default;
+  cursor: pointer;
 }
 </style>
