@@ -3,7 +3,7 @@
     <Sidebar />
 
     <div class="wrapper d-flex flex-column min-vh-100">
-      <Header :store="order?.store || {}" />
+      <Header :store="home?.store || {}" />
 
       <div class="body flex-grow-1">
         <CContainer class="px-4" lg>
@@ -315,7 +315,6 @@
                     </span>
                   </div>
 
-                  <!-- 配送中才顯示預計出貨日期 -->
                   <div
                     v-if="order.delivery_status === 'shipping'"
                     class="order-info-item"
@@ -329,7 +328,6 @@
                     </span>
                   </div>
 
-                  <!-- 已送達才顯示預計送達日期 -->
                   <div
                     v-if="order.delivery_status === 'completed'"
                     class="order-info-item"
@@ -427,7 +425,6 @@
                       order.payment.payment_status === 'paid'
                     "
                   >
-
                     <!-- 付款確認狀態 -->
                     <div class="order-info-item">
                       <span class="order-info-label">
@@ -613,7 +610,7 @@
 
       <!-- Footer -->
       <Footer
-        :footer="order?.footer || {}"
+        :footer="home?.footer || {}"
         class="mt-auto"
       />
 
@@ -680,9 +677,12 @@ import Footer from '../../components/customer_homepage/Footer.vue'
 import Createdby from '../../components/customer_homepage/Createdby.vue'
 
 import {
+  getCustomerHome,
   getCustomerOrder,
   deleteCustomerOrder
 } from '../../api/customer.js'
+
+import { useCartStore } from '../../stores/cart.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -690,6 +690,9 @@ const router = useRouter()
 const storeId = Number(route.params.storeId)
 const orderId = Number(route.params.orderId)
 
+const cartStore = useCartStore()
+
+const home = ref(null)
 const loading = ref(true)
 const cancelling = ref(false)
 const error = ref('')
@@ -723,6 +726,21 @@ const refundReasonOptions = [
     value: 'other'
   }
 ]
+
+const loadHome = async () => {
+  try {
+    home.value = await getCustomerHome(storeId)
+  } catch (err) {
+    console.error(
+      '取得首頁資料失敗:',
+      err
+    )
+  }
+}
+
+const loadCartTotal = async () => {
+  await cartStore.loadCartTotal(storeId)
+}
 
 const loadOrder = async () => {
   loading.value = true
@@ -801,6 +819,8 @@ const cancelOrder = async () => {
       storeId,
       order.value.order_number
     )
+
+    await loadCartTotal()
 
     showCancelModal.value = false
 
@@ -920,8 +940,10 @@ const getRefundReasonText = (reason) => {
   return option?.label || reason
 }
 
-onMounted(() => {
-  loadOrder()
+onMounted(async () => {
+  await loadHome()
+  await loadOrder()
+  await loadCartTotal()
 })
 </script>
 

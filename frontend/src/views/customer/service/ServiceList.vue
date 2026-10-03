@@ -197,15 +197,11 @@
           確定要刪除此客服案件嗎？
         </p>
 
-        <p class="text-secondary mb-0">
-          刪除後將會將案件標記為已取消
-        </p>
       </CModalBody>
 
       <CModalFooter>
         <CButton
           color="secondary"
-          variant="outline"
           :disabled="deleting"
           @click="closeDeleteModal"
         >

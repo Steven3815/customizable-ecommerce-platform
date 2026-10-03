@@ -3,7 +3,7 @@
     <Sidebar />
 
     <div class="wrapper d-flex flex-column min-vh-100">
-      <Header :store="service?.store || {}" />
+      <Header :store="home?.store || {}" />
 
       <div class="body flex-grow-1">
         <CContainer class="px-4" lg>
@@ -283,7 +283,7 @@
 
       <!-- Footer -->
       <Footer
-        :footer="service?.footer || {}"
+        :footer="home?.footer || {}"
         class="mt-auto"
       />
 
@@ -352,6 +352,7 @@ import Footer from '../../../components/customer_homepage/Footer.vue'
 import Createdby from '../../../components/customer_homepage/Createdby.vue'
 
 import {
+  getCustomerHome,
   getCustomerService,
   deleteCustomerService
 } from '../../../api/customer.js'
@@ -365,10 +366,24 @@ const serviceId = Number(route.params.serviceId)
 const loading = ref(true)
 const error = ref('')
 const service = ref(null)
+const home = ref(null)
 
 const showDeleteModal = ref(false)
 const deleting = ref(false)
 
+/* 載入首頁資料 */
+const loadHome = async () => {
+  try {
+    home.value = await getCustomerHome(storeId)
+  } catch (err) {
+    console.error(
+      '取得首頁資料失敗:',
+      err
+    )
+  }
+}
+
+/* 載入客服案件 */
 const loadService = async () => {
   loading.value = true
   error.value = ''
@@ -492,8 +507,9 @@ const getImageUrl = (url) => {
   return `http://localhost/ecommerce-platform/backend${url}`
 }
 
-onMounted(() => {
-  loadService()
+onMounted(async () => {
+  await loadHome()
+  await loadService()
 })
 </script>
 

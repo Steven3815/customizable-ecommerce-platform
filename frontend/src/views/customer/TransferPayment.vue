@@ -1,10 +1,9 @@
-```vue
 <template>
   <div>
     <Sidebar />
 
     <div class="wrapper d-flex flex-column min-vh-100">
-      <Header :store="payment?.store || {}" />
+      <Header :store="home?.store || {}" />
 
       <div class="body flex-grow-1">
         <CContainer class="px-4" lg>
@@ -218,7 +217,11 @@
         </CContainer>
       </div>
 
-      <Footer :footer="payment?.footer || {}" />
+      <!-- Footer -->
+      <Footer
+        :footer="home?.footer || {}"
+      />
+
       <Createdby />
     </div>
 
@@ -343,9 +346,12 @@ import Footer from '../../components/customer_homepage/Footer.vue'
 import Createdby from '../../components/customer_homepage/Createdby.vue'
 
 import {
+  getCustomerHome,
   getCustomerTransferPayment,
   submitCustomerTransferPayment
 } from '../../api/customer.js'
+
+import { useCartStore } from '../../stores/cart.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -353,6 +359,9 @@ const router = useRouter()
 const storeId = route.params.storeId
 const orderId = route.params.orderId
 
+const cartStore = useCartStore()
+
+const home = ref(null)
 const payment = ref(null)
 
 const paymentProofImage = ref(null)
@@ -407,6 +416,24 @@ const paymentMethodTitle = computed(() => {
 
   return '轉帳資訊'
 })
+
+// 取得首頁資料
+async function loadHome() {
+  try {
+    home.value =
+      await getCustomerHome(storeId)
+  } catch (error) {
+    console.error(
+      '取得首頁資料失敗:',
+      error
+    )
+  }
+}
+
+// 更新購物車金額
+async function loadCartTotal() {
+  await cartStore.loadCartTotal(storeId)
+}
 
 function showError(message) {
   errorMessage.value = message
@@ -557,6 +584,8 @@ async function submitPayment() {
       data
     )
 
+    await loadCartTotal()
+
     paymentSuccessVisible.value = true
 
   } catch (error) {
@@ -594,7 +623,9 @@ onMounted(async () => {
     return
   }
 
+  await loadHome()
   await loadPayment()
+  await loadCartTotal()
 })
 
 onBeforeUnmount(() => {
