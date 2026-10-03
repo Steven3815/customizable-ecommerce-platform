@@ -24,7 +24,16 @@ import {
   cibCcApplePay,
   cibCcAmex,
 } from '@coreui/icons'
-import { cifUs, cifBr, cifIn, cifFr, cifEs, cifPl } from '@coreui/icons'
+
+import {
+  cifUs,
+  cifBr,
+  cifIn,
+  cifFr,
+  cifEs,
+  cifPl,
+} from '@coreui/icons'
+
 import {
   cilArrowBottom,
   cilArrowRight,
@@ -54,6 +63,7 @@ import {
   cilGlobeAlt,
   cilGrid,
   cilFile,
+  cilHome,
   cilJustifyCenter,
   cilLaptop,
   cilLayers,
@@ -114,6 +124,7 @@ export const iconsSet = Object.assign(
     cilGlobeAlt,
     cilGrid,
     cilFile,
+    cilHome,
     cilJustifyCenter,
     cilLaptop,
     cilLayers,

@@ -549,7 +549,7 @@ const paymentConfirmStatusOptions = [
     value: 'all'
   },
   {
-    label: '等待確認',
+    label: '處理中',
     value: 'waiting'
   },
   {
@@ -738,7 +738,7 @@ function getPaymentText(status) {
 // 付款確認文字
 function getPaymentConfirmText(status) {
   const statusMap = {
-    waiting: '等待確認',
+    waiting: '處理中',
     confirmed: '已確認',
     rejected: '已拒絕'
   }

@@ -29,10 +29,6 @@
             <CCard class="mb-4">
               <CCardBody>
 
-                <h4 class="mb-4">
-                  會員基本資料
-                </h4>
-
                 <!-- 姓名 -->
                 <CRow class="mb-4">
                   <CCol :md="6">

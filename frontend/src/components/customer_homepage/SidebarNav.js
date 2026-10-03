@@ -1,9 +1,8 @@
 import { defineComponent, h, onMounted, ref, resolveComponent } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
-import { cilExternalLink } from '@coreui/icons'
 import { CBadge, CSidebarNav, CNavItem, CNavGroup, CNavTitle } from '@coreui/vue'
-import nav from '@/_nav.js'
+import nav from '@/_customer_nav.js'
 
 import simplebar from 'simplebar-vue'
 import 'simplebar-vue/dist/simplebar.min.css'
@@ -55,6 +54,26 @@ const SidebarNav = defineComponent({
       firstRender.value = false
     })
 
+    // 根據目前網址取得 storeId
+    const getStoreId = () => {
+      return route.params.storeId
+    }
+
+    // 將 :storeId 替換成目前商店的 storeId
+    const getNavPath = (path) => {
+      if (!path) {
+        return path
+      }
+
+      const storeId = getStoreId()
+
+      if (!storeId) {
+        return path
+      }
+
+      return path.replace(':storeId', storeId)
+    }
+
     const renderItem = (item) => {
       if (item.items) {
         return h(
@@ -97,10 +116,10 @@ const SidebarNav = defineComponent({
                 : h('span', { class: 'nav-icon' }, h('span', { class: 'nav-icon-bullet' })),
               item.name,
               item.external && h(resolveComponent('CIcon'), {
-                class: 'ms-2',
-                name: 'cil-external-link',
-                size: 'sm'
-              }),
+                  class: 'ms-2',
+                  name: 'cilExternalLink',
+                  size: 'sm',
+                }),
               item.badge &&
                 h(
                   CBadge,
@@ -118,11 +137,12 @@ const SidebarNav = defineComponent({
         )
       }
 
-      return item.to
+      const navPath = getNavPath(item.to)
+      return navPath
         ? h(
             RouterLink,
             {
-              to: item.to,
+              to: navPath,
               custom: true,
             },
             {
