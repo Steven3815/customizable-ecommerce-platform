@@ -107,7 +107,8 @@ async function loadOrder() {
     order.value = data.order
     refundEnable.value =
       Boolean(Number(data.refund_enable))
-    paymentNote.value = data.order.payment?.payment_note || ''
+    paymentNote.value =
+      data.order.payment?.payment_note || ''
   } catch (err) {
     console.error('取得訂單詳細資料失敗:', err)
 
@@ -118,7 +119,8 @@ async function loadOrder() {
     } else if (err.status === 404) {
       error.value = '找不到此訂單'
     } else {
-      error.value = err.message || '取得訂單詳細資料失敗'
+      error.value =
+        err.message || '取得訂單詳細資料失敗'
     }
 
     showError(error.value)
@@ -167,21 +169,38 @@ async function changeDeliveryStatus(status) {
       delivery_status: status
     })
 
-    order.value.delivery.delivery_status = data.delivery_status
-    order.value.updated_at = new Date().toISOString()
+    order.value.delivery.delivery_status =
+      data.delivery_status
+
+    order.value.updated_at =
+      new Date().toISOString()
   } catch (err) {
-    console.error('更新訂單配送狀態失敗:', err)
+    console.error(
+      '更新訂單配送狀態失敗:',
+      err
+    )
 
     if (err.status === 401) {
-      showError('登入狀態已失效，請重新登入')
+      showError(
+        '登入狀態已失效，請重新登入'
+      )
     } else if (err.status === 403) {
-      showError('目前無權限更新此訂單')
+      showError(
+        '目前無權限更新此訂單'
+      )
     } else if (err.status === 404) {
-      showError('找不到此訂單')
+      showError(
+        '找不到此訂單'
+      )
     } else if (err.status === 409) {
-      showError('此訂單配送狀態無法進行此變更')
+      showError(
+        '此訂單配送狀態無法進行此變更'
+      )
     } else {
-      showError(err.message || '更新訂單配送狀態失敗')
+      showError(
+        err.message ||
+        '更新訂單配送狀態失敗'
+      )
     }
   } finally {
     updatingDelivery.value = false
@@ -199,7 +218,10 @@ function closePaymentConfirmModal() {
 }
 
 async function confirmPayment(paymentConfirmStatus) {
-  if (!order.value?.payment || confirmingPayment.value) {
+  if (
+    !order.value?.payment ||
+    confirmingPayment.value
+  ) {
     return
   }
 
@@ -214,8 +236,10 @@ async function confirmPayment(paymentConfirmStatus) {
   try {
     const data = await confirmOrderPayment({
       order_id: order.value.order_id,
-      payment_confirm_status: paymentConfirmStatus,
-      payment_note: paymentNote.value.trim()
+      payment_confirm_status:
+        paymentConfirmStatus,
+      payment_note:
+        paymentNote.value.trim()
     })
 
     order.value.payment.payment_status =
@@ -238,18 +262,32 @@ async function confirmPayment(paymentConfirmStatus) {
 
     closePaymentConfirmModal()
   } catch (err) {
-    console.error('更新訂單付款狀態失敗:', err)
+    console.error(
+      '更新訂單付款狀態失敗:',
+      err
+    )
 
     if (err.status === 401) {
-      showError('登入狀態已失效，請重新登入')
+      showError(
+        '登入狀態已失效，請重新登入'
+      )
     } else if (err.status === 403) {
-      showError('目前無權限更新此訂單付款')
+      showError(
+        '目前無權限更新此訂單付款'
+      )
     } else if (err.status === 404) {
-      showError('找不到付款資料')
+      showError(
+        '找不到付款資料'
+      )
     } else if (err.status === 409) {
-      showError('此付款目前無法進行此變更')
+      showError(
+        '此付款目前無法進行此變更'
+      )
     } else {
-      showError(err.message || '更新訂單付款狀態失敗')
+      showError(
+        err.message ||
+        '更新訂單付款狀態失敗'
+      )
     }
   } finally {
     confirmingPayment.value = false
@@ -287,20 +325,26 @@ function getPaymentConfirmStatusText(status) {
   return statusMap[status] || status
 }
 
+// 付款方式轉中文
 function getPaymentMethodText(method) {
   const methodMap = {
     credit_card: '信用卡',
     atm: 'ATM 轉帳',
     post_office: '郵局轉帳',
+    cash_on_delivery: '貨到付款',
+    in_store: '門市付款',
     linepay: 'LINE Pay'
   }
 
   return methodMap[method] || method
 }
 
+// 配送方式轉中文
 function getDeliveryMethodText(method) {
   const methodMap = {
-    home_delivery: '宅配'
+    home_delivery: '宅配',
+    convenience_store: '超商取貨',
+    store_pickup: '門市取貨'
   }
 
   return methodMap[method] || method
@@ -327,7 +371,9 @@ function getRefundReasonText(reason) {
 }
 
 function formatAmount(amount) {
-  return `$${Number(amount || 0).toLocaleString()}`
+  return `$${Number(
+    amount || 0
+  ).toLocaleString()}`
 }
 
 function formatDate(date) {
@@ -335,11 +381,16 @@ function formatDate(date) {
     return '-'
   }
 
-  return date.replace('T', ' ').slice(0, 19)
+  return date
+    .replace('T', ' ')
+    .slice(0, 19)
 }
 
 function getItemSubtotal(item) {
-  return Number(item.quantity || 0) * Number(item.price || 0)
+  return (
+    Number(item.quantity || 0) *
+    Number(item.price || 0)
+  )
 }
 
 function canConfirmPayment() {
@@ -349,11 +400,15 @@ function canConfirmPayment() {
 
   return (
     (
-      order.value.payment.payment_method === 'atm' ||
-      order.value.payment.payment_method === 'post_office'
+      order.value.payment.payment_method ===
+        'atm' ||
+      order.value.payment.payment_method ===
+        'post_office'
     ) &&
-    order.value.payment.payment_status === 'processing' &&
-    order.value.payment.payment_confirm_status === 'waiting'
+    order.value.payment.payment_status ===
+      'processing' &&
+    order.value.payment.payment_confirm_status ===
+      'waiting'
   )
 }
 
@@ -515,7 +570,11 @@ onMounted(() => {
                   <strong>商品金額</strong>
 
                   <div class="mt-1">
-                    {{ formatAmount(order.amount?.product_amount) }}
+                    {{
+                      formatAmount(
+                        order.amount?.product_amount
+                      )
+                    }}
                   </div>
                 </div>
 
@@ -523,7 +582,11 @@ onMounted(() => {
                   <strong>運費</strong>
 
                   <div class="mt-1">
-                    {{ formatAmount(order.amount?.shipping_fee) }}
+                    {{
+                      formatAmount(
+                        order.amount?.shipping_fee
+                      )
+                    }}
                   </div>
                 </div>
 
@@ -531,7 +594,11 @@ onMounted(() => {
                   <strong>訂單總金額</strong>
 
                   <div class="mt-1 fw-bold">
-                    {{ formatAmount(order.amount?.total_amount) }}
+                    {{
+                      formatAmount(
+                        order.amount?.total_amount
+                      )
+                    }}
                   </div>
                 </div>
               </CCardBody>
@@ -595,11 +662,17 @@ onMounted(() => {
                       </CTableDataCell>
 
                       <CTableDataCell>
-                        {{ formatAmount(getItemSubtotal(item)) }}
+                        {{
+                          formatAmount(
+                            getItemSubtotal(item)
+                          )
+                        }}
                       </CTableDataCell>
                     </CTableRow>
 
-                    <CTableRow v-if="!order.items?.length">
+                    <CTableRow
+                      v-if="!order.items?.length"
+                    >
                       <CTableDataCell
                         colspan="5"
                         class="text-center text-body-secondary"
@@ -625,7 +698,11 @@ onMounted(() => {
                     <strong>付款方式</strong>
 
                     <div class="mt-1">
-                      {{ getPaymentMethodText(order.payment.payment_method) }}
+                      {{
+                        getPaymentMethodText(
+                          order.payment.payment_method
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -633,7 +710,11 @@ onMounted(() => {
                     <strong>付款狀態</strong>
 
                     <div class="mt-1">
-                      {{ getPaymentStatusText(order.payment.payment_status) }}
+                      {{
+                        getPaymentStatusText(
+                          order.payment.payment_status
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -641,7 +722,11 @@ onMounted(() => {
                     <strong>付款金額</strong>
 
                     <div class="mt-1">
-                      {{ formatAmount(order.payment.amount) }}
+                      {{
+                        formatAmount(
+                          order.payment.amount
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -650,9 +735,17 @@ onMounted(() => {
 
                     <div
                       class="mt-1"
-                      :class="{ 'text-danger fw-bold': order.payment.payment_confirm_status === 'waiting' }"
+                      :class="{
+                        'text-danger fw-bold':
+                          order.payment.payment_confirm_status ===
+                          'waiting'
+                      }"
                     >
-                      {{ getPaymentConfirmStatusText(order.payment.payment_confirm_status) }}
+                      {{
+                        getPaymentConfirmStatusText(
+                          order.payment.payment_confirm_status
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -669,7 +762,11 @@ onMounted(() => {
                       <strong>付款時間</strong>
 
                       <div class="mt-1">
-                        {{ formatDate(order.payment.paid_at) }}
+                        {{
+                          formatDate(
+                            order.payment.paid_at
+                          )
+                        }}
                       </div>
                     </div>
 
@@ -689,8 +786,14 @@ onMounted(() => {
 
                       <div class="mt-2">
                         <img
-                          v-if="order.payment.payment_proof_image"
-                          :src="order.payment.payment_proof_image"
+                          v-if="
+                            order.payment
+                              .payment_proof_image
+                          "
+                          :src="
+                            order.payment
+                              .payment_proof_image
+                          "
                           alt="付款證明"
                           class="payment-proof-image"
                         >
@@ -708,7 +811,11 @@ onMounted(() => {
                       <CButton
                         color="success"
                         :disabled="confirmingPayment"
-                        @click="openPaymentConfirmModal('confirmed')"
+                        @click="
+                          openPaymentConfirmModal(
+                            'confirmed'
+                          )
+                        "
                       >
                         確認收到付款
                       </CButton>
@@ -716,7 +823,11 @@ onMounted(() => {
                       <CButton
                         color="danger"
                         :disabled="confirmingPayment"
-                        @click="openPaymentConfirmModal('rejected')"
+                        @click="
+                          openPaymentConfirmModal(
+                            'rejected'
+                          )
+                        "
                       >
                         拒絕付款
                       </CButton>
@@ -727,26 +838,41 @@ onMounted(() => {
                   <!-- 已確認或已拒絕 -->
                   <div
                     v-if="
-                      order.payment.payment_confirm_status === 'confirmed' ||
-                      order.payment.payment_confirm_status === 'rejected'
+                      order.payment
+                        .payment_confirm_status ===
+                        'confirmed' ||
+                      order.payment
+                        .payment_confirm_status ===
+                        'rejected'
                     "
                     class="mb-3"
                   >
                     <strong>付款備註</strong>
 
                     <div class="mt-1">
-                      {{ order.payment.payment_note || '-' }}
+                      {{
+                        order.payment.payment_note ||
+                        '-'
+                      }}
                     </div>
                   </div>
 
                   <!-- 已確認 -->
                   <div
-                    v-if="order.payment.payment_confirm_status === 'confirmed'"
+                    v-if="
+                      order.payment
+                        .payment_confirm_status ===
+                      'confirmed'
+                    "
                   >
                     <strong>確認時間</strong>
 
                     <div class="mt-1">
-                      {{ formatDate(order.payment.confirmed_at) }}
+                      {{
+                        formatDate(
+                          order.payment.confirmed_at
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -772,7 +898,11 @@ onMounted(() => {
                   <strong>配送方式</strong>
 
                   <div class="mt-1">
-                    {{ getDeliveryMethodText(order.delivery?.delivery_method) }}
+                    {{
+                      getDeliveryMethodText(
+                        order.delivery?.delivery_method
+                      )
+                    }}
                   </div>
                 </div>
 
@@ -781,59 +911,104 @@ onMounted(() => {
 
                   <div
                     class="mt-1"
-                    :class="{ 'text-danger fw-bold': order.delivery?.delivery_status === 'pending' }"
+                    :class="{
+                      'text-danger fw-bold':
+                        order.delivery?.delivery_status ===
+                        'pending'
+                    }"
                   >
-                    {{ getDeliveryStatusText(order.delivery?.delivery_status) }}
+                    {{
+                      getDeliveryStatusText(
+                        order.delivery?.delivery_status
+                      )
+                    }}
                   </div>
                 </div>
 
                 <div
-                  v-if="order.delivery?.delivery_status === 'pending'"
+                  v-if="
+                    order.delivery?.delivery_status ===
+                    'pending'
+                  "
                   class="mb-4"
                 >
                   <strong>預計出貨日期</strong>
 
                   <div class="mt-1">
-                    {{ order.delivery.estimated_ship_date || '-' }}
+                    {{
+                      order.delivery
+                        .estimated_ship_date || '-'
+                    }}
                   </div>
                 </div>
 
                 <div
-                  v-else-if="order.delivery?.delivery_status === 'shipping'"
+                  v-else-if="
+                    order.delivery?.delivery_status ===
+                    'shipping'
+                  "
                   class="mb-4"
                 >
                   <strong>預計到貨日期</strong>
 
                   <div class="mt-1">
-                    {{ order.delivery.estimated_arrival_date || '-' }}
+                    {{
+                      order.delivery
+                        .estimated_arrival_date || '-'
+                    }}
                   </div>
                 </div>
 
                 <div
-                  v-if="order.delivery?.delivery_status !== 'completed'"
+                  v-if="
+                    order.delivery?.delivery_status !==
+                    'completed'
+                  "
                 >
 
                   <div
-                    v-if="order.delivery?.delivery_status === 'pending'"
+                    v-if="
+                      order.delivery?.delivery_status ===
+                      'pending'
+                    "
                   >
                     <CButton
                       color="primary"
                       :disabled="updatingDelivery"
-                      @click="openDeliveryConfirmModal('shipping')"
+                      @click="
+                        openDeliveryConfirmModal(
+                          'shipping'
+                        )
+                      "
                     >
-                      {{ updatingDelivery ? '更新中...' : '開始配送' }}
+                      {{
+                        updatingDelivery
+                          ? '更新中...'
+                          : '開始配送'
+                      }}
                     </CButton>
                   </div>
 
                   <div
-                    v-else-if="order.delivery?.delivery_status === 'shipping'"
+                    v-else-if="
+                      order.delivery?.delivery_status ===
+                      'shipping'
+                    "
                   >
                     <CButton
                       color="success"
                       :disabled="updatingDelivery"
-                      @click="openDeliveryConfirmModal('completed')"
+                      @click="
+                        openDeliveryConfirmModal(
+                          'completed'
+                        )
+                      "
                     >
-                      {{ updatingDelivery ? '更新中...' : '完成配送' }}
+                      {{
+                        updatingDelivery
+                          ? '更新中...'
+                          : '完成配送'
+                      }}
                     </CButton>
                   </div>
 
@@ -855,16 +1030,26 @@ onMounted(() => {
                   目前無開啟退款功能; 若需開啟，可至「商店設定｣
                 </div>
 
-                <template v-else-if="order.refund">
+                <template
+                  v-else-if="order.refund"
+                >
 
                   <div class="mb-3">
                     <strong>退款狀態</strong>
 
                     <div
                       class="mt-1"
-                      :class="{ 'text-danger fw-bold': order.refund.refund_status === 'pending' }"
+                      :class="{
+                        'text-danger fw-bold':
+                          order.refund.refund_status ===
+                          'pending'
+                      }"
                     >
-                      {{ getRefundStatusText(order.refund.refund_status) }}
+                      {{
+                        getRefundStatusText(
+                          order.refund.refund_status
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -872,7 +1057,11 @@ onMounted(() => {
                     <strong>退款原因</strong>
 
                     <div class="mt-1">
-                      {{ getRefundReasonText(order.refund.refund_reason) }}
+                      {{
+                        getRefundReasonText(
+                          order.refund.refund_reason
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -880,7 +1069,10 @@ onMounted(() => {
                     <strong>退款說明</strong>
 
                     <div class="mt-1">
-                      {{ order.refund.refund_description || '-' }}
+                      {{
+                        order.refund
+                          .refund_description || '-'
+                      }}
                     </div>
                   </div>
 
@@ -888,7 +1080,9 @@ onMounted(() => {
                     <strong>管理員回覆</strong>
 
                     <div class="mt-1">
-                      {{ order.refund.admin_reply || '-' }}
+                      {{
+                        order.refund.admin_reply || '-'
+                      }}
                     </div>
                   </div>
 
@@ -896,7 +1090,11 @@ onMounted(() => {
                     <strong>申請時間</strong>
 
                     <div class="mt-1">
-                      {{ formatDate(order.refund.requested_at) }}
+                      {{
+                        formatDate(
+                          order.refund.requested_at
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -904,7 +1102,11 @@ onMounted(() => {
                     <strong>處理時間</strong>
 
                     <div class="mt-1">
-                      {{ formatDate(order.refund.processed_at) }}
+                      {{
+                        formatDate(
+                          order.refund.processed_at
+                        )
+                      }}
                     </div>
                   </div>
 
@@ -958,7 +1160,11 @@ onMounted(() => {
     >
       <CModalHeader>
         <CModalTitle>
-          {{ paymentConfirmAction === 'confirmed' ? '確認付款' : '拒絕付款' }}
+          {{
+            paymentConfirmAction === 'confirmed'
+              ? '確認付款'
+              : '拒絕付款'
+          }}
         </CModalTitle>
       </CModalHeader>
 
@@ -980,11 +1186,21 @@ onMounted(() => {
         </CButton>
 
         <CButton
-          :color="paymentConfirmAction === 'confirmed' ? 'success' : 'danger'"
+          :color="
+            paymentConfirmAction === 'confirmed'
+              ? 'success'
+              : 'danger'
+          "
           :disabled="confirmingPayment"
-          @click="confirmPayment(paymentConfirmAction)"
+          @click="
+            confirmPayment(paymentConfirmAction)
+          "
         >
-          {{ confirmingPayment ? '處理中...' : '確認' }}
+          {{
+            confirmingPayment
+              ? '處理中...'
+              : '確認'
+          }}
         </CButton>
       </CModalFooter>
     </CModal>
@@ -996,7 +1212,11 @@ onMounted(() => {
     >
       <CModalHeader>
         <CModalTitle>
-          {{ deliveryConfirmStatus === 'shipping' ? '開始配送' : '完成配送' }}
+          {{
+            deliveryConfirmStatus === 'shipping'
+              ? '開始配送'
+              : '完成配送'
+          }}
         </CModalTitle>
       </CModalHeader>
 
@@ -1018,11 +1238,19 @@ onMounted(() => {
         </CButton>
 
         <CButton
-          :color="deliveryConfirmStatus === 'shipping' ? 'primary' : 'success'"
+          :color="
+            deliveryConfirmStatus === 'shipping'
+              ? 'primary'
+              : 'success'
+          "
           :disabled="updatingDelivery"
           @click="confirmDeliveryStatus"
         >
-          {{ updatingDelivery ? '更新中...' : '確認' }}
+          {{
+            updatingDelivery
+              ? '更新中...'
+              : '確認'
+          }}
         </CButton>
       </CModalFooter>
     </CModal>

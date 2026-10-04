@@ -53,6 +53,30 @@ function closeErrorModal() {
   errorModalMessage.value = ''
 }
 
+// 取得圖片完整 URL
+function getImageUrl(url) {
+  if (!url) {
+    return null
+  }
+
+  if (url.startsWith('blob:')) {
+    return url
+  }
+
+  if (
+    url.startsWith('http://') ||
+    url.startsWith('https://')
+  ) {
+    return url
+  }
+
+  const relativePath = url.startsWith('/ecommerce-platform/backend/')
+    ? url.slice('/ecommerce-platform/backend'.length)
+    : url
+
+  return `http://localhost/ecommerce-platform/backend${relativePath}`
+}
+
 // 取得客服案件詳細資料
 async function loadCustomerService() {
   loading.value = true
@@ -62,6 +86,13 @@ async function loadCustomerService() {
     const serviceId = route.params.serviceId
 
     const data = await getCustomerService(serviceId)
+
+    // 不顯示已取消的客服案件
+    if (data.service?.status === 'cancel') {
+      service.value = null
+      error.value = '找不到客服案件'
+      return
+    }
 
     service.value = data.service
     adminReply.value = data.service.admin_reply || ''
@@ -163,6 +194,21 @@ async function confirmReply() {
   }
 }
 
+// 客服問題類型
+function getProblemTypeText(type) {
+  const typeMap = {
+    product: '商品問題',
+    order: '訂單問題',
+    payment: '付款問題',
+    delivery: '配送問題',
+    refund: '退款問題',
+    other: '其他問題'
+  }
+
+  return typeMap[type] || type
+}
+
+// 客服狀態
 function getServiceStatusText(status) {
   const statusMap = {
     pending: '待處理',
@@ -172,6 +218,7 @@ function getServiceStatusText(status) {
   return statusMap[status] || status
 }
 
+// 配送狀態
 function getDeliveryStatusText(status) {
   const statusMap = {
     pending: '待出貨',
@@ -182,18 +229,23 @@ function getDeliveryStatusText(status) {
   return statusMap[status] || status
 }
 
+// 配送方式
 function getDeliveryMethodText(method) {
   const methodMap = {
-    home_delivery: '宅配'
+    home_delivery: '宅配',
+    convenience_store: '超商取貨',
+    store_pickup: '門市取貨'
   }
 
   return methodMap[method] || method
 }
 
+// 格式化金額
 function formatAmount(amount) {
   return `$${Number(amount || 0).toLocaleString()}`
 }
 
+// 格式化日期
 function formatDate(date) {
   if (!date) {
     return '-'
@@ -278,7 +330,7 @@ onMounted(() => {
                   <strong>問題類型</strong>
 
                   <div class="mt-1">
-                    {{ service.problem_type || '-' }}
+                    {{ getProblemTypeText(service.problem_type) }}
                   </div>
                 </div>
 
@@ -287,7 +339,7 @@ onMounted(() => {
 
                   <div
                     class="mt-1"
-                    :class="{ 
+                    :class="{
                       'text-danger fw-bold': service.status === 'pending',
                       'text-success fw-bold': service.status === 'resolved'
                     }"
@@ -406,25 +458,19 @@ onMounted(() => {
                   </div>
                 </div>
 
-                <div>
+                <!-- 有圖片才顯示問題圖片 -->
+                <div v-if="service.image_url">
                   <strong>問題圖片</strong>
 
                   <div class="mt-2">
                     <img
-                      v-if="service.image_url"
-                      :src="service.image_url"
+                      :src="getImageUrl(service.image_url)"
                       alt="客服問題圖片"
                       class="service-image"
                     >
-
-                    <div
-                      v-else
-                      class="text-body-secondary"
-                    >
-                      尚無問題圖片
-                    </div>
                   </div>
                 </div>
+
               </CCardBody>
             </CCard>
 
@@ -558,12 +604,12 @@ onMounted(() => {
 
 <style scoped>
 .service-image {
-  max-width: 500px;
-  max-height: 500px;
+  display: block;
   width: auto;
-  height: auto;
+  max-width: 100%;
+  max-height: 800px;
   object-fit: contain;
   border: 1px solid var(--cui-border-color);
-  border-radius: 4px;
+  border-radius: 6px;
 }
 </style>

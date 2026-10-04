@@ -64,6 +64,20 @@ function closeErrorModal() {
   errorModalMessage.value = ''
 }
 
+// 客服問題類型
+function getProblemTypeText(type) {
+  const typeMap = {
+    product: '商品問題',
+    order: '訂單問題',
+    payment: '付款問題',
+    delivery: '配送問題',
+    refund: '退款問題',
+    other: '其他問題'
+  }
+
+  return typeMap[type] || type
+}
+
 // 取得客服案件
 async function loadServices() {
   loading.value = true
@@ -76,9 +90,15 @@ async function loadServices() {
       sort.value
     )
 
-    services.value = data.services || []
+    // 不顯示已取消的客服案件
+    services.value = (data.services || []).filter(
+      service => service.status !== 'cancelled'
+    )
+
     totalPages.value = data.total_pages || 0
-    total.value = data.total || 0
+
+    // 排除取消案件後重新計算目前顯示筆數
+    total.value = services.value.length
 
   } catch (e) {
     console.error('取得客服案件資料失敗:', e)
@@ -324,7 +344,7 @@ onMounted(() => {
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ service.problem_type }}
+                          {{ getProblemTypeText(service.problem_type) }}
                         </CTableDataCell>
 
                         <CTableDataCell>

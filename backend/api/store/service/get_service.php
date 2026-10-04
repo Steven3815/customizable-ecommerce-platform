@@ -68,6 +68,7 @@ LEFT JOIN ORDERS o
 
 WHERE cs.service_id = ?
 AND cs.store_id = ?
+AND cs.status != 'cancel'
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -75,6 +76,7 @@ $stmt->execute([
     $service_id,
     $store_id
 ]);
+
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 客服案件不存在
@@ -84,6 +86,13 @@ if (!$service) {
         "error" => "Service not found"
     ], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+// 圖片 URL
+$image_url = $service["image_url"];
+
+if (!empty($image_url)) {
+    $image_url = "/ecommerce-platform/backend" . $image_url;
 }
 
 // 整理資料
@@ -110,7 +119,7 @@ $result = [
 
     "problem_type" => $service["problem_type"],
     "description" => $service["description"],
-    "image_url" => $service["image_url"],
+    "image_url" => $image_url,
     "status" => $service["status"],
     "admin_reply" => $service["admin_reply"],
     "created_at" => $service["created_at"],

@@ -50,6 +50,34 @@ const error = ref('')
 const showErrorModal = ref(false)
 const errorModalMessage = ref('')
 
+// 退款原因
+const refundReasonOptions = [
+  {
+    label: '請選擇退款原因',
+    value: ''
+  },
+  {
+    label: '商品瑕疵',
+    value: 'product_defect'
+  },
+  {
+    label: '商品與描述不符',
+    value: 'product_not_as_described'
+  },
+  {
+    label: '商品損壞',
+    value: 'product_damaged'
+  },
+  {
+    label: '商品缺少或錯誤',
+    value: 'product_missing_or_wrong'
+  },
+  {
+    label: '其他',
+    value: 'other'
+  }
+]
+
 // 顯示錯誤 Modal
 function showError(message) {
   errorModalMessage.value = message
@@ -139,6 +167,16 @@ function getRefundStatus(status) {
   }
 
   return statusMap[status] || status
+}
+
+// 退款原因轉中文
+function getRefundReasonText(reason) {
+  const option =
+    refundReasonOptions.find(
+      item => item.value === reason
+    )
+
+  return option?.label || reason
 }
 
 // 格式化金額
@@ -338,7 +376,11 @@ onMounted(() => {
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ refund.refund_reason }}
+                          {{
+                            getRefundReasonText(
+                              refund.refund_reason
+                            )
+                          }}
                         </CTableDataCell>
 
                         <CTableDataCell
@@ -351,10 +393,16 @@ onMounted(() => {
                         <CTableDataCell>
                           <span
                             :class="{
-                              'text-danger': refund.refund_status === 'pending'
+                              'text-danger':
+                                refund.refund_status ===
+                                'pending'
                             }"
                           >
-                            {{ getRefundStatus(refund.refund_status) }}
+                            {{
+                              getRefundStatus(
+                                refund.refund_status
+                              )
+                            }}
                           </span>
                         </CTableDataCell>
 
@@ -366,7 +414,11 @@ onMounted(() => {
                           <CButton
                             color="primary"
                             size="sm"
-                            @click="goToRefundDetail(refund.refund_id)"
+                            @click="
+                              goToRefundDetail(
+                                refund.refund_id
+                              )
+                            "
                           >
                             查看
                           </CButton>
@@ -374,7 +426,9 @@ onMounted(() => {
 
                       </CTableRow>
 
-                      <CTableRow v-if="refunds.length === 0">
+                      <CTableRow
+                        v-if="refunds.length === 0"
+                      >
                         <CTableDataCell
                           colspan="8"
                           class="text-center text-body-secondary"
@@ -408,13 +462,6 @@ onMounted(() => {
                       :key="pageNumber"
                       :active="pageNumber === page"
                       @click="changePage(pageNumber)"
-                    >
-                      {{ pageNumber }}
-                    </CPaginationItem>
-
-                    <CPaginationItem
-                      :disabled="page === totalPages"
-                      @click="changePage(page + 1)"
                     >
                       {{ pageNumber }}
                     </CPaginationItem>

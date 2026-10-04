@@ -87,7 +87,11 @@ async function loadProducts() {
       page: page.value
     })
 
-    products.value = data.products || []
+    // 不顯示已刪除商品
+    products.value = (data.products || []).filter(
+      product => product.status !== 'deleted'
+    )
+
     categories.value = data.categories || []
 
     totalPages.value = data.pagination?.total_pages || 0

@@ -48,6 +48,34 @@ const error = ref('')
 const showErrorModal = ref(false)
 const errorModalMessage = ref('')
 
+// 退款原因
+const refundReasonOptions = [
+  {
+    label: '請選擇退款原因',
+    value: ''
+  },
+  {
+    label: '商品瑕疵',
+    value: 'product_defect'
+  },
+  {
+    label: '商品與描述不符',
+    value: 'product_not_as_described'
+  },
+  {
+    label: '商品損壞',
+    value: 'product_damaged'
+  },
+  {
+    label: '商品缺少或錯誤',
+    value: 'product_missing_or_wrong'
+  },
+  {
+    label: '其他',
+    value: 'other'
+  }
+]
+
 // 顯示錯誤 Modal
 function showError(message) {
   errorModalMessage.value = message
@@ -182,6 +210,16 @@ function getRefundStatusText(status) {
   return statusMap[status] || status
 }
 
+// 退款原因轉中文
+function getRefundReasonText(reason) {
+  const option =
+    refundReasonOptions.find(
+      item => item.value === reason
+    )
+
+  return option?.label || reason
+}
+
 // 付款時間
 function formatDate(date) {
   if (!date) {
@@ -300,7 +338,7 @@ onMounted(() => {
                   <strong>退款原因</strong>
 
                   <div class="mt-1">
-                    {{ refund.refund_reason || '-' }}
+                    {{ getRefundReasonText(refund.refund_reason) }}
                   </div>
                 </div>
 
@@ -409,7 +447,7 @@ onMounted(() => {
                     {{ formatAmount(refund.shipping_fee) }}
                   </div>
                 </div>
-                
+
                 <div class="mb-3">
                   <strong>訂單總金額</strong>
 
