@@ -42,8 +42,10 @@ const orders = ref([])
 
 const search = ref('')
 const status = ref('all')
-const refundStatus = ref('all')
+const paymentStatus = ref('all')
 const paymentConfirmStatus = ref('all')
+const deliveryStatus = ref('all')
+const refundStatus = ref('all')
 const sort = ref('newest')
 
 const page = ref(1)
@@ -78,8 +80,10 @@ async function loadOrders() {
     const data = await getOrders({
       search: search.value.trim(),
       status: status.value,
-      refundStatus: refundStatus.value,
+      paymentStatus: paymentStatus.value,
       paymentConfirmStatus: paymentConfirmStatus.value,
+      deliveryStatus: deliveryStatus.value,
+      refundStatus: refundStatus.value,
       sort: sort.value,
       page: page.value
     })
@@ -111,11 +115,52 @@ async function loadOrders() {
 watch(
   [
     status,
-    refundStatus,
+    paymentStatus,
     paymentConfirmStatus,
+    deliveryStatus,
+    refundStatus,
     sort
   ],
-  () => {
+  (
+    [
+      newStatus,
+      newPaymentStatus,
+      newPaymentConfirmStatus,
+      newDeliveryStatus,
+      newRefundStatus
+    ],
+    oldValues
+  ) => {
+
+    // 手動選擇訂單狀態
+    if (newStatus !== oldValues?.[0]) {
+
+      // 選擇未完成時，其他狀態篩選全部重設
+      if (newStatus === 'pending') {
+        paymentStatus.value = 'all'
+        paymentConfirmStatus.value = 'all'
+        deliveryStatus.value = 'all'
+        refundStatus.value = 'all'
+      }
+
+      page.value = 1
+      loadOrders()
+      return
+    }
+
+    // 只要其他狀態有選擇，就自動改成已完成
+    if (
+      newPaymentStatus !== 'all' ||
+      newPaymentConfirmStatus !== 'all' ||
+      newDeliveryStatus !== 'all' ||
+      newRefundStatus !== 'all'
+    ) {
+      if (status.value !== 'completed') {
+        status.value = 'completed'
+        return
+      }
+    }
+
     page.value = 1
     loadOrders()
   }
@@ -164,7 +209,7 @@ function goToOrderDetail(orderId) {
 // 配送狀態
 function getDeliveryStatus(status) {
   const statusMap = {
-    pending: '待處理',
+    pending: '待出貨',
     shipping: '配送中',
     completed: '已完成'
   }
@@ -172,10 +217,22 @@ function getDeliveryStatus(status) {
   return statusMap[status] || status
 }
 
-// 付款確認狀態
+// 付款狀態
 function getPaymentStatus(status) {
   const statusMap = {
-    waiting: '待確認',
+    pending: '待付款',
+    processing: '處理中',
+    paid: '已付款',
+    failed: '付款失敗'
+  }
+
+  return statusMap[status] || status
+}
+
+// 付款確認狀態
+function getPaymentConfirmStatus(status) {
+  const statusMap = {
+    waiting: '處理中',
     confirmed: '已確認',
     rejected: '已拒絕'
   }
@@ -187,7 +244,7 @@ function getPaymentStatus(status) {
 function getRefundStatus(status) {
   const statusMap = {
     none: '無退款',
-    pending: '申請中',
+    pending: '處理中',
     approved: '已核准',
     rejected: '已拒絕'
   }
@@ -260,7 +317,8 @@ onMounted(() => {
 
                 <CRow class="g-3">
 
-                  <CCol :md="4">
+                  <!-- 搜尋 -->
+                  <CCol :md="2">
                     <CFormLabel>
                       搜尋
                     </CFormLabel>
@@ -272,9 +330,10 @@ onMounted(() => {
                     />
                   </CCol>
 
+                  <!-- 訂單狀態 -->
                   <CCol :md="2">
                     <CFormLabel>
-                      配送狀態
+                      訂單狀態
                     </CFormLabel>
 
                     <CFormSelect
@@ -285,19 +344,51 @@ onMounted(() => {
                       </option>
 
                       <option value="pending">
-                        待處理
-                      </option>
-
-                      <option value="shipping">
-                        配送中
+                        未完成
                       </option>
 
                       <option value="completed">
                         已完成
                       </option>
+
+                      <option value="cancelled">
+                        已取消
+                      </option>
                     </CFormSelect>
                   </CCol>
 
+                  <!-- 付款狀態 -->
+                  <CCol :md="2">
+                    <CFormLabel>
+                      付款狀態
+                    </CFormLabel>
+
+                    <CFormSelect
+                      v-model="paymentStatus"
+                    >
+                      <option value="all">
+                        全部
+                      </option>
+
+                      <option value="pending">
+                        待付款
+                      </option>
+
+                      <option value="processing">
+                        處理中
+                      </option>
+
+                      <option value="paid">
+                        已付款
+                      </option>
+
+                      <option value="failed">
+                        付款失敗
+                      </option>
+                    </CFormSelect>
+                  </CCol>
+
+                  <!-- 付款確認 -->
                   <CCol :md="2">
                     <CFormLabel>
                       付款確認
@@ -310,8 +401,8 @@ onMounted(() => {
                         全部
                       </option>
 
-                      <option value="waiting">
-                        待確認
+                      <option value="processing">
+                        處理中
                       </option>
 
                       <option value="confirmed">
@@ -324,6 +415,34 @@ onMounted(() => {
                     </CFormSelect>
                   </CCol>
 
+                  <!-- 配送狀態 -->
+                  <CCol :md="2">
+                    <CFormLabel>
+                      配送狀態
+                    </CFormLabel>
+
+                    <CFormSelect
+                      v-model="deliveryStatus"
+                    >
+                      <option value="all">
+                        全部
+                      </option>
+
+                      <option value="pending">
+                        待出貨
+                      </option>
+
+                      <option value="shipping">
+                        配送中
+                      </option>
+
+                      <option value="completed">
+                        已完成
+                      </option>
+                    </CFormSelect>
+                  </CCol>
+
+                  <!-- 退款狀態 -->
                   <CCol :md="2">
                     <CFormLabel>
                       退款狀態
@@ -336,12 +455,8 @@ onMounted(() => {
                         全部
                       </option>
 
-                      <option value="none">
-                        無退款
-                      </option>
-
                       <option value="pending">
-                        申請中
+                        處理中
                       </option>
 
                       <option value="approved">
@@ -354,6 +469,7 @@ onMounted(() => {
                     </CFormSelect>
                   </CCol>
 
+                  <!-- 排序 -->
                   <CCol :md="2">
                     <CFormLabel>
                       排序
@@ -500,7 +616,7 @@ onMounted(() => {
                           <span
                             :class="{ 'text-danger': order.payment_confirm_status === 'waiting' }"
                           >
-                            {{ getPaymentStatus(order.payment_confirm_status) }}
+                            {{ getPaymentConfirmStatus(order.payment_confirm_status) }}
                           </span>
                         </CTableDataCell>
 
@@ -569,7 +685,6 @@ onMounted(() => {
                     <CPaginationItem
                       :disabled="page === totalPages"
                       @click="changePage(page + 1)"
-                      style="cursor: pointer;"
                     >
                       下一頁
                     </CPaginationItem>

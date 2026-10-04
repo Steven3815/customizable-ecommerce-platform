@@ -807,12 +807,13 @@ export async function updateFooterSettings(formData) {
 }
 
 // Store Order List
-
 export async function getOrders({
   search = '',
   status = 'all',
-  refundStatus = 'all',
+  paymentStatus = 'all',
   paymentConfirmStatus = 'all',
+  deliveryStatus = 'all',
+  refundStatus = 'all',
   sort = 'newest',
   page = 1
 } = {}) {
@@ -824,11 +825,13 @@ export async function getOrders({
     }
 
     params.append('status', status)
-    params.append('refund_status', refundStatus)
+    params.append('payment_status', paymentStatus)
     params.append(
       'payment_confirm_status',
       paymentConfirmStatus
     )
+    params.append('delivery_status', deliveryStatus)
+    params.append('refund_status', refundStatus)
     params.append('sort', sort)
     params.append('page', page)
 
