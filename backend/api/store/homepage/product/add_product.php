@@ -70,6 +70,7 @@ if (mb_strlen($product_name) > 200) {
 
 try {
 
+    // 確認商品類別
     $sql = "
         SELECT
             category_id,
@@ -86,6 +87,7 @@ try {
         $category_id,
         $store_id
     ]);
+
     $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$category) {
@@ -115,16 +117,24 @@ try {
         $store_id,
         $category_id
     ]);
+
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
     $sort_order = (int)$result["next_sort_order"];
 
     // 新增商品
+    // 預設：
+    // price = NULL → 尚未設定價格
+    // has_spec = 0   → 無規格商品
+    // stock = 0      → 無庫存
     $sql = "
         INSERT INTO PRODUCT (
             store_id,
             category_id,
             product_name,
+            price,
+            has_spec,
+            stock,
             sort_order,
             status
         )
@@ -132,18 +142,23 @@ try {
             ?,
             ?,
             ?,
+            NULL,
+            0,
+            0,
             ?,
             'active'
         )
     ";
 
     $stmt = $pdo->prepare($sql);
+
     $stmt->execute([
         $store_id,
         $category_id,
         $product_name,
         $sort_order
     ]);
+
     $product_id = (int)$pdo->lastInsertId();
 
     echo json_encode([
@@ -154,6 +169,9 @@ try {
             "category_id" => $category_id,
             "category_name" => $category_name,
             "product_name" => $product_name,
+            "price" => null,
+            "has_spec" => false,
+            "stock" => 0,
             "sort_order" => $sort_order,
             "status" => "active"
         ]
@@ -162,6 +180,7 @@ try {
 } catch (Exception $e) {
 
     http_response_code(500);
+
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

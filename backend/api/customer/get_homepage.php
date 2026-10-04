@@ -291,6 +291,26 @@ foreach ($categories as $category) {
     WHERE p.store_id = ?
     AND p.category_id = ?
     AND p.status = 'active'
+
+    AND (
+        (
+            p.has_spec = 0
+            AND p.price IS NOT NULL
+        )
+        OR
+        (
+            p.has_spec = 1
+            AND EXISTS (
+                SELECT 1
+                FROM PRODUCT_SPEC ps
+                WHERE ps.product_id = p.product_id
+                AND ps.store_id = p.store_id
+                AND ps.status = 'active'
+                AND ps.price IS NOT NULL
+            )
+        )
+    )
+
     ORDER BY
         p.sort_order ASC,
         p.product_id DESC

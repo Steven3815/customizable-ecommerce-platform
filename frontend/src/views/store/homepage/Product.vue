@@ -54,6 +54,11 @@ const newProductName = ref('')
 const addingProduct = ref(false)
 const productError = ref('')
 
+// 刪除商品 Modal
+const showDeleteProductModal = ref(false)
+const deletingProductId = ref(null)
+const deletingProduct = ref(false)
+
 // 錯誤提示 Modal
 const showErrorModal = ref(false)
 const errorModalMessage = ref('')
@@ -367,24 +372,42 @@ async function saveProducts() {
   }
 }
 
+// 開啟刪除商品 Modal
+function openDeleteProductModal(productId) {
+  deletingProductId.value = productId
+  showDeleteProductModal.value = true
+}
+
+// 關閉刪除商品 Modal
+function closeDeleteProductModal() {
+  if (deletingProduct.value) {
+    return
+  }
+
+  showDeleteProductModal.value = false
+  deletingProductId.value = null
+}
+
 // 刪除商品
-async function removeProduct(
-  productId
-) {
+async function removeProduct() {
   if (
-    !confirm(
-      '確定要刪除此商品嗎？'
-    )
+    deletingProduct.value ||
+    !deletingProductId.value
   ) {
     return
   }
 
+  deletingProduct.value = true
+
   try {
     await deleteHomepageProduct(
-      productId
+      deletingProductId.value
     )
 
     await loadProducts()
+
+    showDeleteProductModal.value = false
+    deletingProductId.value = null
   } catch (e) {
     console.error('刪除商品失敗:', e)
 
@@ -395,6 +418,8 @@ async function removeProduct(
     } else {
       showError(e.message || '刪除商品失敗')
     }
+  } finally {
+    deletingProduct.value = false
   }
 }
 </script>
@@ -611,7 +636,7 @@ async function removeProduct(
                           size="sm"
                           :disabled="saving"
                           @click="
-                            removeProduct(
+                            openDeleteProductModal(
                               product.product_id
                             )
                           "
@@ -642,9 +667,12 @@ async function removeProduct(
                   <b>說明：</b>
                   商品會按照目前的順序顯示於首頁
                   可使用上移與下移調整商品順序
-                </small> <br>
-                <small><b>更多操作: </b>可至「網站首頁管理」新增商品類別，或至「商品管理」編輯詳細商品資訊</small>
-
+                </small>
+                <br>
+                <small>
+                  <b>更多操作: </b>
+                  可至「網站首頁管理」新增商品類別，或至「商品管理」編輯詳細商品資訊
+                </small>
 
                 <!-- 儲存 / 取消修改 -->
                 <div
@@ -760,5 +788,44 @@ async function removeProduct(
         </CButton>
       </CModalFooter>
     </CModal>
+
+    <!-- 刪除商品 Modal -->
+    <CModal
+      :visible="showDeleteProductModal"
+      @close="closeDeleteProductModal"
+    >
+      <CModalHeader class="border-0">
+        <CModalTitle>
+          刪除商品
+        </CModalTitle>
+      </CModalHeader>
+
+      <CModalBody>
+        確定要刪除此商品嗎？
+      </CModalBody>
+
+      <CModalFooter class="border-0">
+        <CButton
+          color="secondary"
+          :disabled="deletingProduct"
+          @click="closeDeleteProductModal"
+        >
+          取消
+        </CButton>
+
+        <CButton
+          color="danger"
+          :disabled="deletingProduct"
+          @click="removeProduct"
+        >
+          {{
+            deletingProduct
+              ? '刪除中...'
+              : '確定刪除'
+          }}
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
   </div>
 </template>

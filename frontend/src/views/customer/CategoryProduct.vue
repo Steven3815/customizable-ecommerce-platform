@@ -149,7 +149,13 @@ onMounted(async () => {
       data
     )
 
-    products.value = data.products || []
+    /*
+     * 只顯示有設定價格的商品
+     * 與首頁商品顯示判斷一致
+     */
+    products.value = (data.products || []).filter(
+      product => product.display_price !== null
+    )
 
     categoryName.value =
       data.category_name ||

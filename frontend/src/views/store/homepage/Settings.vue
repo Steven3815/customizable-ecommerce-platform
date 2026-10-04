@@ -52,6 +52,11 @@ const newCategoryName = ref('')
 const addingCategory = ref(false)
 const categoryError = ref('')
 
+// 刪除分類 Modal
+const showDeleteCategoryModal = ref(false)
+const deletingCategoryId = ref(null)
+const deletingCategory = ref(false)
+
 // 錯誤提示 Modal
 const showErrorModal = ref(false)
 const errorModalMessage = ref('')
@@ -258,18 +263,44 @@ async function moveCategory(index, direction) {
   }
 }
 
-// 刪除分類
-async function removeCategory(categoryId) {
-  if (!confirm('確定要刪除此分類嗎？')) {
+// 開啟刪除分類 Modal
+function openDeleteCategoryModal(categoryId) {
+  deletingCategoryId.value = categoryId
+  showDeleteCategoryModal.value = true
+}
+
+// 關閉刪除分類 Modal
+function closeDeleteCategoryModal() {
+  if (deletingCategory.value) {
     return
   }
 
+  showDeleteCategoryModal.value = false
+  deletingCategoryId.value = null
+}
+
+// 刪除分類
+async function removeCategory() {
+  if (
+    deletingCategory.value ||
+    !deletingCategoryId.value
+  ) {
+    return
+  }
+
+  deletingCategory.value = true
+
   try {
-    const data = await deleteCategories([categoryId])
+    const data = await deleteCategories([
+      deletingCategoryId.value
+    ])
 
     categories.value = data.categories
 
     error.value = ''
+
+    showDeleteCategoryModal.value = false
+    deletingCategoryId.value = null
   } catch (e) {
     console.error('刪除分類失敗:', e)
 
@@ -280,6 +311,8 @@ async function removeCategory(categoryId) {
     } else {
       showError(e.message || '刪除分類失敗')
     }
+  } finally {
+    deletingCategory.value = false
   }
 }
 </script>
@@ -312,6 +345,7 @@ async function removeCategory(categoryId) {
               <h2 class="mt-2 mb-3">
                 網站首頁設定
               </h2>
+
               <div class="mb-3">
                 <CButton
                   color="link"
@@ -347,15 +381,19 @@ async function removeCategory(categoryId) {
                     :true-value="1"
                     :false-value="0"
                   />
-                  
-                  <CFormCheck class="mb-4"
+
+                  <CFormCheck
+                    class="mb-4"
                     v-model="website.intro_section_enable"
                     label="輪播區塊"
                     :true-value="1"
                     :false-value="0"
                   />
-                  <small><b>說明:</b> 開啟後，首頁將顯示對應區塊</small> <br>
-                  <small><b>橫幅區塊:</b> 主要的橫幅圖片，用於呈現活動、優惠或重要資訊</small><br>
+
+                  <small><b>說明:</b> 開啟後，首頁將顯示對應區塊</small>
+                  <br>
+                  <small><b>橫幅區塊:</b> 主要的橫幅圖片，用於呈現活動、優惠或重要資訊</small>
+                  <br>
                   <small><b>輪播區塊:</b> 以輪播方式顯示多張圖片，可用於展示活動、商品或宣傳內容</small>
                 </div>
               </CCardBody>
@@ -370,7 +408,8 @@ async function removeCategory(categoryId) {
 
                 <CRow>
                   <CCol :md="4">
-                    <CFormSelect class="mb-4"
+                    <CFormSelect
+                      class="mb-4"
                       v-model="product.display_limit"
                       label="每列顯示商品數量"
                     >
@@ -384,9 +423,10 @@ async function removeCategory(categoryId) {
 
                       <option :value="6">
                         6 個
-                      </option>  
+                      </option>
                     </CFormSelect>
                   </CCol>
+
                   <CCol :md="12">
                     <small>
                       <b>說明：</b>
@@ -471,7 +511,7 @@ async function removeCategory(categoryId) {
                         <CButton
                           color="danger"
                           size="sm"
-                          @click="removeCategory(category.category_id)"
+                          @click="openDeleteCategoryModal(category.category_id)"
                         >
                           刪除
                         </CButton>
@@ -486,11 +526,19 @@ async function removeCategory(categoryId) {
                         目前沒有商品類別
                       </CTableDataCell>
                     </CTableRow>
-                    
+
                   </CTableBody>
                 </CTable>
-                <small><b>說明:</b> 用於將商品依照不同類型進行分類，方便顧客瀏覽與尋找商品</small><br>
-                <small><b>更多操作: </b>可至「首頁商品管理」新增商品、調整名稱，或至「商品管理」編輯詳細商品資訊</small>
+
+                <small>
+                  <b>說明:</b>
+                  用於將商品依照不同類型進行分類，方便顧客瀏覽與尋找商品
+                </small>
+                <br>
+                <small>
+                  <b>更多操作: </b>
+                  可至「首頁商品管理」新增商品、調整名稱，或至「商品管理」編輯詳細商品資訊
+                </small>
               </CCardBody>
             </CCard>
 
@@ -530,35 +578,36 @@ async function removeCategory(categoryId) {
                     :false-value="0"
                   />
                 </div>
+
                 <small>
-                  <b>說明：</b> 開啟後，頁尾可設定對應的商家資訊
+                  <b>說明：</b>
+                  開啟後，頁尾可設定對應的商家資訊
                 </small>
               </CCardBody>
-              
             </CCard>
 
             <!-- 儲存 -->
             <div class="d-flex justify-content-end mb-5">
-            <CButton
-              color="secondary"
-              class="me-2"
-              :disabled="saving"
-              @click="cancelChanges"
-            >
-              取消修改
-            </CButton>
+              <CButton
+                color="secondary"
+                class="me-2"
+                :disabled="saving"
+                @click="cancelChanges"
+              >
+                取消修改
+              </CButton>
 
-            <CButton
-              color="primary"
-              :disabled="saving"
-              @click="saveSettings"
-            >
-              {{
-                saving
-                  ? '儲存中...'
-                  : '儲存設定'
-              }}
-            </CButton>
+              <CButton
+                color="primary"
+                :disabled="saving"
+                @click="saveSettings"
+              >
+                {{
+                  saving
+                    ? '儲存中...'
+                    : '儲存設定'
+                }}
+              </CButton>
             </div>
           </div>
 
@@ -636,6 +685,44 @@ async function removeCategory(categoryId) {
           @click="closeErrorModal"
         >
           確定
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
+    <!-- 刪除分類 Modal -->
+    <CModal
+      :visible="showDeleteCategoryModal"
+      @close="closeDeleteCategoryModal"
+    >
+      <CModalHeader class="border-0">
+        <CModalTitle>
+          刪除商品類別
+        </CModalTitle>
+      </CModalHeader>
+
+      <CModalBody>
+        確定要刪除此商品類別嗎？
+      </CModalBody>
+
+      <CModalFooter class="border-0">
+        <CButton
+          color="secondary"
+          :disabled="deletingCategory"
+          @click="closeDeleteCategoryModal"
+        >
+          取消
+        </CButton>
+
+        <CButton
+          color="danger"
+          :disabled="deletingCategory"
+          @click="removeCategory"
+        >
+          {{
+            deletingCategory
+              ? '刪除中...'
+              : '確定刪除'
+          }}
         </CButton>
       </CModalFooter>
     </CModal>

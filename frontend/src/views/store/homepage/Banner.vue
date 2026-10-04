@@ -56,6 +56,7 @@ const showErrorModal = ref(false)
 const errorMessage = ref('')
 
 const showDeleteModal = ref(false)
+const showDeleteImageModal = ref(false)
 
 // 圖片網址
 function getImageUrl(url) {
@@ -388,6 +389,15 @@ async function saveBanner() {
   }
 }
 
+// 開啟刪除圖片確認
+function openDeleteImageModal() {
+  showDeleteImageModal.value = true
+}
+
+function closeDeleteImageModal() {
+  showDeleteImageModal.value = false
+}
+
 // 刪除橫幅圖片
 async function removeBannerImage() {
   if (
@@ -429,7 +439,7 @@ async function removeBannerImage() {
     imageSource.value = 'upload'
     defaultBannerId.value = ''
 
-    showError('橫幅圖片刪除成功' || data.message)
+    showDeleteImageModal.value = false
 
   } catch (e) {
     console.error('刪除橫幅圖片失敗:', e)
@@ -730,7 +740,7 @@ onBeforeUnmount(() => {
                     <CButton
                       color="danger"
                       :disabled="saving"
-                      @click="removeBannerImage"
+                      @click="openDeleteImageModal"
                     >
                       刪除圖片
                     </CButton>
@@ -845,6 +855,44 @@ onBeforeUnmount(() => {
           @click="closeErrorModal"
         >
           確定
+        </CButton>
+      </CModalFooter>
+    </CModal>
+
+    <!-- 刪除圖片確認 -->
+    <CModal
+      :visible="showDeleteImageModal"
+      @close="closeDeleteImageModal"
+    >
+      <CModalHeader class="border-0">
+        <CModalTitle>
+          刪除圖片
+        </CModalTitle>
+      </CModalHeader>
+
+      <CModalBody>
+        確定要刪除目前的橫幅圖片嗎？
+      </CModalBody>
+
+      <CModalFooter class="border-0">
+        <CButton
+          color="secondary"
+          :disabled="saving"
+          @click="closeDeleteImageModal"
+        >
+          取消
+        </CButton>
+
+        <CButton
+          color="danger"
+          :disabled="saving"
+          @click="removeBannerImage"
+        >
+          {{
+            saving
+              ? '刪除中...'
+              : '確定刪除'
+          }}
         </CButton>
       </CModalFooter>
     </CModal>

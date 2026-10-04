@@ -28,10 +28,12 @@
             <CRow>
               <CCol :md="12">
                 <div
+                  v-if="products.length > 0"
                   class="products-carousel"
                   :class="`display-limit-${displayLimit}`"
                 >
                   <div class="products-wrapper">
+
                     <div
                       v-for="product in products"
                       :key="product.product_id"
@@ -46,6 +48,7 @@
                         @view-product="openProduct"
                       />
                     </div>
+
                   </div>
                 </div>
               </CCol>
@@ -85,6 +88,7 @@
       :store-id="route.params.storeId"
       @close="closeProductModal"
     />
+
   </div>
 </template>
 
@@ -157,7 +161,10 @@ onMounted(async () => {
       data
     )
 
-    products.value = data.products || []
+    // 只顯示有設定顯示價格的商品
+    products.value = (data.products || []).filter(
+      product => product.display_price !== null
+    )
 
     displayLimit.value =
       Number(data.display_limit) || 4
@@ -229,7 +236,6 @@ onMounted(async () => {
   margin-bottom: 3rem;
 }
 
-
 /* Products */
 
 .products-carousel {
@@ -259,7 +265,6 @@ onMounted(async () => {
 .product-item {
   min-width: 0;
 }
-
 
 /* Tablet */
 
