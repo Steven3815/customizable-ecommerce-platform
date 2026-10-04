@@ -290,6 +290,13 @@
       <Createdby />
     </div>
 
+    <!-- 未登入 -->
+    <LoginRequireModal
+      :visible="showLoginModal"
+      :store-id="storeId"
+      @close="showLoginModal = false"
+    />
+
     <!-- 刪除確認 Modal -->
     <CModal
       :visible="showDeleteModal"
@@ -350,9 +357,11 @@ import Sidebar from '../../../components/customer_homepage/Sidebar.vue'
 import Header from '../../../components/customer_homepage/Header.vue'
 import Footer from '../../../components/customer_homepage/Footer.vue'
 import Createdby from '../../../components/customer_homepage/Createdby.vue'
+import LoginRequireModal from '../../../components/customer/LoginRequireModal.vue'
 
 import {
   getCustomerHome,
+  getCustomerLoginStatus,
   getCustomerService,
   deleteCustomerService
 } from '../../../api/customer.js'
@@ -367,6 +376,8 @@ const loading = ref(true)
 const error = ref('')
 const service = ref(null)
 const home = ref(null)
+
+const showLoginModal = ref(false)
 
 const showDeleteModal = ref(false)
 const deleting = ref(false)
@@ -383,10 +394,42 @@ const loadHome = async () => {
   }
 }
 
+/* 檢查登入狀態 */
+const checkLoginStatus = async () => {
+  try {
+    const data = await getCustomerLoginStatus()
+
+    if (data.loggedIn !== true) {
+      showLoginModal.value = true
+      loading.value = false
+      return false
+    }
+
+    return true
+
+  } catch (err) {
+    console.error(
+      '取得登入狀態失敗:',
+      err
+    )
+
+    showLoginModal.value = true
+    loading.value = false
+
+    return false
+  }
+}
+
 /* 載入客服案件 */
 const loadService = async () => {
   loading.value = true
   error.value = ''
+
+  const loggedIn = await checkLoginStatus()
+
+  if (!loggedIn) {
+    return
+  }
 
   try {
     const data = await getCustomerService(
@@ -400,6 +443,16 @@ const loadService = async () => {
       '取得客服案件失敗:',
       err
     )
+
+    if (err.status === 401) {
+      router.replace('/401')
+      return
+    }
+
+    if (err.status === 404) {
+      router.replace('/404')
+      return
+    }
 
     error.value =
       err.message || '取得客服案件失敗'

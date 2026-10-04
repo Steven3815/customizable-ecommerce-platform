@@ -35,7 +35,7 @@
 
                 <div class="category-header">
 
-                  <div class="category-title-wrapper">
+                  <div class="category-title-wrapper mt-4">
 
                     <h1>
                       {{ category.category_name }}
@@ -43,7 +43,7 @@
 
                   </div>
 
-                  <div class="category-action">
+                  <div class="category-action mt-4">
                     <CButton
                       color="link"
                       class="text-decoration-none"
@@ -63,7 +63,7 @@
               <CCol :md="12">
 
                 <div
-                  class="products-carousel swiper"
+                  class="products-carousel swiper mb-4"
                   :class="`display-limit-${home?.homepage_product_setting?.display_limit || 4}`"
                 >
 
@@ -80,6 +80,7 @@
                         :name="product.product_name"
                         :image="product.main_image"
                         :price="product.display_price"
+                        :show-placeholder="true"
                         @view-product="openProduct"
                       />
                     </div>

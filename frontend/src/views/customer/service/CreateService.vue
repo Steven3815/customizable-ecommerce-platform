@@ -180,6 +180,13 @@
       <Createdby />
     </div>
 
+    <!-- 未登入 -->
+    <LoginRequireModal
+      :visible="showLoginModal"
+      :store-id="storeId"
+      @close="showLoginModal = false"
+    />
+
     <!-- 錯誤提示視窗 -->
     <CModal
       :visible="errorVisible"
@@ -291,9 +298,11 @@ import Sidebar from '../../../components/customer_homepage/Sidebar.vue'
 import Header from '../../../components/customer_homepage/Header.vue'
 import Footer from '../../../components/customer_homepage/Footer.vue'
 import Createdby from '../../../components/customer_homepage/Createdby.vue'
+import LoginRequireModal from '../../../components/customer/LoginRequireModal.vue'
 
 import {
   getCustomerHome,
+  getCustomerLoginStatus,
   getCustomerOrders,
   getCustomerServices,
   createCustomerService
@@ -329,6 +338,8 @@ const canCreateService = ref(true)
 
 const serviceUnavailableVisible = ref(false)
 const serviceUnavailableMessage = ref('')
+
+const showLoginModal = ref(false)
 
 const problemTypeOptions = [
   {
@@ -414,6 +425,33 @@ async function loadHome() {
     }
 
     router.replace('/404')
+  }
+}
+
+// 檢查登入狀態
+async function checkLoginStatus() {
+  try {
+    const data =
+      await getCustomerLoginStatus()
+
+    if (data.loggedIn !== true) {
+      showLoginModal.value = true
+      checkingService.value = false
+      return false
+    }
+
+    return true
+
+  } catch (error) {
+    console.error(
+      '取得登入狀態失敗:',
+      error
+    )
+
+    showLoginModal.value = true
+    checkingService.value = false
+
+    return false
   }
 }
 
@@ -670,6 +708,13 @@ onMounted(async () => {
   await loadHome()
 
   if (errorVisible.value) {
+    return
+  }
+
+  const loggedIn =
+    await checkLoginStatus()
+
+  if (!loggedIn) {
     return
   }
 

@@ -157,6 +157,7 @@
                     >
                       刪除案件
                     </CButton>
+
                     <!-- 查看案件 -->
                     <CButton
                       color="primary"
@@ -180,6 +181,13 @@
       </div>
     </div>
 
+    <!-- 未登入 -->
+    <LoginRequireModal
+      :visible="showLoginModal"
+      :store-id="storeId"
+      @close="showLoginModal = false"
+    />
+
     <!-- 刪除案件確認 Modal -->
     <CModal
       :visible="showDeleteModal"
@@ -196,7 +204,6 @@
         <p class="mb-2">
           確定要刪除此客服案件嗎？
         </p>
-
       </CModalBody>
 
       <CModalFooter>
@@ -247,6 +254,7 @@ import {
 
 import {
   getCustomerHome,
+  getCustomerLoginStatus,
   getCustomerServices,
   deleteCustomerService
 } from '../../../api/customer.js'
@@ -255,6 +263,7 @@ import Header from '../../../components/customer_homepage/Header.vue'
 import Sidebar from '../../../components/customer_homepage/Sidebar.vue'
 import Footer from '../../../components/customer_homepage/Footer.vue'
 import Createdby from '../../../components/customer_homepage/Createdby.vue'
+import LoginRequireModal from '../../../components/customer/LoginRequireModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -264,6 +273,8 @@ const services = ref([])
 
 const loading = ref(true)
 const error = ref('')
+
+const showLoginModal = ref(false)
 
 const storeId = route.params.storeId
 
@@ -303,10 +314,44 @@ async function loadHome() {
   }
 }
 
+// 檢查登入狀態
+async function checkLoginStatus() {
+  try {
+    const data =
+      await getCustomerLoginStatus()
+
+    if (data.loggedIn !== true) {
+      showLoginModal.value = true
+      loading.value = false
+      return false
+    }
+
+    return true
+
+  } catch (err) {
+    console.error(
+      '取得登入狀態失敗:',
+      err
+    )
+
+    showLoginModal.value = true
+    loading.value = false
+
+    return false
+  }
+}
+
 // 取得客服案件
 async function loadServices() {
   loading.value = true
   error.value = ''
+
+  const loggedIn =
+    await checkLoginStatus()
+
+  if (!loggedIn) {
+    return
+  }
 
   try {
     const data =

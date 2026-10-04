@@ -163,6 +163,13 @@
         <Createdby />
       </div>
     </div>
+
+    <!-- 未登入 -->
+    <LoginRequireModal
+      :visible="showLoginModal"
+      :store-id="storeId"
+      @close="showLoginModal = false"
+    />
   </div>
 </template>
 
@@ -188,6 +195,7 @@ import {
 
 import {
   getCustomerHome,
+  getCustomerLoginStatus,
   getCustomerRefunds
 } from '../../../api/customer.js'
 
@@ -195,6 +203,7 @@ import Header from '../../../components/customer_homepage/Header.vue'
 import Sidebar from '../../../components/customer_homepage/Sidebar.vue'
 import Footer from '../../../components/customer_homepage/Footer.vue'
 import Createdby from '../../../components/customer_homepage/Createdby.vue'
+import LoginRequireModal from '../../../components/customer/LoginRequireModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -204,6 +213,7 @@ const refunds = ref([])
 
 const loading = ref(true)
 const error = ref('')
+const showLoginModal = ref(false)
 
 const storeId = route.params.storeId
 
@@ -270,10 +280,43 @@ async function loadHome() {
   }
 }
 
+// 檢查登入狀態
+async function checkLoginStatus() {
+  try {
+    const data =
+      await getCustomerLoginStatus()
+
+    if (data.loggedIn !== true) {
+      showLoginModal.value = true
+      loading.value = false
+      return false
+    }
+
+    return true
+  } catch (err) {
+    console.error(
+      '取得登入狀態失敗:',
+      err
+    )
+
+    showLoginModal.value = true
+    loading.value = false
+
+    return false
+  }
+}
+
 // 取得退款資料
 async function loadRefunds() {
   loading.value = true
   error.value = ''
+
+  const loggedIn =
+    await checkLoginStatus()
+
+  if (!loggedIn) {
+    return
+  }
 
   try {
     const data =
@@ -287,11 +330,6 @@ async function loadRefunds() {
       '取得退款列表失敗:',
       err
     )
-
-    if (err.status === 401) {
-      router.replace('/401')
-      return
-    }
 
     if (err.status === 404) {
       router.replace('/404')

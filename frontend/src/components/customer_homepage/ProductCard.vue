@@ -93,23 +93,22 @@ const openProduct = () => {
 </script>
 
 <style scoped>
-.product-image {
+.product-image,
+.image-placeholder {
   width: calc(100% - 24px);
   aspect-ratio: 1 / 1;
-  object-fit: cover;
-  display: block;
   margin: 12px auto 0;
-  border-radius: 4px;
-}
-
-.image-placeholder {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+}
 
+.product-image {
+  object-fit: cover;
+}
+
+.image-placeholder {
   background-color: var(--cui-tertiary-bg);
   color: var(--cui-secondary-color);
   font-size: 14px;

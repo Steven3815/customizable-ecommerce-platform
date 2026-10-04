@@ -5,7 +5,7 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once "../../../config/cors.php";
-require_once "../../../middleware/customer_auth.php";
+require_once "../../../config/database.php";
 
 // 取得搜尋條件
 $category_id = $_GET["category_id"] ?? null;

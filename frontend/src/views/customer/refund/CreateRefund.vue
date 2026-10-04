@@ -162,6 +162,13 @@
       <Createdby />
     </div>
 
+    <!-- 未登入 -->
+    <LoginRequireModal
+      :visible="showLoginModal"
+      :store-id="storeId"
+      @close="showLoginModal = false"
+    />
+
     <!-- 錯誤提示 -->
     <CModal
       :visible="errorVisible"
@@ -273,9 +280,11 @@ import Sidebar from '../../../components/customer_homepage/Sidebar.vue'
 import Header from '../../../components/customer_homepage/Header.vue'
 import Footer from '../../../components/customer_homepage/Footer.vue'
 import Createdby from '../../../components/customer_homepage/Createdby.vue'
+import LoginRequireModal from '../../../components/customer/LoginRequireModal.vue'
 
 import {
   getCustomerHome,
+  getCustomerLoginStatus,
   getCustomerOrder,
   createCustomerRefund
 } from '../../../api/customer.js'
@@ -310,6 +319,8 @@ const canRefund = ref(true)
 
 const refundUnavailableVisible = ref(false)
 const refundUnavailableMessage = ref('')
+
+const showLoginModal = ref(false)
 
 const refundReasonOptions = [
   {
@@ -388,9 +399,43 @@ async function loadHome() {
   }
 }
 
+// 檢查登入狀態
+async function checkLoginStatus() {
+  try {
+    const data =
+      await getCustomerLoginStatus()
+
+    if (data.loggedIn !== true) {
+      showLoginModal.value = true
+      loadingOrder.value = false
+      return false
+    }
+
+    return true
+
+  } catch (error) {
+    console.error(
+      '取得登入狀態失敗:',
+      error
+    )
+
+    showLoginModal.value = true
+    loadingOrder.value = false
+
+    return false
+  }
+}
+
 // 取得訂單
 async function loadOrder() {
   loadingOrder.value = true
+
+  const loggedIn =
+    await checkLoginStatus()
+
+  if (!loggedIn) {
+    return
+  }
 
   try {
     const data =
