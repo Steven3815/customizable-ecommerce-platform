@@ -188,8 +188,8 @@ function getRefundStatus(status) {
   const statusMap = {
     none: '無退款',
     pending: '申請中',
-    approved: '退款已核准',
-    rejected: '退款已拒絕'
+    approved: '已核准',
+    rejected: '已拒絕'
   }
 
   return statusMap[status] || status
@@ -345,11 +345,11 @@ onMounted(() => {
                       </option>
 
                       <option value="approved">
-                        退款已核准
+                        已核准
                       </option>
 
                       <option value="rejected">
-                        退款已拒絕
+                        已拒絕
                       </option>
                     </CFormSelect>
                   </CCol>

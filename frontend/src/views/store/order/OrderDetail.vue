@@ -54,6 +54,34 @@ const error = ref('')
 const showErrorModal = ref(false)
 const errorModalMessage = ref('')
 
+// 退款原因
+const refundReasonOptions = [
+  {
+    label: '請選擇退款原因',
+    value: ''
+  },
+  {
+    label: '商品瑕疵',
+    value: 'product_defect'
+  },
+  {
+    label: '商品與描述不符',
+    value: 'product_not_as_described'
+  },
+  {
+    label: '商品損壞',
+    value: 'product_damaged'
+  },
+  {
+    label: '商品缺少或錯誤',
+    value: 'product_missing_or_wrong'
+  },
+  {
+    label: '其他',
+    value: 'other'
+  }
+]
+
 // 顯示錯誤 Modal
 function showError(message) {
   errorModalMessage.value = message
@@ -77,7 +105,8 @@ async function loadOrder() {
     const data = await getOrder(orderId)
 
     order.value = data.order
-    refundEnable.value = data.refund_enable
+    refundEnable.value =
+      Boolean(Number(data.refund_enable))
     paymentNote.value = data.order.payment?.payment_note || ''
   } catch (err) {
     console.error('取得訂單詳細資料失敗:', err)
@@ -189,12 +218,23 @@ async function confirmPayment(paymentConfirmStatus) {
       payment_note: paymentNote.value.trim()
     })
 
-    order.value.payment.payment_status = data.payment.payment_status
-    order.value.payment.payment_confirm_status = data.payment.payment_confirm_status
-    order.value.payment.payment_note = data.payment.payment_note
-    order.value.payment.paid_at = data.payment.paid_at
-    order.value.payment.confirmed_at = data.payment.confirmed_at
-    order.value.updated_at = new Date().toISOString()
+    order.value.payment.payment_status =
+      data.payment.payment_status
+
+    order.value.payment.payment_confirm_status =
+      data.payment.payment_confirm_status
+
+    order.value.payment.payment_note =
+      data.payment.payment_note
+
+    order.value.payment.paid_at =
+      data.payment.paid_at
+
+    order.value.payment.confirmed_at =
+      data.payment.confirmed_at
+
+    order.value.updated_at =
+      new Date().toISOString()
 
     closePaymentConfirmModal()
   } catch (err) {
@@ -274,6 +314,16 @@ function getRefundStatusText(status) {
   }
 
   return statusMap[status] || status
+}
+
+// 退款原因轉中文
+function getRefundReasonText(reason) {
+  const option =
+    refundReasonOptions.find(
+      item => item.value === reason
+    )
+
+  return option?.label || reason
 }
 
 function formatAmount(amount) {
@@ -822,7 +872,7 @@ onMounted(() => {
                     <strong>退款原因</strong>
 
                     <div class="mt-1">
-                      {{ order.refund.refund_reason || '-' }}
+                      {{ getRefundReasonText(order.refund.refund_reason) }}
                     </div>
                   </div>
 

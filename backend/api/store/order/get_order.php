@@ -9,11 +9,14 @@ require_once "../../../middleware/store_auth.php";
 // 檢查 Store 是否存在
 $sql = "
 SELECT
-    store_id,
-    store_name,
-    status
-FROM STORE
-WHERE store_id = ?
+    s.store_id,
+    s.store_name,
+    s.status,
+    ss.refund_enable
+FROM STORE s
+INNER JOIN STORE_SETTING ss
+    ON s.store_id = ss.store_id
+WHERE s.store_id = ?
 ";
 
 $stmt = $pdo->prepare($sql);
@@ -214,8 +217,7 @@ unset($item);
 if ($payment) {
     $payment["payment_id"] = (int)$payment["payment_id"];
     $payment["store_id"] = (int)$payment["store_id"];
-    $payment["amount"] = (float)$payment["amount"]; 
-
+    $payment["amount"] = (float)$payment["amount"];
 }
 
 // 整理 Refund
@@ -233,13 +235,21 @@ $order["shipping_fee"] = (float)$order["shipping_fee"];
 $order["total_amount"] = (float)$order["total_amount"];
 
 // 取得付款確認狀態
-$payment_confirm_status = $payment["payment_confirm_status"] ?? null;
+$payment_confirm_status =
+    $payment["payment_confirm_status"] ?? null;
+
+// 取得退款功能是否開啟
+$refund_enable =
+    (bool)$store["refund_enable"];
+
 // 回傳
 echo json_encode([
     "store" => [
         "store_id" => (int)$store["store_id"],
         "store_name" => $store["store_name"]
     ],
+
+    "refund_enable" => $refund_enable,
 
     "order" => [
         "order_id" => $order["order_id"],
