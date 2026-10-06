@@ -1,7 +1,6 @@
 import { defineComponent, h, onMounted, ref, resolveComponent } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
-import { cilExternalLink } from '@coreui/icons'
 import { CBadge, CSidebarNav, CNavItem, CNavGroup, CNavTitle } from '@coreui/vue'
 import nav from '@/_nav.js'
 
@@ -28,13 +27,53 @@ const isActiveLink = (route, link) => {
   return currentPath === targetPath
 }
 
+/*
+ * Store List / Detail 使用不同的 URL，
+ * 所以需要讓兩個 route name 共用同一個 Sidebar 項目的 active 狀態。
+ */
+const activeRouteGroups = {
+  '/store/admin/product_list': [
+    'StoreProductList',
+    'StoreProductDetail',
+  ],
+
+  '/store/admin/order_list': [
+    'StoreOrderList',
+    'StoreOrderDetail',
+  ],
+
+  '/store/admin/customer_list': [
+    'StoreCustomerList',
+    'StoreCustomerDetail',
+  ],
+
+  '/store/admin/customer_service_list': [
+    'StoreCustomerServiceList',
+    'StoreCustomerServiceDetail',
+  ],
+
+  '/store/admin/refund_list': [
+    'StoreRefundList',
+    'StoreRefundDetail',
+  ],
+}
+
 const isActiveItem = (route, item) => {
+  // 原本的路徑判斷
   if (isActiveLink(route, item.to)) {
     return true
   }
 
+  // 有子選單時，檢查子項目
   if (item.items) {
-    return item.items.some((child) => isActiveItem(route, child))
+    return item.items.some((child) =>
+      isActiveItem(route, child)
+    )
+  }
+
+  // List / Detail route name 判斷
+  if (item.to && activeRouteGroups[item.to]) {
+    return activeRouteGroups[item.to].includes(route.name)
   }
 
   return false
@@ -97,10 +136,10 @@ const AppSidebarNav = defineComponent({
                 : h('span', { class: 'nav-icon' }, h('span', { class: 'nav-icon-bullet' })),
               item.name,
               item.external && h(resolveComponent('CIcon'), {
-                class: 'ms-2',
-                name: 'cil-external-link',
-                size: 'sm'
-              }),
+                  class: 'ms-2',
+                  name: 'cil-external-link',
+                  size: 'sm',
+                }),
               item.badge &&
                 h(
                   CBadge,
@@ -130,7 +169,7 @@ const AppSidebarNav = defineComponent({
                 h(
                   resolveComponent(item.component),
                   {
-                    active: props.isActive,
+                    active: isActiveItem(route, item),
                     as: 'div',
                     href: props.href,
                     onClick: () => props.navigate(),

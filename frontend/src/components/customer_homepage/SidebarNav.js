@@ -27,6 +27,28 @@ const isActiveLink = (route, link) => {
   return currentPath === targetPath
 }
 
+// List / Detail / Create / Checkout / Payment 共用 Sidebar active 狀態
+const activeRouteGroups = {
+  '/store-:storeId/order_list': [
+    'CustomerOrderList',
+    'CustomerOrderDetail',
+    'CustomerCheckout',
+    'CustomerCreditCard',
+    'CustomerTransferPayment',
+  ],
+
+  '/store-:storeId/refund_list': [
+    'CustomerRefundList',
+    'CustomerCreateRefund',
+  ],
+
+  '/store-:storeId/service_list': [
+    'CustomerServiceList',
+    'CustomerServiceDetail',
+    'CustomerCreateService',
+  ],
+}
+
 const isActiveItem = (route, item) => {
   if (isActiveLink(route, item.to)) {
     return true
@@ -34,6 +56,10 @@ const isActiveItem = (route, item) => {
 
   if (item.items) {
     return item.items.some((child) => isActiveItem(route, child))
+  }
+
+  if (item.to && activeRouteGroups[item.to]) {
+    return activeRouteGroups[item.to].includes(route.name)
   }
 
   return false
@@ -150,7 +176,7 @@ const SidebarNav = defineComponent({
                 h(
                   resolveComponent(item.component),
                   {
-                    active: props.isActive,
+                    active: isActiveItem(route, item),
                     as: 'div',
                     href: props.href,
                     onClick: () => props.navigate(),
