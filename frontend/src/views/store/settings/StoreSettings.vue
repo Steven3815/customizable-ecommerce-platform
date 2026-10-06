@@ -128,12 +128,12 @@ function validateSettings() {
       storeSettings.value.refund_days_limit === null ||
       storeSettings.value.refund_days_limit === undefined
     ) {
-      showError('請填寫退貨期限')
+      showError('請填寫退款期限')
       return false
     }
 
     if (Number(storeSettings.value.refund_days_limit) < 0) {
-      showError('退貨期限不可小於 0')
+      showError('退款期限不可小於 0')
       return false
     }
   }
@@ -518,17 +518,17 @@ onMounted(loadSettings)
               </CCardBody>
             </CCard>
 
-            <!-- 退貨功能 -->
+            <!-- 退款功能 -->
             <CCard class="mb-4">
               <CCardBody>
 
                 <h4 class="mb-4">
-                  退貨功能
+                  退款功能
                 </h4>
 
                 <CFormCheck
                   v-model="storeSettings.refund_enable"
-                  label="啟用退貨功能"
+                  label="啟用退款功能"
                 />
 
                 <CRow
@@ -538,7 +538,7 @@ onMounted(loadSettings)
                   <CCol :md="2">
                     <div class="d-flex align-items-center">
                       <CFormLabel class="mb-0 me-3 text-nowrap">
-                        退貨期限
+                        退款期限
                       </CFormLabel>
 
                       <CFormInput
@@ -560,7 +560,7 @@ onMounted(loadSettings)
                 >
                   <br>
                   <strong>說明：</strong>
-                  可選擇是否開放顧客退貨 (退貨期限建議7天)
+                  可選擇是否開放顧客退款 (退款期限建議7天)
                 </small>
 
               </CCardBody>

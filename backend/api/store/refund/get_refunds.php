@@ -7,6 +7,30 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
+// 檢查退款功能是否開啟
+$settingSql = "
+SELECT
+    refund_enable
+FROM STORE_SETTING
+WHERE store_id = ?
+";
+
+$settingStmt = $pdo->prepare($settingSql);
+$settingStmt->execute([$store_id]);
+
+$setting = $settingStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$setting) {
+    http_response_code(404);
+    echo json_encode([
+        "error" => "Store setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$refund_enable = (int)$setting["refund_enable"];
+
 // 分頁
 $page = isset($_GET["page"])
     ? (int)$_GET["page"]
@@ -168,6 +192,7 @@ if (!$refunds) {
         "total_pages" => $total_pages,
         "date_sort" => $date_sort,
         "price_sort" => $price_sort,
+        "refund_enable" => $refund_enable,
         "message" => "No refunds found",
         "refunds" => []
     ], JSON_UNESCAPED_UNICODE);
@@ -265,6 +290,7 @@ echo json_encode([
     "total_pages" => $total_pages,
     "date_sort" => $date_sort,
     "price_sort" => $price_sort,
+    "refund_enable" => $refund_enable,
     "refunds" => $result
 ], JSON_UNESCAPED_UNICODE);
 

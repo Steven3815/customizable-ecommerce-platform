@@ -11,17 +11,27 @@
 
             <!-- 標題 -->
             <div class="mb-4">
-              <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
                 <h2 class="mt-2 mb-0">
                   客服案件
                 </h2>
 
+                <!-- 客服功能開啟才顯示建立客服 -->
                 <CButton
+                  v-if="customerServiceEnable"
                   color="primary"
                   @click="createService"
                 >
                   建立客服
                 </CButton>
+              </div>
+
+              <!-- 客服功能未開啟 -->
+              <div
+                v-if="!customerServiceEnable"
+                class="text-danger mb-4"
+              >
+                目前無開啟客服功能
               </div>
 
               <!-- 篩選 -->
@@ -77,7 +87,9 @@
                   目前沒有符合條件的客服案件
                 </h4>
 
+                <!-- 客服功能開啟才顯示建立客服 -->
                 <CButton
+                  v-if="customerServiceEnable"
                   color="primary"
                   @click="createService"
                 >
@@ -268,6 +280,8 @@ import LoginRequireModal from '../../../components/customer/LoginRequireModal.vu
 const route = useRoute()
 const router = useRouter()
 
+const storeId = route.params.storeId
+
 const home = ref(null)
 const services = ref([])
 
@@ -276,7 +290,8 @@ const error = ref('')
 
 const showLoginModal = ref(false)
 
-const storeId = route.params.storeId
+// 客服功能是否開啟
+const customerServiceEnable = ref(false)
 
 const status = ref('all')
 
@@ -304,6 +319,7 @@ async function loadHome() {
   try {
     home.value =
       await getCustomerHome(storeId)
+
   } catch (err) {
     console.error(
       '取得首頁資料失敗:',
@@ -359,6 +375,10 @@ async function loadServices() {
         storeId,
         status.value
       )
+
+    // 判斷店家是否開啟客服功能
+    customerServiceEnable.value =
+      Number(data.customer_service_enable) === 1
 
     services.value =
       data.services || []

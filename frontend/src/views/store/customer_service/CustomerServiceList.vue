@@ -52,6 +52,8 @@ const error = ref('')
 const showErrorModal = ref(false)
 const errorModalMessage = ref('')
 
+const customerServiceEnable = ref(false)
+
 // 顯示錯誤 Modal
 function showError(message) {
   errorModalMessage.value = message
@@ -89,6 +91,9 @@ async function loadServices() {
       status.value,
       sort.value
     )
+
+    customerServiceEnable.value =
+      Number(data.customer_service_enable) === 1
 
     // 不顯示已取消的客服案件
     services.value = (data.services || []).filter(
@@ -211,6 +216,14 @@ onMounted(() => {
               <h2 class="mt-2 mb-3">
                 客服管理
               </h2>
+
+              <!-- 未開啟客服功能 -->
+              <div
+                v-if="!customerServiceEnable"
+                class="text-danger"
+              >
+                目前未開啟客服功能
+              </div>
             </div>
 
             <!-- 客服搜尋 -->

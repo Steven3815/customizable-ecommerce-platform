@@ -50,14 +50,24 @@ const activeRouteGroups = {
 }
 
 const isActiveItem = (route, item) => {
-  if (isActiveLink(route, item.to)) {
+  // 將 :storeId 替換成目前商店的 storeId
+  const navPath = item.to
+    ? item.to.replace(':storeId', route.params.storeId)
+    : item.to
+
+  // 一般頁面直接比對實際網址
+  if (isActiveLink(route, navPath)) {
     return true
   }
 
+  // 有子選單時，檢查子項目
   if (item.items) {
-    return item.items.some((child) => isActiveItem(route, child))
+    return item.items.some((child) =>
+      isActiveItem(route, child)
+    )
   }
 
+  // List / Detail / Create / Checkout / Payment route name 判斷
   if (item.to && activeRouteGroups[item.to]) {
     return activeRouteGroups[item.to].includes(route.name)
   }
@@ -108,7 +118,9 @@ const SidebarNav = defineComponent({
             as: 'div',
             compact: true,
             ...(firstRender.value && {
-              visible: item.items.some((child) => isActiveItem(route, child)),
+              visible: item.items.some((child) =>
+                isActiveItem(route, child)
+              ),
             }),
           },
           {
@@ -139,9 +151,14 @@ const SidebarNav = defineComponent({
                     customClassName: 'nav-icon',
                     name: item.icon,
                   })
-                : h('span', { class: 'nav-icon' }, h('span', { class: 'nav-icon-bullet' })),
+                : h(
+                    'span',
+                    { class: 'nav-icon' },
+                    h('span', { class: 'nav-icon-bullet' }),
+                  ),
               item.name,
-              item.external && h(resolveComponent('CIcon'), {
+              item.external &&
+                h(resolveComponent('CIcon'), {
                   class: 'ms-2',
                   name: 'cilExternalLink',
                   size: 'sm',
@@ -164,6 +181,7 @@ const SidebarNav = defineComponent({
       }
 
       const navPath = getNavPath(item.to)
+
       return navPath
         ? h(
             RouterLink,
@@ -188,7 +206,11 @@ const SidebarNav = defineComponent({
                             customClassName: 'nav-icon',
                             name: item.icon,
                           })
-                        : h('span', { class: 'nav-icon' }, h('span', { class: 'nav-icon-bullet' })),
+                        : h(
+                            'span',
+                            { class: 'nav-icon' },
+                            h('span', { class: 'nav-icon-bullet' }),
+                          ),
                       item.name,
                       item.badge &&
                         h(

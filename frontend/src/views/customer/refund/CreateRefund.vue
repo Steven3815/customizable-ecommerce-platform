@@ -131,7 +131,7 @@
                 訂單編號: {{ order.order_number }}
               </h4>
 
-              <div class="text-body-secondary">
+              <div class="text-danger">
                 {{ refundUnavailableMessage }}
               </div>
             </CCardBody>
@@ -286,6 +286,7 @@ import {
   getCustomerHome,
   getCustomerLoginStatus,
   getCustomerOrder,
+  getCustomerRefunds,
   createCustomerRefund
 } from '../../../api/customer.js'
 
@@ -316,6 +317,9 @@ const errorVisible = ref(false)
 const refundSuccessVisible = ref(false)
 
 const canRefund = ref(true)
+
+// 退款功能是否開啟
+const refundEnable = ref(false)
 
 const refundUnavailableVisible = ref(false)
 const refundUnavailableMessage = ref('')
@@ -438,6 +442,21 @@ async function loadOrder() {
   }
 
   try {
+    // 先確認退款功能是否開啟
+    const refundData =
+      await getCustomerRefunds(storeId)
+
+    refundEnable.value =
+      Number(refundData.refund_enable) === 1
+
+    if (!refundEnable.value) {
+      showRefundUnavailable(
+        '目前無開啟退款功能'
+      )
+
+      return
+    }
+
     const data =
       await getCustomerOrder(
         storeId,
@@ -521,6 +540,15 @@ function clearImage() {
 
 // 驗證退款資料
 function validateRefund() {
+  // 再次確認退款功能
+  if (!refundEnable.value) {
+    showRefundUnavailable(
+      '目前無開啟退款功能'
+    )
+
+    return false
+  }
+
   if (!refundReason.value) {
     showError(
       '請選擇退款原因'
@@ -552,6 +580,15 @@ function validateRefund() {
 async function submitRefund() {
   errorMessage.value = ''
   errorVisible.value = false
+
+  // 退款功能未開啟時禁止建立
+  if (!refundEnable.value || !canRefund.value) {
+    showRefundUnavailable(
+      '目前無開啟退款功能'
+    )
+
+    return
+  }
 
   if (!validateRefund()) {
     return

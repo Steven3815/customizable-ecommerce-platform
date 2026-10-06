@@ -1,3 +1,4 @@
+```vue
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 
@@ -49,6 +50,9 @@ const error = ref('')
 
 const showErrorModal = ref(false)
 const errorModalMessage = ref('')
+
+// 退款功能是否開啟
+const refundEnable = ref(false)
 
 // 退款原因
 const refundReasonOptions = [
@@ -102,24 +106,46 @@ async function loadRefunds() {
       priceSort.value
     )
 
-    refunds.value = data.refunds || []
-    totalPages.value = data.total_pages || 0
-    total.value = data.total || 0
+    console.log(
+      '退款 API 回傳資料:',
+      data
+    )
+
+    // 判斷店家是否開啟退款功能
+    refundEnable.value =
+      Number(data.refund_enable) === 1
+
+    refunds.value =
+      data.refunds || []
+
+    totalPages.value =
+      Number(data.total_pages) || 0
+
+    total.value =
+      Number(data.total) || 0
 
   } catch (e) {
-    console.error('取得退款列表失敗:', e)
+    console.error(
+      '取得退款列表失敗:',
+      e
+    )
 
     refunds.value = []
     totalPages.value = 0
     total.value = 0
 
     if (e.status === 403) {
-      error.value = '您沒有權限存取此頁面'
+      error.value =
+        '您沒有權限存取此頁面'
     } else if (e.status === 400) {
-      error.value = e.message || '查詢條件錯誤'
+      error.value =
+        e.message ||
+        '查詢條件錯誤'
     } else {
-      error.value = '取得退款列表失敗'
+      error.value =
+        '取得退款列表失敗'
     }
+
   } finally {
     loading.value = false
   }
@@ -181,10 +207,13 @@ function getRefundReasonText(reason) {
 
 // 格式化金額
 function formatAmount(amount) {
-  return Number(amount).toLocaleString('zh-TW', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  })
+  return Number(amount).toLocaleString(
+    'zh-TW',
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }
+  )
 }
 
 // 格式化日期
@@ -193,13 +222,16 @@ function formatDate(date) {
     return ''
   }
 
-  return new Date(date).toLocaleString('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return new Date(date).toLocaleString(
+    'zh-TW',
+    {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }
+  )
 }
 
 onMounted(() => {
@@ -212,18 +244,25 @@ onMounted(() => {
     <AppSidebar />
 
     <div class="wrapper d-flex flex-column min-vh-100">
+
       <AppHeader />
 
       <div class="body flex-grow-1">
+
         <CContainer class="px-4" lg>
 
           <!-- 載入中 -->
-          <div v-if="loading">
+          <div
+            v-if="loading"
+            class="text-center py-5"
+          >
             載入中...
           </div>
 
           <!-- 頁面載入錯誤 -->
-          <div v-else-if="error">
+          <div
+            v-else-if="error"
+          >
             <p class="text-danger">
               {{ error }}
             </p>
@@ -232,10 +271,21 @@ onMounted(() => {
           <!-- 頁面內容 -->
           <div v-else>
 
-            <div class="position-relative mb-4">
-              <h2 class="mt-2 mb-3">
+            <!-- 標題 -->
+            <div class="mb-4">
+
+              <h2 class="mt-2 mb-2">
                 退款管理
               </h2>
+
+              <!-- 退款功能未開啟 -->
+              <div
+                v-if="refundEnable === false"
+                class="text-danger mb-4"
+              >
+                目前無開啟退款功能
+              </div>
+
             </div>
 
             <!-- 退款搜尋 -->
@@ -249,6 +299,7 @@ onMounted(() => {
                 <CRow class="g-3">
 
                   <CCol :md="3">
+
                     <CFormLabel>
                       申請時間
                     </CFormLabel>
@@ -256,6 +307,7 @@ onMounted(() => {
                     <CFormSelect
                       v-model="dateSort"
                     >
+
                       <option value="newest">
                         最新退款
                       </option>
@@ -263,10 +315,13 @@ onMounted(() => {
                       <option value="oldest">
                         最舊退款
                       </option>
+
                     </CFormSelect>
+
                   </CCol>
 
                   <CCol :md="3">
+
                     <CFormLabel>
                       退款金額
                     </CFormLabel>
@@ -274,6 +329,7 @@ onMounted(() => {
                     <CFormSelect
                       v-model="priceSort"
                     >
+
                       <option value="none">
                         預設
                       </option>
@@ -285,7 +341,9 @@ onMounted(() => {
                       <option value="low">
                         金額最低
                       </option>
+
                     </CFormSelect>
+
                   </CCol>
 
                 </CRow>
@@ -300,6 +358,7 @@ onMounted(() => {
                 <div
                   class="d-flex justify-content-between align-items-center mb-4"
                 >
+
                   <h4 class="mb-0">
                     退款列表
                   </h4>
@@ -311,11 +370,18 @@ onMounted(() => {
                   <span class="text-body-secondary">
                     共 {{ total }} 筆退款
                   </span>
+
                 </div>
 
                 <div class="table-responsive">
-                  <CTable hover class="text-center">
+
+                  <CTable
+                    hover
+                    class="text-center"
+                  >
+
                     <CTableHead>
+
                       <CTableRow>
 
                         <CTableHeaderCell>
@@ -354,6 +420,7 @@ onMounted(() => {
                         </CTableHeaderCell>
 
                       </CTableRow>
+
                     </CTableHead>
 
                     <CTableBody>
@@ -391,6 +458,7 @@ onMounted(() => {
                         </CTableDataCell>
 
                         <CTableDataCell>
+
                           <span
                             :class="{
                               'text-danger':
@@ -404,6 +472,7 @@ onMounted(() => {
                               )
                             }}
                           </span>
+
                         </CTableDataCell>
 
                         <CTableDataCell>
@@ -411,6 +480,7 @@ onMounted(() => {
                         </CTableDataCell>
 
                         <CTableDataCell>
+
                           <CButton
                             color="primary"
                             size="sm"
@@ -422,33 +492,40 @@ onMounted(() => {
                           >
                             查看
                           </CButton>
+
                         </CTableDataCell>
 
                       </CTableRow>
 
+                      <!-- 沒有退款案件 -->
                       <CTableRow
                         v-if="refunds.length === 0"
                       >
+
                         <CTableDataCell
                           colspan="8"
                           class="text-center text-body-secondary"
                         >
                           目前沒有退款案件
                         </CTableDataCell>
+
                       </CTableRow>
 
                     </CTableBody>
+
                   </CTable>
+
                 </div>
 
                 <!-- 分頁 -->
                 <div
                   v-if="totalPages > 1"
                   class="d-flex justify-content-center mt-4"
-                  style="cursor: pointer;"
                 >
+
                   <CPagination>
 
+                    <!-- 上一頁 -->
                     <CPaginationItem
                       :disabled="page === 1"
                       @click="changePage(page - 1)"
@@ -457,15 +534,18 @@ onMounted(() => {
                       上一頁
                     </CPaginationItem>
 
+                    <!-- 頁碼 -->
                     <CPaginationItem
                       v-for="pageNumber in totalPages"
                       :key="pageNumber"
                       :active="pageNumber === page"
                       @click="changePage(pageNumber)"
+                      style="cursor: pointer;"
                     >
                       {{ pageNumber }}
                     </CPaginationItem>
 
+                    <!-- 下一頁 -->
                     <CPaginationItem
                       :disabled="page === totalPages"
                       @click="changePage(page + 1)"
@@ -475,6 +555,7 @@ onMounted(() => {
                     </CPaginationItem>
 
                   </CPagination>
+
                 </div>
 
               </CCardBody>
@@ -483,9 +564,11 @@ onMounted(() => {
           </div>
 
         </CContainer>
+
       </div>
 
       <AppFooter />
+
     </div>
 
     <!-- 錯誤提示 Modal -->
@@ -493,10 +576,13 @@ onMounted(() => {
       :visible="showErrorModal"
       @close="closeErrorModal"
     >
+
       <CModalHeader>
+
         <CModalTitle>
           提示
         </CModalTitle>
+
       </CModalHeader>
 
       <CModalBody>
@@ -504,13 +590,16 @@ onMounted(() => {
       </CModalBody>
 
       <CModalFooter class="border-0">
+
         <CButton
           color="primary"
           @click="closeErrorModal"
         >
           確定
         </CButton>
+
       </CModalFooter>
+
     </CModal>
 
   </div>
@@ -522,3 +611,4 @@ onMounted(() => {
   font-size: 14px;
 }
 </style>
+```

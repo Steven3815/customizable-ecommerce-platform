@@ -15,6 +15,14 @@
                 <h2 class="mb-2">
                   客服案件
                 </h2>
+
+                <!-- 客服功能未開啟 -->
+                <div
+                  v-if="!customerServiceEnable"
+                  class="text-danger"
+                >
+                  目前無開啟客服功能
+                </div>
               </div>
 
               <CButton
@@ -379,6 +387,9 @@ const home = ref(null)
 
 const showLoginModal = ref(false)
 
+// 客服功能是否開啟
+const customerServiceEnable = ref(false)
+
 const showDeleteModal = ref(false)
 const deleting = ref(false)
 
@@ -436,6 +447,10 @@ const loadService = async () => {
       storeId,
       serviceId
     )
+
+    // 判斷店家是否開啟客服功能
+    customerServiceEnable.value =
+      Number(data.customer_service_enable) === 1
 
     service.value = data
   } catch (err) {

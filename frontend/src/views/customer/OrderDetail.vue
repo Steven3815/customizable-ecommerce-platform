@@ -592,7 +592,11 @@
                     尚無退款資料
                   </div>
 
-                  <div class="d-flex mt-4">
+                  <!-- 退款功能開啟才顯示申請退款 -->
+                  <div
+                    v-if="refundEnable"
+                    class="d-flex mt-4"
+                  >
                     <CButton
                       color="primary"
                       @click="goCreateRefund"
@@ -601,6 +605,7 @@
                     </CButton>
                   </div>
                 </template>
+
               </CCardBody>
             </CCard>
 
@@ -697,7 +702,10 @@ const loading = ref(true)
 const cancelling = ref(false)
 const error = ref('')
 const order = ref(null)
+
+// 退款功能是否開啟
 const refundEnable = ref(false)
+
 const showCancelModal = ref(false)
 
 const refundReasonOptions = [
@@ -752,8 +760,9 @@ const loadOrder = async () => {
       orderId
     )
 
+    // 判斷商店是否開啟退款功能
     refundEnable.value =
-      data.refund_enable === true
+      Number(data.refund_enable) === 1
 
     order.value =
       data.order
@@ -783,6 +792,11 @@ const goOrderEdit = () => {
 }
 
 const goCreateRefund = () => {
+  // 退款功能未開啟時禁止進入退款申請頁
+  if (!refundEnable.value) {
+    return
+  }
+
   router.push(
     `/store-${storeId}/refund/create?orderId=${orderId}`
   )

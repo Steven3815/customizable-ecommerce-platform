@@ -127,16 +127,6 @@ if ($store_setting["store_mode"] !== "shopping") {
     exit;
 }
 
-// 客服功能未開啟
-if ((int)$store_setting["customer_service_enable"] !== 1) {
-    http_response_code(403);
-    echo json_encode([
-        "error" => "Customer service is currently unavailable"
-    ], JSON_UNESCAPED_UNICODE);
-
-    exit;
-}
-
 // 取得客服案件
 $sql = "
 SELECT

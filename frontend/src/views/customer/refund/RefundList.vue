@@ -17,6 +17,14 @@
                 </h2>
               </div>
 
+              <!-- 退款功能未開啟 -->
+              <div
+                v-if="!refundEnable"
+                class="text-danger mb-4"
+              >
+                目前無開啟退款功能
+              </div>
+
               <!-- 篩選 -->
               <div class="row g-3">
                 <div class="col-md-3">
@@ -219,6 +227,9 @@ const storeId = route.params.storeId
 
 const status = ref('all')
 
+// 退款功能是否開啟
+const refundEnable = ref(false)
+
 const statusOptions = [
   {
     label: '全部',
@@ -321,6 +332,10 @@ async function loadRefunds() {
   try {
     const data =
       await getCustomerRefunds(storeId)
+
+    // 判斷退款功能是否開啟
+    refundEnable.value =
+      Number(data.refund_enable) === 1
 
     refunds.value =
       data.refunds || []

@@ -7,6 +7,31 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once "../../../config/cors.php";
 require_once "../../../middleware/store_auth.php";
 
+// 檢查客服功能是否開啟
+$settingSql = "
+SELECT
+    customer_service_enable
+FROM STORE_SETTING
+WHERE store_id = ?
+";
+
+$settingStmt = $pdo->prepare($settingSql);
+$settingStmt->execute([$store_id]);
+
+$setting = $settingStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$setting) {
+    http_response_code(404);
+    echo json_encode([
+        "error" => "Store setting not found"
+    ], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+
+$customer_service_enable =
+    (int)$setting["customer_service_enable"];
+
 // 取得頁數與狀態篩選
 $page = $_GET["page"] ?? 1;
 $status = $_GET["status"] ?? "all";
@@ -163,6 +188,7 @@ echo json_encode([
     "total_pages" => $total_pages,
     "status_filter" => $status,
     "sort" => $sort,
+    "customer_service_enable" => $customer_service_enable,
     "services" => $result
 ], JSON_UNESCAPED_UNICODE);
 

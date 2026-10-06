@@ -45,6 +45,7 @@ const searchKeyword = ref('')
 const categoryId = ref('')
 const status = ref('all')
 const stockStatus = ref('all')
+const stockAlertEnable = ref(false)
 
 const page = ref(1)
 const totalPages = ref(0)
@@ -81,11 +82,19 @@ async function loadProducts() {
       status: status.value === 'all'
         ? null
         : status.value,
-      stock_status: stockStatus.value === 'all'
-        ? null
-        : stockStatus.value,
+      stock_status: stockAlertEnable.value && stockStatus.value !== 'all'
+        ? stockStatus.value
+        : null,
       page: page.value
     })
+
+    // 取得庫存預警設定
+    stockAlertEnable.value = Number(data.stock_alert_enable) === 1
+
+    // 未開啟庫存預警時重設庫存篩選
+    if (!stockAlertEnable.value) {
+      stockStatus.value = 'all'
+    }
 
     // 不顯示已刪除商品
     products.value = (data.products || []).filter(
@@ -296,7 +305,10 @@ onMounted(() => {
                     </CFormSelect>
                   </CCol>
 
-                  <CCol :md="3">
+                  <CCol
+                    v-if="stockAlertEnable"
+                    :md="3"
+                  >
                     <CFormLabel>
                       庫存狀態
                     </CFormLabel>
@@ -390,7 +402,7 @@ onMounted(() => {
                           庫存
                         </CTableHeaderCell>
 
-                        <CTableHeaderCell>
+                        <CTableHeaderCell v-if="stockAlertEnable">
                           庫存狀態
                         </CTableHeaderCell>
 
@@ -442,11 +454,12 @@ onMounted(() => {
                           {{ product.stock }}
                         </CTableDataCell>
 
-                        <CTableDataCell>
+                        <CTableDataCell v-if="stockAlertEnable">
                           <span
                             :class="{
+                              'text-warning':
+                                product.stock_status === 'low_stock',
                               'text-danger':
-                                product.stock_status === 'low_stock' ||
                                 product.stock_status === 'out_of_stock'
                             }"
                           >
@@ -455,7 +468,16 @@ onMounted(() => {
                         </CTableDataCell>
 
                         <CTableDataCell>
-                          {{ getProductStatus(product.status) }}
+                          <span
+                            :class="{
+                              'text-success':
+                                product.status === 'active',
+                              'text-danger':
+                                product.status === 'hidden'
+                            }"
+                          >
+                            {{ getProductStatus(product.status) }}
+                          </span>
                         </CTableDataCell>
 
                         <CTableDataCell>
@@ -476,7 +498,7 @@ onMounted(() => {
 
                       <CTableRow v-if="products.length === 0">
                         <CTableDataCell
-                          colspan="9"
+                          :colspan="stockAlertEnable ? 9 : 8"
                           class="text-center text-body-secondary"
                         >
                           目前沒有商品

@@ -336,6 +336,9 @@ const serviceSuccessVisible = ref(false)
 
 const canCreateService = ref(true)
 
+// 客服功能是否開啟
+const customerServiceEnable = ref(false)
+
 const serviceUnavailableVisible = ref(false)
 const serviceUnavailableMessage = ref('')
 
@@ -455,7 +458,7 @@ async function checkLoginStatus() {
   }
 }
 
-// 檢查是否已有處理中的客服案件
+// 檢查客服功能與是否已有處理中的客服案件
 async function checkPendingService() {
   checkingService.value = true
 
@@ -466,6 +469,20 @@ async function checkPendingService() {
         'pending'
       )
 
+    // 判斷店家是否開啟客服功能
+    customerServiceEnable.value =
+      Number(data.customer_service_enable) === 1
+
+    // 未開啟客服功能
+    if (!customerServiceEnable.value) {
+      showServiceUnavailable(
+        '目前無開啟客服功能'
+      )
+
+      return
+    }
+
+    // 檢查是否已有處理中的客服案件
     const pendingServices =
       data.services || []
 
@@ -581,6 +598,24 @@ function clearImage() {
 }
 
 function validateService() {
+  // 再次確認客服功能是否開啟
+  if (!customerServiceEnable.value) {
+    showServiceUnavailable(
+      '目前無開啟客服功能'
+    )
+
+    return false
+  }
+
+  // 確認目前可以建立客服
+  if (!canCreateService.value) {
+    showServiceUnavailable(
+      '您目前已有處理中的客服案件，請等待案件處理完成後再建立新的案件'
+    )
+
+    return false
+  }
+
   if (!problemType.value) {
     showError(
       '請選擇問題類型'
@@ -721,6 +756,11 @@ onMounted(async () => {
   await checkPendingService()
 
   if (errorVisible.value) {
+    return
+  }
+
+  // 只有客服功能開啟且沒有 pending 案件才取得訂單
+  if (!canCreateService.value) {
     return
   }
 
