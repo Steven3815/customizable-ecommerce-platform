@@ -575,6 +575,7 @@ onMounted(() => {
 
                     <CButton
                       color="success"
+                      class="text-white"
                       :disabled="processing"
                       @click="openProcessConfirmModal('approved')"
                     >

@@ -729,12 +729,12 @@ function cancelChanges() {
                   商品資訊
                 </h4>
 
-                <!-- 商品狀態 -->
-                <CRow class="mb-4">
-                  <CCol :md="4">
-                    <CFormLabel>
-                      商品狀態
-                    </CFormLabel>
+                    <!-- 商品狀態 -->
+                    <CRow class="mb-4">
+                      <CCol :md="4">
+                        <CFormLabel>
+                          商品狀態
+                        </CFormLabel>
 
                     <CFormSelect v-model="status">
                       <option value="active">
@@ -745,6 +745,13 @@ function cancelChanges() {
                         下架
                       </option>
                     </CFormSelect>
+
+                    <div
+                      v-if="status === 'hidden'"
+                      class="text-danger mt-2"
+                    >
+                      目前商品為下架狀態
+                    </div>
                   </CCol>
                 </CRow>
 
@@ -1106,7 +1113,8 @@ function cancelChanges() {
                   />
 
                   <small class="d-block mt-2 text-body-secondary">
-                    建議圖片比例為 1200 × 800（3 : 2）
+                    建議圖片比例為 1200 × 800（3 : 2）<br>
+                    可選擇多張圖片
                   </small>
 
                   <!-- 待確認圖片 -->

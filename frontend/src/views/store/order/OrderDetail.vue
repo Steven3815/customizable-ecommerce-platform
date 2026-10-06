@@ -810,6 +810,7 @@ onMounted(() => {
                     <div class="mt-4 d-flex gap-2">
                       <CButton
                         color="success"
+                        class="text-white"
                         :disabled="confirmingPayment"
                         @click="
                           openPaymentConfirmModal(
@@ -997,6 +998,7 @@ onMounted(() => {
                   >
                     <CButton
                       color="success"
+                      class="text-white"
                       :disabled="updatingDelivery"
                       @click="
                         openDeliveryConfirmModal(

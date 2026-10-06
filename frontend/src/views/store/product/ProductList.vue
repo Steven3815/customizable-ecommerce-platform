@@ -173,8 +173,8 @@ function getProductStatus(status) {
 // 庫存狀態
 function getStockStatus(status) {
   const statusMap = {
-    in_stock: '庫存正常',
-    low_stock: '庫存不足',
+    in_stock: '正常',
+    low_stock: '不足',
     out_of_stock: '缺貨'
   }
 
@@ -309,11 +309,11 @@ onMounted(() => {
                       </option>
 
                       <option value="in_stock">
-                        庫存正常
+                        正常
                       </option>
 
                       <option value="low_stock">
-                        庫存不足
+                        不足
                       </option>
 
                       <option value="out_of_stock">

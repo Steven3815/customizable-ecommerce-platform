@@ -109,7 +109,6 @@ try {
         FROM PRODUCT
         WHERE store_id = ?
         AND category_id = ?
-        AND status = 'active'
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -127,6 +126,7 @@ try {
     // price = NULL → 尚未設定價格
     // has_spec = 0   → 無規格商品
     // stock = 0      → 無庫存
+    // status = hidden → 預設下架
     $sql = "
         INSERT INTO PRODUCT (
             store_id,
@@ -146,7 +146,7 @@ try {
             0,
             0,
             ?,
-            'active'
+            'hidden'
         )
     ";
 
@@ -173,7 +173,7 @@ try {
             "has_spec" => false,
             "stock" => 0,
             "sort_order" => $sort_order,
-            "status" => "active"
+            "status" => "hidden"
         ]
     ], JSON_UNESCAPED_UNICODE);
 
