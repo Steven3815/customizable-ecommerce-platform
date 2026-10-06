@@ -5,6 +5,8 @@ import StoreLayout from '../layouts/StoreLayout.vue'
 import Page404 from '@/views/error/Page404.vue'
 import Page401 from '@/views/error/Page401.vue'
 
+import LandingPage from '@/views/LandingPage.vue'
+
 import CustomerLogin from '../views/auth/CustomerLogin.vue'
 import CustomerRegister from '../views/auth/CustomerRegister.vue'
 import StoreLogin from '../views/auth/StoreLogin.vue'
@@ -63,6 +65,12 @@ const router = createRouter({
       path: '/401',
       name: 'Page401',
       component: Page401,
+    },
+    // Landing Page
+    {
+      path: '/',
+      name: 'LandingPage',
+      component: LandingPage
     },
     // Customer
     {
