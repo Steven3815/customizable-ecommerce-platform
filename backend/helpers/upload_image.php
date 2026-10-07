@@ -16,10 +16,10 @@ function uploadImage(
     }
 
     // 檢查圖片容量
-    $max_file_size = 5 * 1024 * 1024; // 5 MB
+    $max_file_size = 10 * 1024 * 1024; // 10 MB
 
     if ($file["size"] > $max_file_size) {
-        throw new Exception("Image file size must not exceed 5 MB");
+        throw new Exception("Image file size must not exceed 10 MB");
     }
     
     // 檢查 MIME Type
