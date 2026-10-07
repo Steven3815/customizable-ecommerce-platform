@@ -1,14 +1,17 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
 import { useColorModes } from '@coreui/vue'
+import { useRouter } from 'vue-router'
 
 import AppHeaderDropdownAccnt from './HeaderDropdownAccnt.vue'
 import CartOffcanvas from './CartOffcanvas.vue'
+import { checkCustomerLogin } from '../../api/auth.js'
 import { useSidebarStore } from '../../stores/sidebar.js'
 import { useCartStore } from '../../stores/cart.js'
 
 const headerClassNames = ref('mb-4 p-0')
 const cartOffcanvas = ref(null)
+const isLoggedIn = ref(false)
 
 const { colorMode, setColorMode } = useColorModes(
   'coreui-free-vue-admin-template-theme'
@@ -16,6 +19,7 @@ const { colorMode, setColorMode } = useColorModes(
 
 const sidebar = useSidebarStore()
 const cartStore = useCartStore()
+const router = useRouter()
 
 const props = defineProps({
   store: {
@@ -27,6 +31,29 @@ const props = defineProps({
   }
 })
 
+const checkLogin = async () => {
+  try {
+    const result = await checkCustomerLogin()
+
+    isLoggedIn.value = result
+
+    if (isLoggedIn.value && props.store.store_id) {
+      await cartStore.loadCartTotal(
+        props.store.store_id
+      )
+    }
+  } catch (error) {
+    console.error('Header login error:', error)
+    isLoggedIn.value = false
+  }
+}
+
+const goLogin = () => {
+  router.push(
+    `/store-${props.store.store_id}/login`
+  )
+}
+
 const openCart = async () => {
   await cartOffcanvas.value?.open()
 
@@ -37,9 +64,9 @@ const openCart = async () => {
 
 watch(
   () => props.store.store_id,
-  (storeId) => {
-    if (storeId) {
-      cartStore.loadCartTotal(storeId)
+  async (storeId) => {
+    if (storeId && isLoggedIn.value) {
+      await cartStore.loadCartTotal(storeId)
     }
   },
   {
@@ -48,6 +75,8 @@ watch(
 )
 
 onMounted(() => {
+  checkLogin()
+
   document.addEventListener('scroll', () => {
     if (document.documentElement.scrollTop > 0) {
       headerClassNames.value = 'mb-4 p-0 shadow-sm'
@@ -77,70 +106,80 @@ onMounted(() => {
         />
       </CHeaderToggler>
 
-      <!-- Store Name -->
       <CHeaderBrand class="store-name-wrapper">
         <div class="store-name">
           {{ props.store.store_name }}
         </div>
       </CHeaderBrand>
 
-      <CHeaderNav class="ms-auto">
-        <CNavItem>
-          <CNavLink href="#">
+      <template v-if="isLoggedIn">
+        <CHeaderNav class="ms-auto">
+          <CNavItem>
+            <CNavLink href="#">
+              <CIcon
+                icon="cil-bell"
+                size="lg"
+              />
+            </CNavLink>
+          </CNavItem>
+
+          <CNavItem>
+            <CNavLink href="#">
+              <CIcon
+                icon="cil-envelope-open"
+                size="lg"
+              />
+            </CNavLink>
+          </CNavItem>
+        </CHeaderNav>
+
+        <CHeaderNav>
+          <li class="nav-item py-1">
+            <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
+          </li>
+
+          <AppHeaderDropdownAccnt />
+        </CHeaderNav>
+
+        <div class="cart-container">
+          <CButton
+            class="header-icon d-lg-none"
+            @click="openCart"
+          >
+            <CIcon icon="cil-basket" />
+          </CButton>
+
+          <CButton
+            class="cart-button d-none d-lg-flex"
+            @click="openCart"
+          >
             <CIcon
-              icon="cil-bell"
-              size="lg"
+              icon="cil-basket"
+              size="sm"
             />
-          </CNavLink>
-        </CNavItem>
 
-        <CNavItem>
-          <CNavLink href="#">
-            <CIcon
-              icon="cil-envelope-open"
-              size="lg"
-            />
-          </CNavLink>
-        </CNavItem>
-      </CHeaderNav>
+            <strong>
+              ${{ cartStore.cartTotal.toLocaleString() }}
+            </strong>
+          </CButton>
+        </div>
+      </template>
 
-      <CHeaderNav>
-        <li class="nav-item py-1">
-          <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
-        </li>
-
-        <AppHeaderDropdownAccnt />
-      </CHeaderNav>
-
-      <div class="cart-container">
-
-        <!-- 手機版 -->
+      <CHeaderNav
+        v-else
+        class="ms-auto me-4"
+      >
         <CButton
-          class="header-icon d-lg-none"
-          @click="openCart"
+          color="primary"
+          @click="goLogin"
         >
-          <CIcon icon="cil-basket" />
+          登入
         </CButton>
-
-        <!-- 桌面版 -->
-        <CButton
-          class="cart-button d-none d-lg-flex"
-          @click="openCart"
-        >
-          <CIcon
-            icon="cil-basket"
-            size="sm"
-          />
-
-          <strong>
-            ${{ cartStore.cartTotal.toLocaleString() }}
-          </strong>
-        </CButton>
-
-      </div>
+      </CHeaderNav>
     </CContainer>
 
     <CartOffcanvas
+      v-if="isLoggedIn"
       ref="cartOffcanvas"
       :store-id="props.store.store_id"
     />

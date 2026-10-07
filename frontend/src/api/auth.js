@@ -174,3 +174,26 @@ export async function storeLogout() {
         throw error
     }
 }
+export async function checkCustomerLogin() {
+    try {
+        const response = await fetch(
+            'http://localhost/ecommerce-platform/backend/api/auth/check_customer_login.php',
+            {
+                method: 'GET',
+                credentials: 'include'
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            return false
+        }
+
+        return data.logged_in === true
+
+    } catch (error) {
+        console.error('Check customer login error:', error)
+        return false
+    }
+}
