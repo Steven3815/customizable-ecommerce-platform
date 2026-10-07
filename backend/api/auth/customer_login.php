@@ -27,27 +27,27 @@ if (!is_array($data)) {
 
 // 檢查必要欄位
 if (
-    !isset($data["store_id"]) ||
     !isset($data["email"]) ||
     !isset($data["password"])
 ) {
-
     http_response_code(400);
     echo json_encode([
-        "error" => "商店 ID、Email 和密碼為必填"
+        "error" => "Email 和密碼為必填"
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
 
 // 取得資料
-$store_id = (int)$data["store_id"];
+$store_id = isset($data["store_id"])
+    ? (int)$data["store_id"]
+    : null;
+
 $email = trim($data["email"]);
 $password = $data["password"];
 
 // 檢查 Store ID
-if ($store_id <= 0) {
-
+if ($store_id !== null && $store_id <= 0) {
     http_response_code(400);
     echo json_encode([
         "error" => "商店 ID 無效"
@@ -89,54 +89,59 @@ if ($password === "") {
     exit;
 }
 
-// 檢查 Store
-$sql = "
-SELECT
-    s.store_id,
-    s.store_name,
-    s.status AS store_status,
-    ss.store_mode
+// 如果有 Store ID，檢查 Store
+$store = null;
 
-FROM STORE s
+if ($store_id !== null) {
 
-INNER JOIN STORE_SETTING ss
-    ON s.store_id = ss.store_id
+    $sql = "
+    SELECT
+        s.store_id,
+        s.store_name,
+        s.status AS store_status,
+        ss.store_mode
 
-WHERE s.store_id = ?
-";
+    FROM STORE s
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$store_id]);
-$store = $stmt->fetch(PDO::FETCH_ASSOC);
+    INNER JOIN STORE_SETTING ss
+        ON s.store_id = ss.store_id
 
-// Store 不存在
-if (!$store) {
-    http_response_code(404);
-    echo json_encode([
-        "error" => "找不到此商店"
-    ], JSON_UNESCAPED_UNICODE);
+    WHERE s.store_id = ?
+    ";
 
-    exit;
-}
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$store_id]);
+    $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Store 帳號停用
-if ($store["store_status"] !== "active") {
-    http_response_code(403);
-    echo json_encode([
-        "error" => "此商店目前已停用"
-    ], JSON_UNESCAPED_UNICODE);
+    // Store 不存在
+    if (!$store) {
+        http_response_code(404);
+        echo json_encode([
+            "error" => "找不到此商店"
+        ], JSON_UNESCAPED_UNICODE);
 
-    exit;
-}
+        exit;
+    }
 
-// 展示模式禁止登入
-if ($store["store_mode"] !== "shopping") {
-    http_response_code(403);
-    echo json_encode([
-        "error" => "展示模式無法登入"
-    ], JSON_UNESCAPED_UNICODE);
+    // Store 帳號停用
+    if ($store["store_status"] !== "active") {
+        http_response_code(403);
+        echo json_encode([
+            "error" => "此商店目前已停用"
+        ], JSON_UNESCAPED_UNICODE);
 
-    exit;
+        exit;
+    }
+
+    // 展示模式禁止登入
+    if ($store["store_mode"] !== "shopping") {
+        http_response_code(403);
+        echo json_encode([
+            "error" => "展示模式無法登入"
+        ], JSON_UNESCAPED_UNICODE);
+
+        exit;
+    }
 }
 
 // 查詢會員
@@ -218,10 +223,12 @@ echo json_encode([
         "address" => $customer["address"]
     ],
 
-    "store" => [
-        "store_id" => $store_id,
-        "store_name" => $store["store_name"]
-    ],
+    "store" => $store
+        ? [
+            "store_id" => $store_id,
+            "store_name" => $store["store_name"]
+        ]
+        : null,
 
     "session" => [
         "session_id" => session_id(),

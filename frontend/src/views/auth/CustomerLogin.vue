@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="store"
+    v-if="store || !storeId"
     class="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center"
   >
     <CContainer>
@@ -90,7 +90,10 @@
                 </CForm>
 
                 <!-- Register -->
-                <div class="text-center text-body-secondary">
+                <div
+                  v-if="storeId"
+                  class="text-center text-body-secondary"
+                >
                   還沒有帳號？
                   <RouterLink :to="`/store-${storeId}/register`">
                     點此註冊
@@ -138,6 +141,10 @@ const router = useRouter()
 const storeId = route.params.storeId
 
 onMounted(async () => {
+  if (!storeId) {
+    return
+  }
+
   try {
     const data = await getStore(storeId)
     store.value = data.store
@@ -160,7 +167,11 @@ async function login() {
     console.log(data)
 
     // 登入成功
-    router.push(`/store-${storeId}`)
+    if (storeId) {
+      router.push(`/store-${storeId}`)
+    } else {
+      router.push('/customer')
+    }
   } catch (e) {
     error.value = e.message
   }

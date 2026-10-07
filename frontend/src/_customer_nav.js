@@ -3,6 +3,12 @@
  */
 
 export default [
+
+  {
+    component: 'CNavTitle',
+    name: '商店',
+  },
+
   {
     component: 'CNavItem',
     name: '首頁',
@@ -44,4 +50,16 @@ export default [
     to: '/store-:storeId/profile',
     icon: 'cilUser',
   },
+    {
+    component: 'CNavTitle',
+    name: '會員中心',
+  },
+
+  {
+    component: 'CNavItem',
+    name: '會員中心',
+    to: '/customer',
+    icon: 'cilHome',
+  }
+
 ]

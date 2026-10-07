@@ -172,6 +172,13 @@ const viewCategory = (categoryId) => {
 onMounted(async () => {
   const storeId = route.params.storeId
 
+  // 記錄最後造訪的商店
+  if (storeId) {
+    localStorage.setItem('lastStoreId', storeId)
+    console.log('記錄商店 ID:', storeId)
+    console.log('目前 localStorage:', localStorage.getItem('lastStoreId'))
+  }
+
   try {
     home.value = await getCustomerHome(storeId)
 

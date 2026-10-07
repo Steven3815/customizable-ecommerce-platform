@@ -28,6 +28,11 @@ import CustomerCreateService from '../views/customer/service/CreateService.vue'
 import CustomerRefundList from '../views/customer/refund/RefundList.vue'
 import CustomerCreateRefund from '../views/customer/refund/CreateRefund.vue'
 
+import CustomerMemberHome from '../views/customer/member/MemberHOme.vue'
+import CustomerMemberOrders from '../views/customer/member/Orders.vue'
+import CustomerMemberRefunds from '../views/customer/member/Refunds.vue'
+import CustomerMemberServices from '../views/customer/member/Services.vue'
+
 import StoreDashboard from '../views/store/dashboard/Dashboard.vue'
 import StoreHomepageSettings from '../views/store/homepage/Settings.vue'
 import StoreHomepageSettingsBanner from '../views/store/homepage/Banner.vue'
@@ -48,8 +53,7 @@ import StoreRefundList from '../views/store/refund/RefundList.vue'
 import StoreRefundDetail from '../views/store/refund/RefundDetail.vue'
 
 import { checkStoreAuth } from '@/api/store.js'
-
-
+import { checkCustomerLogin } from '@/api/auth.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -277,6 +281,46 @@ const router = createRouter({
         }
       },
     },
+    // Member Center
+    {
+      path: '/customer',
+      name: 'CustomerMemberHome',
+      component: CustomerMemberHome,
+      meta: {
+        requiresCustomerAuth: true
+      }
+    },
+    {
+      path: '/customer/login',
+      name: 'CustomerLoginGlobal',
+      component: CustomerLogin,
+    },
+    {
+      path: '/customer/orders',
+      name: 'CustomerMemberOrders',
+      component: CustomerMemberOrders,
+      meta: {
+        requiresCustomerAuth: true
+      }
+    },
+
+    {
+      path: '/customer/refunds',
+      name: 'CustomerMemberRefunds',
+      component: CustomerMemberRefunds,
+      meta: {
+        requiresCustomerAuth: true
+      }
+    },
+
+    {
+      path: '/customer/services',
+      name: 'CustomerMemberServices',
+      component: CustomerMemberServices,
+      meta: {
+        requiresCustomerAuth: true
+      }
+    },
 
     // Store
     {
@@ -447,14 +491,20 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  if (!to.meta.requiresStoreAuth) {
-    return true
+  if (to.meta.requiresStoreAuth) {
+    const isAuthenticated = await checkStoreAuth()
+
+    if (!isAuthenticated) {
+      return '/401'
+    }
   }
 
-  const isAuthenticated = await checkStoreAuth()
+  if (to.meta.requiresCustomerAuth) {
+    const isAuthenticated = await checkCustomerLogin()
 
-  if (!isAuthenticated) {
-    return '/401'
+    if (!isAuthenticated) {
+      return '/customer/login'
+    }
   }
 
   return true

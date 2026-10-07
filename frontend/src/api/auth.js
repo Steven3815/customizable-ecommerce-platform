@@ -32,6 +32,15 @@ export async function customerRegister(storeId, name, email, password) {
 
 export async function customerLogin(storeId, email, password) {
     try {
+        const body = {
+            email: email,
+            password: password
+        }
+
+        if (storeId) {
+            body.store_id = storeId
+        }
+
         const response = await fetch(
             'http://localhost/ecommerce-platform/backend/api/auth/customer_login.php',
             {
@@ -40,11 +49,7 @@ export async function customerLogin(storeId, email, password) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    store_id: storeId,
-                    email: email,
-                    password: password
-                })
+                body: JSON.stringify(body)
             }
         )
 
@@ -174,6 +179,7 @@ export async function storeLogout() {
         throw error
     }
 }
+
 export async function checkCustomerLogin() {
     try {
         const response = await fetch(

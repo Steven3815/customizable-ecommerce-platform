@@ -1110,3 +1110,100 @@ export async function getCustomerRefunds(storeId) {
     throw error
   }
 }
+
+// Member Center
+
+export async function getMemberOrders(params = {}) {
+  try {
+    const query = new URLSearchParams(params).toString()
+
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/member/get_orders.php${query ? `?${query}` : ''}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得會員中心訂單列表失敗'
+      )
+
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error(
+      '取得會員中心訂單列表失敗:',
+      error
+    )
+    throw error
+  }
+}
+
+export async function getMemberRefunds() {
+  try {
+    const response = await fetch(
+      'http://localhost/ecommerce-platform/backend/api/customer/member/get_refunds.php',
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得會員中心退款列表失敗'
+      )
+
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error(
+      '取得會員中心退款列表失敗:',
+      error
+    )
+    throw error
+  }
+}
+
+export async function getMemberServices(status = 'all') {
+  try {
+    const response = await fetch(
+      `http://localhost/ecommerce-platform/backend/api/customer/member/get_services.php?status=${status}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        data.error || '取得會員中心客服列表失敗'
+      )
+
+      error.status = response.status
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error(
+      '取得會員中心客服列表失敗:',
+      error
+    )
+    throw error
+  }
+}
