@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   CContainer,
@@ -36,6 +37,8 @@ import {
   deleteHomepageProduct,
   reorderHomepageProducts
 } from '@/api/store.js'
+
+const router = useRouter()
 
 const categories = ref([])
 const categoryId = ref(null)
@@ -165,6 +168,16 @@ function showError(message) {
 function closeErrorModal() {
   showErrorModal.value = false
   errorModalMessage.value = ''
+}
+
+// 前往商品詳細編輯
+function goToProductDetail(productId) {
+  router.push({
+    name: 'StoreProductDetail',
+    params: {
+      productId
+    }
+  })
 }
 
 // 開啟新增商品 Modal
@@ -628,6 +641,21 @@ async function removeProduct() {
                           "
                         >
                           下移
+                        </CButton>
+
+                        <!-- 編輯 -->
+                        <CButton
+                          color="primary"
+                          size="sm"
+                          class="me-2"
+                          :disabled="saving"
+                          @click="
+                            goToProductDetail(
+                              product.product_id
+                            )
+                          "
+                        >
+                          編輯
                         </CButton>
 
                         <!-- 刪除 -->

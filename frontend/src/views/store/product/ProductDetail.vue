@@ -179,10 +179,9 @@ onMounted(() => {
   loadProduct()
 })
 
+// 返回上一頁
 function goBack() {
-  router.push({
-    name: 'StoreProductList'
-  })
+  router.back()
 }
 
 // 新增規格
@@ -351,15 +350,41 @@ async function saveProduct() {
 
     console.log('送出的商品狀態:', status.value)
 
-    formData.append('product_id', product.value.product_id)
-    formData.append('product_name', productName.value.trim())
-    formData.append('description', description.value)
-    formData.append('price', price.value)
-    formData.append('has_spec', hasSpec.value ? 1 : 0)
-    formData.append('status', status.value)
+    formData.append(
+      'product_id',
+      product.value.product_id
+    )
+
+    formData.append(
+      'product_name',
+      productName.value.trim()
+    )
+
+    formData.append(
+      'description',
+      description.value
+    )
+
+    formData.append(
+      'price',
+      price.value
+    )
+
+    formData.append(
+      'has_spec',
+      hasSpec.value ? 1 : 0
+    )
+
+    formData.append(
+      'status',
+      status.value
+    )
 
     if (hasSpec.value) {
-      formData.append('spec_name', specName.value.trim())
+      formData.append(
+        'spec_name',
+        specName.value.trim()
+      )
 
       const productSpecs = specs.value.map((spec) => {
         const specData = {
@@ -375,16 +400,25 @@ async function saveProduct() {
         return specData
       })
 
-      formData.append('specs', JSON.stringify(productSpecs))
+      formData.append(
+        'specs',
+        JSON.stringify(productSpecs)
+      )
     } else {
-      formData.append('stock', stock.value)
+      formData.append(
+        'stock',
+        stock.value
+      )
     }
 
     // 只上傳新加入的圖片
     images.value
       .filter(image => image.isNew && image.file)
       .forEach((image) => {
-        formData.append('images[]', image.file)
+        formData.append(
+          'images[]',
+          image.file
+        )
       })
 
     const data = await updateProduct(formData)
@@ -465,7 +499,9 @@ async function removeProductImage() {
   saving.value = true
 
   try {
-    const data = await deleteProductImage(image.image_id)
+    const data = await deleteProductImage(
+      image.image_id
+    )
 
     images.value = (data.images || []).map((image) => ({
       ...image,
@@ -538,7 +574,9 @@ async function moveImage(index, direction) {
   reorderingImage.value = true
 
   try {
-    const imageIds = images.value.map(image => image.image_id)
+    const imageIds = images.value.map(
+      image => image.image_id
+    )
 
     await reorderProductImages(
       product.value.product_id,
@@ -589,13 +627,14 @@ async function removeProduct() {
   deleting.value = true
 
   try {
-    await deleteProduct(product.value.product_id)
+    await deleteProduct(
+      product.value.product_id
+    )
 
     showDeleteModal.value = false
 
-    router.push({
-      name: 'ProductList'
-    })
+    // 刪除成功後返回上一頁
+    router.back()
   } catch (error) {
     console.error('刪除商品失敗:', error)
 
@@ -667,7 +706,7 @@ function cancelChanges() {
               color="primary"
               @click="goBack"
             >
-              返回商品列表
+              返回上一頁
             </CButton>
           </div>
 
@@ -708,7 +747,6 @@ function cancelChanges() {
                   <strong>商品分類：</strong>
                   恕不開放更改商品類別，建議直接至對應類別新增商品
                   <br>
-
                 </small>
               </CCollapse>
 
@@ -717,7 +755,7 @@ function cancelChanges() {
                 class="position-absolute top-0 end-0"
                 @click="goBack"
               >
-                返回商品列表
+                返回上一頁
               </CButton>
             </div>
 
@@ -729,12 +767,12 @@ function cancelChanges() {
                   商品資訊
                 </h4>
 
-                    <!-- 商品狀態 -->
-                    <CRow class="mb-4">
-                      <CCol :md="4">
-                        <CFormLabel>
-                          商品狀態
-                        </CFormLabel>
+                <!-- 商品狀態 -->
+                <CRow class="mb-4">
+                  <CCol :md="4">
+                    <CFormLabel>
+                      商品狀態
+                    </CFormLabel>
 
                     <CFormSelect v-model="status">
                       <option value="active">
@@ -815,12 +853,13 @@ function cancelChanges() {
                     />
                   </CCol>
                 </CRow>
+
                 <small class="text-body-secondary">
                   <br>
                   <strong>更多操作：</strong>
                   可至「首頁商品管理」新增商品
                 </small>
-                 
+
               </CCardBody>
             </CCard>
 

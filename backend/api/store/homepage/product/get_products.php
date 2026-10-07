@@ -119,6 +119,7 @@ try {
             : null;
 
     // 取得商品
+    // 管理頁面顯示 active + hidden deleted 商品不顯示
     $sql = "
         SELECT
             product_id,
@@ -130,7 +131,7 @@ try {
         FROM PRODUCT
         WHERE store_id = ?
         AND category_id = ?
-        AND status = 'active'
+        AND status IN ('active', 'hidden')
         ORDER BY
             sort_order ASC,
             product_id ASC

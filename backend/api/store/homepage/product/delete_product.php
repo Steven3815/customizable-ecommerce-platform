@@ -66,6 +66,7 @@ try {
 
     $pdo->beginTransaction();
 
+    // 取得商品 active / hidden 都可以刪除
     $sql = "
         SELECT
             product_id,
@@ -77,7 +78,7 @@ try {
         FROM PRODUCT
         WHERE product_id = ?
         AND store_id = ?
-        AND status = 'active'
+        AND status IN ('active', 'hidden')
         LIMIT 1
     ";
 
@@ -103,6 +104,7 @@ try {
     $category_id = (int)$product["category_id"];
 
     // Soft Delete
+    // active / hidden 都可以刪除
     $sql = "
         UPDATE PRODUCT
         SET
@@ -110,7 +112,7 @@ try {
             updated_at = NOW()
         WHERE product_id = ?
         AND store_id = ?
-        AND status = 'active'
+        AND status IN ('active', 'hidden')
     ";
 
     $stmt = $pdo->prepare($sql);

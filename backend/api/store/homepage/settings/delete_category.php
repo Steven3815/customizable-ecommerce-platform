@@ -7,7 +7,6 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once "../../../../config/cors.php";
 require_once "../../../../middleware/store_auth.php";
 
-
 // 取得 JSON
 $data = json_decode(
     file_get_contents("php://input"),
@@ -125,7 +124,30 @@ try {
         }
     }
 
-    // Soft Delete 同時將 sort_order 設為 NULL
+    // Soft Delete Category 底下的所有商品
+    // 同時將商品 sort_order 設為 NULL
+    foreach ($validated_category_ids as $category_id) {
+
+        $sql = "
+            UPDATE PRODUCT
+            SET
+                status = 'deleted',
+                sort_order = NULL,
+                updated_at = NOW()
+            WHERE category_id = ?
+            AND store_id = ?
+            AND status != 'deleted'
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            $category_id,
+            $store_id
+        ]);
+    }
+
+    // Soft Delete Category
+    // 同時將 sort_order 設為 NULL
     foreach ($validated_category_ids as $category_id) {
 
         $sql = "
@@ -158,6 +180,7 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$store_id]);
+
     $remaining_category_ids =
         $stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -206,12 +229,12 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$store_id]);
+
     $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 回傳
     echo json_encode([
-        "message" => "Categories deleted and reordered successfully",
-
+        "message" => "Categories and products deleted and reordered successfully",
         "categories" => $categories
     ], JSON_UNESCAPED_UNICODE);
 
@@ -223,10 +246,13 @@ try {
     }
 
     $status_code = $e->getCode();
+
     if ($status_code < 400 || $status_code > 599) {
         $status_code = 500;
     }
+
     http_response_code($status_code);
+
     echo json_encode([
         "error" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);

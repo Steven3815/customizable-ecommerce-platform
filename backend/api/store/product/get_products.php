@@ -77,6 +77,7 @@ if ($category_id !== null) {
     $category_id = (int)$category_id;
 
     // 確認 Category 屬於目前 Store
+    // deleted Category 不允許作為篩選條件
     $sql = "
     SELECT
         category_id,
@@ -84,6 +85,7 @@ if ($category_id !== null) {
     FROM CATEGORY
     WHERE category_id = ?
     AND store_id = ?
+    AND status != 'deleted'
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -139,12 +141,14 @@ if ($stock_status !== null) {
 try {
 
     // 取得目前 Store 所有商品分類
+    // deleted Category 不顯示在篩選選單
     $sql = "
     SELECT
         category_id,
         category_name
     FROM CATEGORY
     WHERE store_id = ?
+    AND status != 'deleted'
     ORDER BY
         category_id ASC
     ";
@@ -195,8 +199,11 @@ try {
             : 0;
 
     // 建立 Product WHERE 條件
+    // 管理頁面只顯示 active / hidden
+    // deleted 商品不顯示
     $where = [
-        "p.store_id = ?"
+        "p.store_id = ?",
+        "p.status IN ('active', 'hidden')"
     ];
 
     $params = [$store_id];
