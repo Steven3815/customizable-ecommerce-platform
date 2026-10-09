@@ -14,7 +14,7 @@ CREATE TABLE CUSTOMER (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- status: super admin 可控制商店啟用或停用
+/*status: super admin 可控制商店啟用或停用*/
 CREATE TABLE STORE (
     store_id INT AUTO_INCREMENT PRIMARY KEY,
     store_name VARCHAR(100) NOT NULL,
@@ -58,7 +58,8 @@ CREATE TABLE PRODUCT (
     price DECIMAL(10,2),
     stock INT DEFAULT 0,
     has_spec BOOLEAN DEFAULT FALSE,
-    spec_name VARCHAR(100), -- 規格名稱，例如：尺寸、顏色
+    spec_name VARCHAR(100), 
+    /*規格名稱，例如：尺寸、顏色*/
     sort_order INT NULL DEFAULT 1,
     status ENUM('active', 'hidden', 'deleted') DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -72,7 +73,8 @@ CREATE TABLE PRODUCT_SPEC (
     spec_id INT AUTO_INCREMENT PRIMARY KEY,
     store_id INT NOT NULL,
     product_id INT NOT NULL,
-    spec_name VARCHAR(100), -- 規格值，例如：S、M、L 或 黑色、白色
+    spec_name VARCHAR(100), 
+    /*規格值，例如：S、M、L 或 黑色、白色*/
     price DECIMAL(10,2) NOT NULL,
     stock INT DEFAULT 0,
     status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
@@ -129,7 +131,8 @@ CREATE TABLE ORDERS (
     product_amount DECIMAL(10,2),
     shipping_fee DECIMAL(10,2),
     total_amount DECIMAL(10,2),
-    order_status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending', --是否完成建立訂單程序 判斷是否可以讓顧客修改訂單
+    order_status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending', 
+    /*是否完成建立訂單程序 判斷是否可以讓顧客修改訂單*/
     delivery_method VARCHAR(50),
     delivery_status ENUM('pending', 'shipping', 'completed') DEFAULT 'pending',
     estimated_ship_date DATE,
@@ -198,7 +201,7 @@ CREATE TABLE WEBSITE_SETTING (
     FOREIGN KEY(store_id) REFERENCES STORE(store_id)
 );
 
--- store_status closed: 關閉 create_order, update_order, all_payment
+/*store_status closed: 關閉 create_order, update_order, all_payment*/
 CREATE TABLE STORE_SETTING (
     setting_id INT AUTO_INCREMENT PRIMARY KEY,
     store_id INT UNIQUE NOT NULL,
