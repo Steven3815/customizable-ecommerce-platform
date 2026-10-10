@@ -587,10 +587,10 @@ try {
             throw new Exception("Invalid delivery methods", 400);
         }
 
-        $delivery_map = [
-            1 => "home_delivery",
-            2 => "convenience_store",
-            3 => "store_pickup"
+        $allowed_delivery_methods = [
+            "home_delivery",
+            "convenience_store",
+            "store_pickup"
         ];
 
         foreach (
@@ -615,8 +615,7 @@ try {
                 !is_numeric($store_delivery_id) ||
                 floor((float)$store_delivery_id)
                     != (float)$store_delivery_id ||
-                (int)$store_delivery_id < 1 ||
-                (int)$store_delivery_id > 3
+                (int)$store_delivery_id < 1
             ) {
                 throw new Exception("Invalid delivery method ID", 400);
             }
@@ -626,9 +625,6 @@ try {
             if (!is_bool($enabled)) {
                 throw new Exception("Invalid delivery method enabled", 400);
             }
-
-            $expected_delivery_method =
-                $delivery_map[$store_delivery_id];
 
             $sql = "
             SELECT
@@ -653,10 +649,13 @@ try {
             }
 
             if (
-                $delivery_method["delivery_method"]
-                !== $expected_delivery_method
+                !in_array(
+                    $delivery_method["delivery_method"],
+                    $allowed_delivery_methods,
+                    true
+                )
             ) {
-                throw new Exception("Delivery method configuration is invalid");
+                throw new Exception("Delivery method configuration is invalid", 400);
             }
 
             $sql = "
