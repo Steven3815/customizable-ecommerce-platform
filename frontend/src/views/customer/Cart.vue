@@ -143,7 +143,10 @@
 
                         <!-- 單價 -->
                         <p class="mb-0">
-                          $ {{ Number(item.price).toLocaleString() }}
+                          <template v-if="isValidPrice(item.price)">
+                            $ {{ Number(item.price).toLocaleString() }}
+                          </template>
+                          <span v-else class="text-danger">價格暫不可用</span>
                         </p>
                       </CCol>
 
@@ -200,7 +203,10 @@
                       <!-- Subtotal -->
                       <CCol :md="2" class="text-md-end mt-3 mt-md-0">
                         <div class="fw-bold mb-2">
-                          $ {{ Number(item.subtotal).toLocaleString() }}
+                          <template v-if="isValidPrice(item.price)">
+                            $ {{ (Number(item.price) * Number(item.quantity)).toLocaleString() }}
+                          </template>
+                          <span v-else class="text-danger">價格暫不可用</span>
                         </div>
 
                         <CButton
@@ -242,14 +248,14 @@
                       </span>
 
                       <span class="fw-bold fs-5">
-                        $ {{ selectedTotalAmount.toLocaleString() }}
+                        {{ selectedTotalAmount === null ? '價格暫不可用' : `$ ${selectedTotalAmount.toLocaleString()}` }}
                       </span>
                     </div>
 
                     <CButton
                       color="primary"
                       class="w-100 mb-2 mt-2"
-                      :disabled="selectedItems.length === 0 || hasInsufficientStock"
+                      :disabled="selectedItems.length === 0 || hasInsufficientStock || hasInvalidPrice"
                       @click="goCheckout"
                     >
                       建立訂單
@@ -396,17 +402,23 @@ const allSelected = computed({
 
 // 計算選取商品總金額
 const selectedTotalAmount = computed(() => {
-  if (!cart.value?.items) {
-    return 0
-  }
-
-  return cart.value.items
-    .filter(item => selectedItems.value.includes(item.cart_item_id))
-    .reduce(
-      (total, item) => total + Number(item.price) * Number(item.quantity),
-      0
-    )
+  if (hasInvalidPrice.value) return null
+  return selectedCartItems.value.reduce(
+    (total, item) => total + Number(item.price) * Number(item.quantity), 0
+  )
 })
+
+function isValidPrice(price) {
+  return price !== null && price !== '' && Number.isFinite(Number(price)) && Number(price) >= 0
+}
+
+const selectedCartItems = computed(() =>
+  (cart.value?.items || []).filter(item => selectedItems.value.includes(item.cart_item_id))
+)
+
+const hasInvalidPrice = computed(() =>
+  selectedCartItems.value.some(item => !isValidPrice(item.price))
+)
 
 // 檢查選取商品是否有庫存不足
 const hasInsufficientStock = computed(() => {
@@ -547,11 +559,7 @@ async function increaseQuantity(item) {
       storeId
     )
 
-    item.quantity = newQuantity
-    item.subtotal = Number(item.price) * newQuantity
-    item.stock_insufficient =
-      item.stock !== null &&
-      newQuantity > Number(item.stock)
+    await loadCart()
   } catch (err) {
     error.value = err.message || '更新購物車數量失敗'
   }
@@ -572,11 +580,7 @@ async function decreaseQuantity(item) {
       storeId
     )
 
-    item.quantity = newQuantity
-    item.subtotal = Number(item.price) * newQuantity
-    item.stock_insufficient =
-      item.stock !== null &&
-      newQuantity > Number(item.stock)
+    await loadCart()
   } catch (err) {
     error.value = err.message || '更新購物車數量失敗'
   }
@@ -597,11 +601,7 @@ async function updateQuantity(item) {
       storeId
     )
 
-    item.quantity = newQuantity
-    item.subtotal = Number(item.price) * newQuantity
-    item.stock_insufficient =
-      item.stock !== null &&
-      newQuantity > Number(item.stock)
+    await loadCart()
   } catch (err) {
     error.value = err.message || '更新購物車數量失敗'
   }

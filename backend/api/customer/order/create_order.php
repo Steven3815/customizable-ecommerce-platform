@@ -7,16 +7,43 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
+function priceToCents($price) {
+    if ($price === null || !is_numeric($price)) {
+        return null;
+    }
+
+    $price = trim((string)$price);
+
+    if (!preg_match('/^\d+(?:\.\d{1,2})?$/D', $price)) {
+        return null;
+    }
+
+    [$whole, $fraction] = array_pad(explode(".", $price, 2), 2, "");
+
+    if (strlen($whole) > 8) {
+        return null;
+    }
+
+    return ((int)$whole * 100) + (int)str_pad($fraction, 2, "0");
+}
+
+function centsToDecimal($amount_cents) {
+    return intdiv($amount_cents, 100) . "." .
+        str_pad((string)($amount_cents % 100), 2, "0", STR_PAD_LEFT);
+}
+
 // 取得 JSON 資料
-$data = json_decode(
-    file_get_contents("php://input"),
-    true
-);
+$raw_input = file_get_contents("php://input");
+$data = json_decode($raw_input, true);
 
 if (!is_array($data)) {
     http_response_code(400);
+
     echo json_encode([
-        "error" => "Invalid JSON data"
+        "error" => "Invalid JSON data",
+        "json_error" => json_last_error_msg(),
+        "received_length" => strlen($raw_input),
+        "received_content_type" => $_SERVER["CONTENT_TYPE"] ?? null
     ], JSON_UNESCAPED_UNICODE);
 
     exit;
@@ -31,6 +58,7 @@ if (
     !isset($data["delivery_method"])
 ) {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Missing required fields"
     ], JSON_UNESCAPED_UNICODE);
@@ -45,11 +73,9 @@ $receiver_address = trim($data["receiver_address"]);
 $delivery_method = trim($data["delivery_method"]);
 
 // 檢查購物車商品
-if (
-    !is_array($cart_item_ids) ||
-    empty($cart_item_ids)
-) {
+if (!is_array($cart_item_ids) || empty($cart_item_ids)) {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Cart item IDs are required"
     ], JSON_UNESCAPED_UNICODE);
@@ -58,11 +84,9 @@ if (
 }
 
 // 檢查收件資料
-if (
-    $receiver_name === "" ||
-    $receiver_phone === ""
-) {
+if ($receiver_name === "" || $receiver_phone === "") {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Receiver information is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -73,6 +97,7 @@ if (
 // 檢查配送方式
 if ($delivery_method === "") {
     http_response_code(400);
+
     echo json_encode([
         "error" => "Delivery method is required"
     ], JSON_UNESCAPED_UNICODE);
@@ -88,6 +113,7 @@ foreach ($cart_item_ids as $cart_item_id) {
         (int)$cart_item_id <= 0
     ) {
         http_response_code(400);
+
         echo json_encode([
             "error" => "Invalid cart item ID"
         ], JSON_UNESCAPED_UNICODE);
@@ -102,24 +128,21 @@ $cart_item_ids = array_map("intval", $cart_item_ids);
 $cart_item_ids = array_values(array_unique($cart_item_ids));
 
 // 固定運費
-$shipping_fee = 60;
+$shipping_fee_cents = 6000;
+$shipping_fee = centsToDecimal($shipping_fee_cents);
+$max_order_amount_cents = 9999999999;
 
 $placeholders = implode(
     ",",
-    array_fill(
-        0,
-        count($cart_item_ids),
-        "?"
-    )
+    array_fill(0, count($cart_item_ids), "?")
 );
 
-$pdo->beginTransaction();
-
 try {
+    $pdo->beginTransaction();
+
     // 再次檢查會員
     $sql = "
-    SELECT
-        customer_id
+    SELECT customer_id
     FROM CUSTOMER
     WHERE customer_id = ?
     ";
@@ -138,48 +161,38 @@ try {
         ci.cart_item_id,
         ci.cart_id,
         cart.store_id,
-
         ci.product_id,
         ci.spec_id,
         ci.quantity,
-
         p.product_name,
         p.has_spec,
         p.price AS product_price,
         p.stock AS product_stock,
         p.status AS product_status,
-
         p.category_id,
-
         c.category_name,
         c.status AS category_status,
-
         ps.spec_name,
         ps.price AS spec_price,
         ps.stock AS spec_stock,
         ps.status AS spec_status
-
     FROM CART_ITEM ci
-
     INNER JOIN CART cart
         ON ci.cart_id = cart.cart_id
         AND ci.store_id = cart.store_id
         AND cart.customer_id = ?
-
     INNER JOIN PRODUCT p
         ON ci.product_id = p.product_id
         AND ci.store_id = p.store_id
-
     LEFT JOIN CATEGORY c
         ON p.category_id = c.category_id
         AND p.store_id = c.store_id
-
     LEFT JOIN PRODUCT_SPEC ps
         ON ci.spec_id = ps.spec_id
         AND ci.product_id = ps.product_id
         AND ci.store_id = ps.store_id
-
     WHERE ci.cart_item_id IN ($placeholders)
+    FOR UPDATE
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -190,7 +203,6 @@ try {
     );
 
     $stmt->execute($params);
-
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 檢查商品是否全部存在
@@ -198,10 +210,7 @@ try {
         throw new Exception("Selected cart items not found", 404);
     }
 
-    if (
-        count($items) !==
-        count($cart_item_ids)
-    ) {
+    if (count($items) !== count($cart_item_ids)) {
         throw new Exception("Invalid cart item selected", 400);
     }
 
@@ -209,10 +218,7 @@ try {
     $store_id = (int)$items[0]["store_id"];
 
     foreach ($items as $item) {
-        if (
-            (int)$item["store_id"] !==
-            $store_id
-        ) {
+        if ((int)$item["store_id"] !== $store_id) {
             throw new Exception(
                 "Cart items must belong to the same store",
                 400
@@ -227,68 +233,43 @@ try {
         ss.store_status AS business_status,
         ss.store_mode
     FROM STORE s
-
     INNER JOIN STORE_SETTING ss
         ON s.store_id = ss.store_id
-
     WHERE s.store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$store_id]);
-
     $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$store) {
-        throw new Exception(
-            "Store setting not found",
-            404
-        );
+        throw new Exception("Store setting not found", 404);
     }
 
     if ($store["store_status"] !== "active") {
-        throw new Exception(
-            "Store is inactive",
-            409
-        );
+        throw new Exception("Store is inactive", 409);
     }
 
     if ($store["business_status"] !== "open") {
-        throw new Exception(
-            "Store is currently closed",
-            409
-        );
+        throw new Exception("Store is currently closed", 409);
     }
 
     if ($store["store_mode"] !== "shopping") {
-        throw new Exception(
-            "Store is currently in showcase mode",
-            409
-        );
+        throw new Exception("Store is currently in showcase mode", 409);
     }
 
     // 驗證商店是否啟用此配送方式
     $sql = "
-    SELECT
-        store_delivery_id,
-        delivery_method,
-        status
+    SELECT store_delivery_id, delivery_method, status
     FROM STORE_DELIVERY_METHOD
-
     WHERE store_id = ?
-    AND delivery_method = ?
-    AND status = 'active'
-
+        AND delivery_method = ?
+        AND status = 'active'
     LIMIT 1
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $store_id,
-        $delivery_method
-    ]);
-
+    $stmt->execute([$store_id, $delivery_method]);
     $delivery = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$delivery) {
@@ -299,32 +280,23 @@ try {
     }
 
     // 檢查商品、Category、規格與庫存
-    $product_amount = 0;
+    $product_amount_cents = 0;
 
-    foreach ($items as $item) {
+    foreach ($items as &$item) {
         $quantity = (int)$item["quantity"];
 
         if ($quantity <= 0) {
-            throw new Exception(
-                "Invalid product quantity",
-                400
-            );
+            throw new Exception("Invalid product quantity", 400);
         }
 
         if ($item["product_status"] !== "active") {
-            throw new Exception(
-                "Product is no longer available",
-                404
-            );
+            throw new Exception("Product is no longer available", 404);
         }
 
         // 檢查 Category
         if ($item["category_id"] !== null) {
             if ($item["category_name"] === null) {
-                throw new Exception(
-                    "Product category not found",
-                    404
-                );
+                throw new Exception("Product category not found", 404);
             }
 
             if ($item["category_status"] !== "active") {
@@ -337,37 +309,30 @@ try {
 
         // 有規格商品
         if ((int)$item["has_spec"] === 1) {
-            if ($item["spec_id"] === null) {
+            if (
+                $item["spec_id"] === null ||
+                $item["spec_name"] === null ||
+                $item["spec_status"] !== "active"
+            ) {
                 throw new Exception(
                     "Product specification is no longer available",
                     404
                 );
             }
 
-            if ($item["spec_name"] === null) {
-                throw new Exception(
-                    "Product specification is no longer available",
-                    404
-                );
+            $price_cents = priceToCents($item["spec_price"]);
+
+            if ($price_cents === null) {
+                throw new Exception("Product price is unavailable", 409);
             }
 
-            if ($item["spec_status"] !== "active") {
-                throw new Exception(
-                    "Product specification is no longer available",
-                    404
-                );
-            }
-
-            $price = (float)$item["spec_price"];
             $stock = (int)$item["spec_stock"];
 
             if ($quantity > $stock) {
                 throw new Exception(
                     "SPECIFICATION_STOCK_INSUFFICIENT|"
-                    . $item["product_name"]
-                    . "|"
-                    . $item["spec_name"]
-                    . "|"
+                    . $item["product_name"] . "|"
+                    . $item["spec_name"] . "|"
                     . $stock,
                     409
                 );
@@ -375,75 +340,74 @@ try {
         } else {
             // 無規格商品
             if ($item["spec_id"] !== null) {
-                throw new Exception(
-                    "Invalid product specification",
-                    400
-                );
+                throw new Exception("Invalid product specification", 400);
             }
 
-            $price = (float)$item["product_price"];
+            $price_cents = priceToCents($item["product_price"]);
+
+            if ($price_cents === null) {
+                throw new Exception("Product price is unavailable", 409);
+            }
+
             $stock = (int)$item["product_stock"];
 
             if ($quantity > $stock) {
                 throw new Exception(
                     "PRODUCT_STOCK_INSUFFICIENT|"
-                    . $item["product_name"]
-                    . "|"
+                    . $item["product_name"] . "|"
                     . $stock,
                     409
                 );
             }
         }
 
-        $product_amount += $price * $quantity;
+        if (
+            $product_amount_cents > $max_order_amount_cents ||
+            $price_cents > intdiv(
+                $max_order_amount_cents - $product_amount_cents,
+                $quantity
+            )
+        ) {
+            throw new Exception("Order amount exceeds supported range", 400);
+        }
+
+        $item["unit_price_cents"] = $price_cents;
+        $product_amount_cents += $price_cents * $quantity;
     }
 
+    unset($item);
+
     // 計算訂單總額
-    $total_amount = $product_amount + $shipping_fee;
+    $total_amount_cents = $product_amount_cents + $shipping_fee_cents;
+
+    if ($total_amount_cents > $max_order_amount_cents) {
+        throw new Exception("Order amount exceeds supported range", 400);
+    }
+
+    $product_amount = centsToDecimal($product_amount_cents);
+    $total_amount = centsToDecimal($total_amount_cents);
 
     // 建立 ORDERS
     $sql = "
-    INSERT INTO ORDERS
-    (
+    INSERT INTO ORDERS (
         customer_id,
         store_id,
-
         receiver_name,
         receiver_phone,
         receiver_address,
-
         order_date,
-
         product_amount,
         shipping_fee,
         total_amount,
-
         delivery_method,
         order_status,
         delivery_status,
-
         estimated_ship_date,
         estimated_arrival_date
     )
-    VALUES
-    (
-        ?,
-        ?,
-
-        ?,
-        ?,
-        ?,
-
-        NOW(),
-
-        ?,
-        ?,
-        ?,
-
-        ?,
-        'pending',
-        'pending',
-
+    VALUES (
+        ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?,
+        'pending', 'pending',
         DATE_ADD(CURDATE(), INTERVAL 3 DAY),
         DATE_ADD(CURDATE(), INTERVAL 7 DAY)
     )
@@ -454,100 +418,63 @@ try {
     $stmt->execute([
         $customer_id,
         $store_id,
-
         $receiver_name,
         $receiver_phone,
         $receiver_address,
-
         $product_amount,
         $shipping_fee,
         $total_amount,
-
         $delivery_method
     ]);
 
     $order_id = (int)$pdo->lastInsertId();
 
     // 建立訂單編號
-    $order_number =
-        "ORD"
-        . date("Ymd")
-        . str_pad(
-            $order_id,
-            4,
-            "0",
-            STR_PAD_LEFT
-        );
+    $order_number = "ORD" . date("Ymd") .
+        str_pad($order_id, 4, "0", STR_PAD_LEFT);
 
     // 更新訂單編號
     $sql = "
     UPDATE ORDERS
-
-    SET
-        order_number = ?
-
+    SET order_number = ?
     WHERE order_id = ?
-    AND store_id = ?
+        AND store_id = ?
     ";
 
     $stmt = $pdo->prepare($sql);
-
-    $stmt->execute([
-        $order_number,
-        $order_id,
-        $store_id
-    ]);
+    $stmt->execute([$order_number, $order_id, $store_id]);
 
     // 建立 ORDER_ITEM
     $sql = "
-    INSERT INTO ORDER_ITEM
-    (
+    INSERT INTO ORDER_ITEM (
         order_id,
         store_id,
         product_id,
         spec_id,
-
         product_name,
         spec_name,
-
         quantity,
         price
     )
-    VALUES
-    (
-        ?,
-        ?,
-        ?,
-        ?,
-
-        ?,
-        ?,
-
-        ?,
-        ?
-    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ";
 
     $stmt_order_item = $pdo->prepare($sql);
 
     foreach ($items as $item) {
-        if ((int)$item["has_spec"] === 1) {
-            $price = (float)$item["spec_price"];
-            $spec_name = $item["spec_name"];
-        } else {
-            $price = (float)$item["product_price"];
-            $spec_name = null;
-        }
+        $spec_name = (int)$item["has_spec"] === 1
+            ? $item["spec_name"]
+            : null;
+
+        $price = centsToDecimal($item["unit_price_cents"]);
 
         $stmt_order_item->execute([
             $order_id,
             $store_id,
             $item["product_id"],
             $item["spec_id"],
-
             $item["product_name"],
             $spec_name,
-
             $item["quantity"],
             $price
         ]);
@@ -560,17 +487,14 @@ try {
         if ((int)$item["has_spec"] === 1) {
             $sql = "
             UPDATE PRODUCT_SPEC
-
             SET
                 stock = stock - ?,
                 updated_at = NOW()
-
             WHERE spec_id = ?
-            AND product_id = ?
-            AND store_id = ?
-
-            AND status = 'active'
-            AND stock >= ?
+                AND product_id = ?
+                AND store_id = ?
+                AND status = 'active'
+                AND stock >= ?
             ";
 
             $stmt = $pdo->prepare($sql);
@@ -594,12 +518,10 @@ try {
             SET
                 stock = stock - ?,
                 updated_at = NOW()
-
             WHERE product_id = ?
-            AND store_id = ?
-
-            AND status = 'active'
-            AND stock >= ?
+                AND store_id = ?
+                AND status = 'active'
+                AND stock >= ?
             ";
 
             $stmt = $pdo->prepare($sql);
@@ -612,9 +534,7 @@ try {
             ]);
 
             if ($stmt->rowCount() !== 1) {
-                throw new Exception(
-                    "Failed to update product stock"
-                );
+                throw new Exception("Failed to update product stock");
             }
         }
     }
@@ -623,46 +543,40 @@ try {
     $sql = "
     DELETE ci
     FROM CART_ITEM ci
-
     INNER JOIN CART c
         ON ci.cart_id = c.cart_id
-
     WHERE c.customer_id = ?
-    AND ci.cart_item_id IN ($placeholders)
+        AND ci.cart_item_id IN ($placeholders)
     ";
 
     $stmt = $pdo->prepare($sql);
 
-    $params = array_merge(
-        [$customer_id],
-        $cart_item_ids
-    );
-
+    $params = array_merge([$customer_id], $cart_item_ids);
     $stmt->execute($params);
 
     $pdo->commit();
 
-    // 回傳
+    // 成功回傳
     echo json_encode([
         "message" => "Order created successfully",
         "order_id" => $order_id,
         "order_number" => $order_number,
         "customer_id" => $customer_id,
         "store_id" => $store_id,
-        "product_amount" => $product_amount,
-        "shipping_fee" => $shipping_fee,
-        "total_amount" => $total_amount,
+        "product_amount" => (float)$product_amount,
+        "shipping_fee" => (float)$shipping_fee,
+        "total_amount" => (float)$total_amount,
         "delivery_method" => $delivery_method,
         "order_status" => "pending",
         "delivery_status" => "pending"
     ], JSON_UNESCAPED_UNICODE);
 
-} catch (Exception $e) {
-    if ($pdo->inTransaction()) {
+} catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
-    $status_code = $e->getCode();
+    $status_code = (int)$e->getCode();
 
     if ($status_code < 400 || $status_code > 599) {
         $status_code = 500;
@@ -679,42 +593,22 @@ try {
         $error_message,
         "PRODUCT_STOCK_INSUFFICIENT|"
     )) {
-        $parts = explode(
-            "|",
-            $error_message,
-            3
-        );
+        $parts = explode("|", $error_message, 3);
 
         $error_type = "insufficient_stock";
-
-        $error_message =
-            "商品「"
-            . $parts[1]
-            . "」庫存不足";
-
+        $error_message = "商品「" . $parts[1] . "」庫存不足";
         $stock = (int)$parts[2];
-    }
 
     // 規格商品庫存不足
-    elseif (str_starts_with(
+    } elseif (str_starts_with(
         $error_message,
         "SPECIFICATION_STOCK_INSUFFICIENT|"
     )) {
-        $parts = explode(
-            "|",
-            $error_message,
-            4
-        );
+        $parts = explode("|", $error_message, 4);
 
         $error_type = "insufficient_stock";
-
-        $error_message =
-            "商品「"
-            . $parts[1]
-            . "」的規格「"
-            . $parts[2]
-            . "」庫存不足";
-
+        $error_message = "商品「" . $parts[1] .
+            "」的規格「" . $parts[2] . "」庫存不足";
         $stock = (int)$parts[3];
     }
 
@@ -726,5 +620,3 @@ try {
 
     exit;
 }
-
-?>

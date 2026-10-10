@@ -159,7 +159,7 @@ onMounted(() => {
             />
 
             <strong>
-              ${{ cartStore.cartTotal.toLocaleString() }}
+              {{ cartStore.cartTotal === null ? '價格暫不可用' : `$${cartStore.cartTotal.toLocaleString()}` }}
             </strong>
           </CButton>
         </div>

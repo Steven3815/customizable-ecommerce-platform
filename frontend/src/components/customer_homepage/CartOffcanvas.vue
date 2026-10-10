@@ -125,7 +125,8 @@
 
             <!-- 單價 -->
             <div class="small mb-1">
-              $ {{ Number(item.price).toLocaleString() }}
+              <template v-if="isValidPrice(item.price)">$ {{ Number(item.price).toLocaleString() }}</template>
+              <span v-else class="text-danger">價格暫不可用</span>
             </div>
 
             <!-- 數量 -->
@@ -142,13 +143,8 @@
 
             <!-- 小計 -->
             <div class="fw-semibold text-nowrap mb-2">
-              $
-              {{
-                (
-                  Number(item.price) *
-                  Number(item.quantity)
-                ).toLocaleString()
-              }}
+              <template v-if="isValidPrice(item.price)">{{ (Number(item.price) * Number(item.quantity)).toLocaleString() }}</template>
+              <span v-else class="text-danger">價格暫不可用</span>
             </div>
 
             <!-- 移除 -->
@@ -188,7 +184,7 @@
           </span>
 
           <span>
-            $ {{ cartSubtotal.toLocaleString() }}
+            {{ cartSubtotal === null ? '價格暫不可用' : `$ ${cartSubtotal.toLocaleString()}` }}
           </span>
 
         </div>
@@ -203,7 +199,7 @@
           </span>
 
           <span>
-            $ {{ cartSubtotal.toLocaleString() }}
+            {{ cartSubtotal === null ? '價格暫不可用' : `$ ${cartSubtotal.toLocaleString()}` }}
           </span>
 
         </div>
@@ -269,6 +265,7 @@ const cartSubtotal = computed(() => {
     return 0
   }
 
+  if (cart.value.items.some(item => !isValidPrice(item.price))) return null
   return cart.value.items.reduce(
     (total, item) =>
       total +
@@ -278,6 +275,10 @@ const cartSubtotal = computed(() => {
   )
 
 })
+
+function isValidPrice(price) {
+  return price !== null && price !== '' && Number.isFinite(Number(price)) && Number(price) >= 0
+}
 
 async function loadCart() {
 

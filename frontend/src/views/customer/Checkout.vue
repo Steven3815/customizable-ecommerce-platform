@@ -68,7 +68,8 @@
                     </span>
 
                     <span class="product-amount">
-                      $ {{ Number(item.price).toLocaleString() }}
+                      <template v-if="isValidPrice(item.price)">$ {{ Number(item.price).toLocaleString() }}</template>
+                      <span v-else class="text-danger">價格暫不可用</span>
                     </span>
                   </div>
 
@@ -88,13 +89,8 @@
                     </span>
 
                     <span class="product-amount">
-                      $
-                      {{
-                        (
-                          Number(item.price) *
-                          Number(item.quantity)
-                        ).toLocaleString()
-                      }}
+                      <template v-if="isValidPrice(item.price)">{{ (Number(item.price) * Number(item.quantity)).toLocaleString() }}</template>
+                      <span v-else class="text-danger">價格暫不可用</span>
                     </span>
                   </div>
                 </div>
@@ -122,7 +118,7 @@
                 </span>
 
                 <span>
-                  $ {{ productAmount.toLocaleString() }}
+                  {{ productAmount === null ? '價格暫不可用' : `$ ${productAmount.toLocaleString()}` }}
                 </span>
               </div>
 
@@ -144,7 +140,7 @@
                 </span>
 
                 <span class="fw-bold">
-                  $ {{ totalAmount.toLocaleString() }}
+                  {{ totalAmount === null ? '價格暫不可用' : `$ ${totalAmount.toLocaleString()}` }}
                 </span>
               </div>
             </CCardBody>
@@ -441,6 +437,7 @@ const selectedCartItems = computed(() => {
 
 // 計算商品金額
 const productAmount = computed(() => {
+  if (selectedCartItems.value.some(item => !isValidPrice(item.price))) return null
   return selectedCartItems.value.reduce(
     (total, item) => total + Number(item.price) * Number(item.quantity),
     0
@@ -449,8 +446,12 @@ const productAmount = computed(() => {
 
 // 計算總金額
 const totalAmount = computed(() => {
-  return productAmount.value + Number(shippingFee.value)
+  return productAmount.value === null ? null : productAmount.value + Number(shippingFee.value)
 })
+
+function isValidPrice(price) {
+  return price !== null && price !== '' && Number.isFinite(Number(price)) && Number(price) >= 0
+}
 
 function showError(message) {
   errorMessage.value = message
@@ -692,6 +693,11 @@ async function loadOrder() {
 }
 
 function validateCheckout() {
+  if (!isEditMode && selectedCartItems.value.some(item => !isValidPrice(item.price))) {
+    showError('商品價格尚未設定或無效，請返回購物車重新確認')
+    return false
+  }
+
   if (!receiverName.value.trim()) {
     showError(
       '請輸入收件人姓名'

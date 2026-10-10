@@ -7,6 +7,13 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once "../../../config/cors.php";
 require_once "../../../middleware/customer_auth.php";
 
+function isValidCartPrice($price) {
+    return $price !== null &&
+        is_numeric($price) &&
+        is_finite((float)$price) &&
+        (float)$price >= 0;
+}
+
 // 取得 JSON
 $data = json_decode(
     file_get_contents("php://input"),
@@ -182,6 +189,7 @@ SELECT
     p.category_id,
     p.has_spec,
     p.stock,
+    p.price,
     p.status
 FROM PRODUCT p
 INNER JOIN CATEGORY c
@@ -200,6 +208,18 @@ $stmt->execute([
 ]);
 
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (
+    $product &&
+    (int)$product["has_spec"] === 0 &&
+    !isValidCartPrice($product["price"])
+) {
+    http_response_code(409);
+    echo json_encode([
+        "error" => "Product price is unavailable"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 if (!$product) {
     http_response_code(403);
@@ -229,7 +249,8 @@ if ((int)$product["has_spec"] === 1) {
     $sql = "
     SELECT
         spec_id,
-        stock
+        stock,
+        price
     FROM PRODUCT_SPEC
     WHERE spec_id = ?
     AND product_id = ?
@@ -244,6 +265,14 @@ if ((int)$product["has_spec"] === 1) {
         $store_id
     ]);
     $spec = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($spec && !isValidCartPrice($spec["price"])) {
+        http_response_code(409);
+        echo json_encode([
+            "error" => "Product price is unavailable"
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     if (!$spec) {
         http_response_code(403);

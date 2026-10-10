@@ -23,7 +23,10 @@
         </CCardTitle>
 
         <div class="price mb-3">
-          ${{ Number(price).toFixed(2) }}
+          <template v-if="price !== null && price !== undefined && Number.isFinite(Number(price)) && Number(price) >= 0">
+            ${{ Number(price).toFixed(2) }}
+          </template>
+          <span v-else>價格暫不可用</span>
         </div>
 
         <CButton
