@@ -32,7 +32,6 @@ if (
     !isset($data["phone"]) ||
     !isset($data["store_mode"])
 ) {
-
     http_response_code(400);
     echo json_encode([
         "error" => "Missing required fields"
@@ -127,7 +126,6 @@ if (
     $store_mode !== "shopping" &&
     $store_mode !== "showcase"
 ) {
-
     http_response_code(400);
     echo json_encode([
         "error" => "商店模式無效"
@@ -167,7 +165,6 @@ $hashed_password = password_hash(
 try {
     $pdo->beginTransaction();
 
-    // store_url 先暫時 NULL
     $sql = "
     INSERT INTO STORE
     (
@@ -221,14 +218,12 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_url,
         $store_id
     ]);
 
     // 建立 STORE_SETTING
-    // store_mode 使用註冊時選擇的模式
     $sql = "
     INSERT INTO STORE_SETTING
     (
@@ -243,14 +238,12 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-
     $stmt->execute([
         $store_id,
         $store_mode
     ]);
 
     // 建立 WEBSITE_SETTING
-    // 如果其他欄位有 DEFAULT，就讓資料庫處理
     $sql = "
     INSERT INTO WEBSITE_SETTING
     (
@@ -321,6 +314,27 @@ try {
         $store_id
     ]);
 
+    // 每個 Store 固定建立 3 種配送方式
+    $sql = "
+    INSERT INTO STORE_DELIVERY_METHOD
+    (
+        store_id,
+        delivery_method,
+        status
+    )
+    VALUES
+    (?, 'home_delivery', 'active'),
+    (?, 'convenience_store', 'active'),
+    (?, 'store_pickup', 'active')
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $store_id,
+        $store_id,
+        $store_id
+    ]);
+
     $pdo->commit();
 
     // 回傳
@@ -338,7 +352,7 @@ try {
             "store_mode" => $store_mode
         ]
     ], JSON_UNESCAPED_UNICODE);
-    
+
 } catch (Exception $e) {
     // 發生錯誤 → Rollback
     if ($pdo->inTransaction()) {
