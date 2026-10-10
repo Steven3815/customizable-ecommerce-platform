@@ -67,10 +67,11 @@ if ($store["status"] !== "active") {
     exit;
 }
 
-// 檢查 Store 模式
+// 檢查 Store 模式及退款功能
 $sql = "
 SELECT
-    store_mode
+    store_mode,
+    refund_enable
 FROM STORE_SETTING
 WHERE store_id = ?
 ";
@@ -113,7 +114,6 @@ SELECT
     r.processed_at,
     o.order_number,
     o.total_amount,
-
     p.paid_at
 
 FROM REFUND r
@@ -145,6 +145,7 @@ if (!$refunds) {
             "store_id" => (int)$store["store_id"],
             "store_name" => $store["store_name"]
         ],
+        "refund_enable" => (int)$store_setting["refund_enable"],
         "count" => 0,
         "refunds" => []
     ], JSON_UNESCAPED_UNICODE);
@@ -207,29 +208,29 @@ foreach ($refunds as $refund) {
     $total_amount = (float)$refund["total_amount"];
 
     // 整理回傳格式
-$result[] = [
-    "refund_id" => $refund_id,
-    "store" => [
-        "store_id" => $refund_store_id,
-        "store_name" => $store["store_name"]
-    ],
-    "order" => [
-        "order_id" => $order_id,
-        "order_number" => $refund["order_number"],
-        "total_amount" => $total_amount
-    ],
-    "payment" => [
-        "paid_at" => $refund["paid_at"]
-    ],
-    "items" => $items,
-    "refund_reason" => $refund["refund_reason"],
-    "refund_description" => $refund["refund_description"],
-    "refund_image_url" => $refund["refund_image_url"],
-    "refund_status" => $refund["refund_status"],
-    "admin_reply" => $refund["admin_reply"],
-    "requested_at" => $refund["requested_at"],
-    "processed_at" => $refund["processed_at"]
-];
+    $result[] = [
+        "refund_id" => $refund_id,
+        "store" => [
+            "store_id" => $refund_store_id,
+            "store_name" => $store["store_name"]
+        ],
+        "order" => [
+            "order_id" => $order_id,
+            "order_number" => $refund["order_number"],
+            "total_amount" => $total_amount
+        ],
+        "payment" => [
+            "paid_at" => $refund["paid_at"]
+        ],
+        "items" => $items,
+        "refund_reason" => $refund["refund_reason"],
+        "refund_description" => $refund["refund_description"],
+        "refund_image_url" => $refund["refund_image_url"],
+        "refund_status" => $refund["refund_status"],
+        "admin_reply" => $refund["admin_reply"],
+        "requested_at" => $refund["requested_at"],
+        "processed_at" => $refund["processed_at"]
+    ];
 }
 
 // 回傳
@@ -238,9 +239,9 @@ echo json_encode([
         "store_id" => (int)$store["store_id"],
         "store_name" => $store["store_name"]
     ],
+    "refund_enable" => (int)$store_setting["refund_enable"],
     "count" => count($result),
     "refunds" => $result
-    
 ], JSON_UNESCAPED_UNICODE);
 
 ?>

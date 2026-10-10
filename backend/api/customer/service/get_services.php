@@ -41,7 +41,8 @@ SELECT
     s.store_id,
     s.store_name,
     s.status,
-    ss.store_mode
+    ss.store_mode,
+    ss.customer_service_enable
 FROM STORE s
 
 INNER JOIN STORE_SETTING ss
@@ -156,6 +157,7 @@ echo json_encode([
         "store_id" => (int)$store["store_id"],
         "store_name" => $store["store_name"]
     ],
+    "customer_service_enable" => (int)$store["customer_service_enable"],
     "status_filter" => $status,
     "count" => count($result),
     "services" => $result
