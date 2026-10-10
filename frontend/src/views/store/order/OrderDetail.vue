@@ -1244,7 +1244,8 @@ onMounted(() => {
             deliveryConfirmStatus === 'shipping'
               ? 'primary'
               : 'success'
-          "
+          "  
+          class="text-white"
           :disabled="updatingDelivery"
           @click="confirmDeliveryStatus"
         >

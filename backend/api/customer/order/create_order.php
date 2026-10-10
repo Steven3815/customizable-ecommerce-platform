@@ -60,8 +60,7 @@ if (
 // 檢查收件資料
 if (
     $receiver_name === "" ||
-    $receiver_phone === "" ||
-    $receiver_address === ""
+    $receiver_phone === ""
 ) {
     http_response_code(400);
     echo json_encode([
